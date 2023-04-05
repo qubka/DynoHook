@@ -8,7 +8,7 @@ DynoHooks offers a simple and intuitive API that makes it easy for developers to
 
 The library comes with pre and post callbacks, enabling developers to catch the behavior of the function before and after its execution. In addition, this allows developers to implement a wide range of use cases, such as logging, tracing, and error handling. Also, the pre and post callback functions used to modify the input and output parameters of the function call.
 
-Libray supports different call conventions, such as *__cdecl*, *__stdcall*, *__fastcall* and *__vectorcall* and other modern x64 call conventions. Developers can customize the callback functions based on their specific use case, and they can choose to override or supplement the behavior of the original function.
+Library supports different call conventions, such as *__cdecl*, *__stdcall*, *__fastcall* and *__vectorcall* and other modern x64 call conventions. Developers can customize the callback functions based on their specific use case, and they can choose to override or supplement the behavior of the original function.
 
 Another unique features of DynoHooks is the ability to handle return values from the hooked function callbacks. The library provides return action feature, which defines the possible actions that the callback function can take with respect to the return value. The ReturnAction can be set to Ignored, Handled, Override, or Supercede, depending on the desired behavior.
 
