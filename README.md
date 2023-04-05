@@ -199,4 +199,4 @@ cmake -G "Visual Studio 15 2017" ..
 ## Links
 - [X64 Function Hooking by Example](http://kylehalladay.com/blog/2020/11/13/Hooking-By-Example.html)
 - [Ayuto's DynamicHooks x32 Library](https://github.com/Ayuto/DynamicHooks)
-- [Sourcemod's DHook extention](https://forums.alliedmods.net/showpost.php?p=2588686&postcount=589)lliedmods.net/showpost.php?p=2588686&postcount=589)
+- [Sourcemod's DHook extention](https://forums.alliedmods.net/showpost.php?p=2588686&postcount=589)
