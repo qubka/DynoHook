@@ -1,0 +1,94 @@
+#pragma once
+
+#include <cassert>
+
+#cmakedefine DYNOHOOK_TEST_NAME "@DYNOHOOK_TEST_NAME@"
+#cmakedefine DYNOHOOK_TEST_CONV @DYNOHOOK_TEST_CONV@
+#cmakedefine DYNOHOOK_TEST_OBJECT @DYNOHOOK_TEST_OBJECT@
+#cmakedefine DYNOHOOK_TEST_HEADER "dynohook/conventions/@DYNOHOOK_TEST_HEADER@.hpp"
+#cmakedefine DYNOHOOK_TEST_NAMESPACE @DYNOHOOK_TEST_NAMESPACE@
+
+#include "dynohook/manager.hpp"
+#include DYNOHOOK_TEST_HEADER
+
+namespace DYNOHOOK_TEST_NAMESPACE {
+    int g_iMyFuncCallCount = 0;
+    int g_iPreMyFuncCallCount = 0;
+    int g_iPostMyFuncCallCount = 0;
+
+    using namespace dyno;
+
+    int DYNOHOOK_TEST_CONV MyFunc(int a0, int a1, int a2, int a3, int a4, int a5, int a6, int a7, int a8, int a9) {
+        g_iMyFuncCallCount++;
+        assert(a0 == 0);
+        assert(a1 == 1);
+        assert(a2 == 2);
+        assert(a3 == 3);
+        assert(a4 == 4);
+        assert(a5 == 5);
+        assert(a6 == 6);
+        assert(a7 == 7);
+        assert(a8 == 8);
+        assert(a9 == 100);
+
+        int result = a0 + a1 + a2 + a3 + a4 + a5 + a6 + a7 + a8 + a9;
+        assert(result == 136);
+
+        return result;
+    }
+
+    ReturnAction PreMyFunc(HookType hookType, Hook& hook) {
+        g_iPreMyFuncCallCount++;
+
+        for (size_t i = 0; i < 10; ++i) {
+            int a = hook.getArgument<int>(i);
+            assert(a == i);
+        }
+
+        hook.setArgument(9, 100);
+
+        return ReturnAction::Ignored;
+    }
+
+    ReturnAction PostMyFunc(HookType hookType, Hook& hook) {
+        g_iPostMyFuncCallCount++;
+
+        for (size_t i = 0; i < 9; ++i) {
+            int a = hook.getArgument<int>(i);
+            assert(a == i);
+        }
+
+        int last_value = hook.getArgument<int>(9);
+        assert(last_value == 100);
+
+        int return_value = hook.getReturnValue<int>();
+        assert(return_value == 136);
+
+        hook.setReturnValue<int>(1337);
+
+        return ReturnAction::Ignored;
+    }
+
+    void test() {
+        HookManager& hookMngr = HookManager::Get();
+
+        // Hook the function
+        Hook* pHook = hookMngr.hook((void *) &MyFunc, new DYNOHOOK_TEST_OBJECT({DATA_TYPE_INT, DATA_TYPE_INT, DATA_TYPE_INT, DATA_TYPE_INT, DATA_TYPE_INT, DATA_TYPE_INT, DATA_TYPE_INT, DATA_TYPE_INT, DATA_TYPE_INT, DATA_TYPE_INT}, DATA_TYPE_INT));
+
+        // Add the callbacks
+        pHook->addCallback(HookType::Pre, (HookHandler *) (void *) &PreMyFunc);
+        pHook->addCallback(HookType::Post, (HookHandler *) (void *) &PostMyFunc);
+
+        // Call the function
+        int ret = MyFunc(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+
+        assert(g_iMyFuncCallCount == 1);
+        assert(g_iPreMyFuncCallCount == 1);
+        assert(g_iPostMyFuncCallCount == 1);
+        assert(ret == 1337);
+
+        hookMngr.unhookAll();
+
+        printf("Test: \"%s\" was passed\n", DYNOHOOK_TEST_NAME);
+    }
+}
