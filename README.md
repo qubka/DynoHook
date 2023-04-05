@@ -194,7 +194,7 @@ cmake -G "Visual Studio 15 2017" ..
 ## Credits
 - [Ayuto](https://github.com/Ayuto/) - DynamicHooks library
 - [peace-maker](https://github.com/peace-maker) - DHooks with detour support
-- [Kailo](https://github.com/Kailo97) - Help with assembly porting from x32 to x64 and f
+- [Kailo](https://github.com/Kailo97) - Help with assembly porting from x32 to x64 and fixing crashes
 
 ## Links
 - [X64 Function Hooking by Example](http://kylehalladay.com/blog/2020/11/13/Hooking-By-Example.html)
