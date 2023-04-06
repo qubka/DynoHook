@@ -9,14 +9,14 @@ x86MsFastcall::x86MsFastcall(std::vector<DataTypeSized> arguments, DataTypeSized
     // Don't force the register on the user.
     // Why choose Fastcall if you set your own argument registers though..
 
-    RegisterType registers[] = { ECX, EDX };
+    std::array<registers, 2> registers = { ECX, EDX };
 
     for (size_t i = 0, j = 0; i < m_Arguments.size(); ++i) {
         DataTypeSized& type = m_Arguments[i];
 
         // Floating should be on stack
-        if (!m_Arguments[i].isFloating()) {
-            if (type.reg == NONE && i < 2) {
+        if (!type.isFloating()) {
+            if (type.reg == NONE && j < registers.size()) {
                 type.reg = registers[j++];
             }
         }
@@ -29,4 +29,4 @@ x86MsFastcall::~x86MsFastcall() {
 
 }
 
-#endif
+#endif // ENV32BIT

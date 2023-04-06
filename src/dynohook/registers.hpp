@@ -1,5 +1,7 @@
 #pragma once
 
+#define AVX512
+
 namespace dyno {
     enum RegisterType : uint8_t {
         // No register at all.
@@ -26,7 +28,7 @@ namespace dyno {
         R13B,
         R14B,
         R15B,
-#endif
+#endif // ENV64BIT
 
         AH,
         CH,
@@ -54,7 +56,7 @@ namespace dyno {
         R13W,
         R14W,
         R15W,
-#endif
+#endif // ENV64BIT
 
         // ========================================================================
         // >> 32-bit General purpose registers
@@ -77,7 +79,7 @@ namespace dyno {
         R13D,
         R14D,
         R15D,
-#endif
+#endif // ENV64BIT
 
         // ========================================================================
         // >> 64-bit General purpose registers
@@ -100,7 +102,7 @@ namespace dyno {
         R13,
         R14,
         R15,
-#endif
+#endif // ENV64BIT
 
         // ========================================================================
         // >> 64-bit MM (MMX) registers
@@ -125,7 +127,6 @@ namespace dyno {
         XMM5,
         XMM6,
         XMM7,
-
 #ifdef ENV64BIT
         XMM8,
         XMM9,
@@ -135,7 +136,25 @@ namespace dyno {
         XMM13,
         XMM14,
         XMM15,
-#endif
+#ifdef AVX512
+        XMM16,
+        XMM17,
+        XMM18,
+        XMM19,
+        XMM20,
+        XMM21,
+        XMM22,
+        XMM23,
+        XMM24,
+        XMM25,
+        XMM26,
+        XMM27,
+        XMM28,
+        XMM29,
+        XMM30,
+        XMM31,
+#endif // AVX512
+#endif // ENV64BIT
 
         // ========================================================================
         // >> 256-bit YMM registers
@@ -157,7 +176,63 @@ namespace dyno {
         YMM13,
         YMM14,
         YMM15,
-#endif
+#ifdef AVX512
+        YMM16,
+        YMM17,
+        YMM18,
+        YMM19,
+        YMM20,
+        YMM21,
+        YMM22,
+        YMM23,
+        YMM24,
+        YMM25,
+        YMM26,
+        YMM27,
+        YMM28,
+        YMM29,
+        YMM30,
+        YMM31,
+#endif // AVX512
+#endif // ENV64BIT
+
+        // ========================================================================
+        // >> 512-bit ZMM registers
+        // ========================================================================
+#ifdef AVX512
+        ZMM0,
+        ZMM1,
+        ZMM2,
+        ZMM3,
+        ZMM4,
+        ZMM5,
+        ZMM6,
+        ZMM7,
+        ZMM8,
+        ZMM9,
+        ZMM10,
+        ZMM11,
+        ZMM12,
+        ZMM13,
+        ZMM14,
+        ZMM15,
+        ZMM16,
+        ZMM17,
+        ZMM18,
+        ZMM19,
+        ZMM20,
+        ZMM21,
+        ZMM22,
+        ZMM23,
+        ZMM24,
+        ZMM25,
+        ZMM26,
+        ZMM27,
+        ZMM28,
+        ZMM29,
+        ZMM30,
+        ZMM31,
+#endif // AVX512
 
         // ========================================================================
         // >> 16-bit Segment registers
@@ -181,7 +256,7 @@ namespace dyno {
         ST5,
         ST6,
         ST7,
-#endif
+#endif // ENV32BIT
     };
 
     static size_t TypeToSize(RegisterType regType);
@@ -196,6 +271,7 @@ namespace dyno {
         SIZE_TWORD = 10,
         SIZE_XMMWORD = 16,
         SIZE_YMMWORD = 32,
+        SIZE_ZMMWORD = 64,
     };
 
     class Register {

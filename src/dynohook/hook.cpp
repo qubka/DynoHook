@@ -252,7 +252,7 @@ void Hook::writeModifyReturnAddress(Assembler& a) const {
     a.push(imm(uintptr_t(this)));
     a.call((void*&) setReturnAddress);
     a.add(esp, 12);
-#endif
+#endif // ENV32BIT
 
     // Restore scratch registers
     writeRestoreScratchRegisters(a);
@@ -619,10 +619,28 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         case XMM13: a.movaps(xmmword_ptr(addr), xmm13); break;
         case XMM14: a.movaps(xmmword_ptr(addr), xmm14); break;
         case XMM15: a.movaps(xmmword_ptr(addr), xmm15); break;
-#endif // ENV64BIT
+#ifdef AVX512
+        case XMM16: a.movaps(xmmword_ptr(addr), xmm16); break;
+        case XMM17: a.movaps(xmmword_ptr(addr), xmm17); break;
+        case XMM18: a.movaps(xmmword_ptr(addr), xmm18); break;
+        case XMM19: a.movaps(xmmword_ptr(addr), xmm19); break;
+        case XMM20: a.movaps(xmmword_ptr(addr), xmm20); break;
+        case XMM21: a.movaps(xmmword_ptr(addr), xmm21); break;
+        case XMM22: a.movaps(xmmword_ptr(addr), xmm22); break;
+        case XMM23: a.movaps(xmmword_ptr(addr), xmm23); break;
+        case XMM24: a.movaps(xmmword_ptr(addr), xmm24); break;
+        case XMM25: a.movaps(xmmword_ptr(addr), xmm25); break;
+        case XMM26: a.movaps(xmmword_ptr(addr), xmm26); break;
+        case XMM27: a.movaps(xmmword_ptr(addr), xmm27); break;
+        case XMM28: a.movaps(xmmword_ptr(addr), xmm28); break;
+        case XMM29: a.movaps(xmmword_ptr(addr), xmm29); break;
+        case XMM30: a.movaps(xmmword_ptr(addr), xmm30); break;
+        case XMM31: a.movaps(xmmword_ptr(addr), xmm31); break;
+#endif // AVX512
+#endif // ENV32BIT
 
         // ========================================================================
-        // >> 256-bit XMM registers
+        // >> 256-bit YMM registers
         // ========================================================================
 #ifdef ENV64BIT
         case YMM1: a.vmovaps(ymmword_ptr(addr), ymm1); break;
@@ -640,7 +658,62 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         case YMM13: a.vmovaps(ymmword_ptr(addr), ymm13); break;
         case YMM14: a.vmovaps(ymmword_ptr(addr), ymm14); break;
         case YMM15: a.vmovaps(ymmword_ptr(addr), ymm15); break;
+#ifdef AVX512
+        case YMM16: a.vmovaps(ymmword_ptr(addr), ymm16); break;
+        case YMM17: a.vmovaps(ymmword_ptr(addr), ymm17); break;
+        case YMM18: a.vmovaps(ymmword_ptr(addr), ymm18); break;
+        case YMM19: a.vmovaps(ymmword_ptr(addr), ymm19); break;
+        case YMM20: a.vmovaps(ymmword_ptr(addr), ymm20); break;
+        case YMM21: a.vmovaps(ymmword_ptr(addr), ymm21); break;
+        case YMM22: a.vmovaps(ymmword_ptr(addr), ymm22); break;
+        case YMM23: a.vmovaps(ymmword_ptr(addr), ymm23); break;
+        case YMM24: a.vmovaps(ymmword_ptr(addr), ymm24); break;
+        case YMM25: a.vmovaps(ymmword_ptr(addr), ymm25); break;
+        case YMM26: a.vmovaps(ymmword_ptr(addr), ymm26); break;
+        case YMM27: a.vmovaps(ymmword_ptr(addr), ymm27); break;
+        case YMM28: a.vmovaps(ymmword_ptr(addr), ymm28); break;
+        case YMM29: a.vmovaps(ymmword_ptr(addr), ymm29); break;
+        case YMM30: a.vmovaps(ymmword_ptr(addr), ymm30); break;
+        case YMM31: a.vmovaps(ymmword_ptr(addr), ymm31); break;
+#endif // AVX512
 #endif // ENV64BIT
+
+        // ========================================================================
+        // >> 512-bit ZMM registers
+        // ========================================================================
+#ifdef AVX512
+        case ZMM1: a.vmovaps(zmmword_ptr(addr), zmm1); break;
+        case ZMM2: a.vmovaps(zmmword_ptr(addr), zmm2); break;
+        case ZMM3: a.vmovaps(zmmword_ptr(addr), zmm3); break;
+        case ZMM4: a.vmovaps(zmmword_ptr(addr), zmm4); break;
+        case ZMM5: a.vmovaps(zmmword_ptr(addr), zmm5); break;
+        case ZMM6: a.vmovaps(zmmword_ptr(addr), zmm6); break;
+        case ZMM7: a.vmovaps(zmmword_ptr(addr), zmm7); break;
+        case ZMM8: a.vmovaps(zmmword_ptr(addr), zmm8); break;
+        case ZMM9: a.vmovaps(zmmword_ptr(addr), zmm9); break;
+        case ZMM10: a.vmovaps(zmmword_ptr(addr), zmm10); break;
+        case ZMM11: a.vmovaps(zmmword_ptr(addr), zmm11); break;
+        case ZMM12: a.vmovaps(zmmword_ptr(addr), zmm12); break;
+        case ZMM13: a.vmovaps(zmmword_ptr(addr), zmm13); break;
+        case ZMM14: a.vmovaps(zmmword_ptr(addr), zmm14); break;
+        case ZMM15: a.vmovaps(zmmword_ptr(addr), zmm15); break;
+        case ZMM16: a.vmovaps(zmmword_ptr(addr), zmm16); break;
+        case ZMM17: a.vmovaps(zmmword_ptr(addr), zmm17); break;
+        case ZMM18: a.vmovaps(zmmword_ptr(addr), zmm18); break;
+        case ZMM19: a.vmovaps(zmmword_ptr(addr), zmm19); break;
+        case ZMM20: a.vmovaps(zmmword_ptr(addr), zmm20); break;
+        case ZMM21: a.vmovaps(zmmword_ptr(addr), zmm21); break;
+        case ZMM22: a.vmovaps(zmmword_ptr(addr), zmm22); break;
+        case ZMM23: a.vmovaps(zmmword_ptr(addr), zmm23); break;
+        case ZMM24: a.vmovaps(zmmword_ptr(addr), zmm24); break;
+        case ZMM25: a.vmovaps(zmmword_ptr(addr), zmm25); break;
+        case ZMM26: a.vmovaps(zmmword_ptr(addr), zmm26); break;
+        case ZMM27: a.vmovaps(zmmword_ptr(addr), zmm27); break;
+        case ZMM28: a.vmovaps(zmmword_ptr(addr), zmm28); break;
+        case ZMM29: a.vmovaps(zmmword_ptr(addr), zmm29); break;
+        case ZMM30: a.vmovaps(zmmword_ptr(addr), zmm30); break;
+        case ZMM31: a.vmovaps(zmmword_ptr(addr), zmm31); break;
+#endif // AVX512
 
         // ========================================================================
         // >> 16-bit Segment registers
@@ -806,7 +879,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         case XMM5: a.movaps(xmm5, dqword_ptr(addr)); break;
         case XMM6: a.movaps(xmm6, dqword_ptr(addr)); break;
         case XMM7: a.movaps(xmm7, dqword_ptr(addr)); break;
-#else // ENV32BIT
+#else // ENV64BIT
         case XMM0: a.movaps(xmm0, xmmword_ptr(addr)); break;
         case XMM1: a.movaps(xmm1, xmmword_ptr(addr)); break;
         case XMM2: a.movaps(xmm2, xmmword_ptr(addr)); break;
@@ -823,10 +896,28 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         case XMM13: a.movaps(xmm13, xmmword_ptr(addr)); break;
         case XMM14: a.movaps(xmm14, xmmword_ptr(addr)); break;
         case XMM15: a.movaps(xmm15, xmmword_ptr(addr)); break;
-#endif // ENV64BIT
+#ifdef AVX512
+        case XMM16: a.movaps(xmm16, xmmword_ptr(addr)); break;
+        case XMM17: a.movaps(xmm17, xmmword_ptr(addr)); break;
+        case XMM18: a.movaps(xmm18, xmmword_ptr(addr)); break;
+        case XMM19: a.movaps(xmm19, xmmword_ptr(addr)); break;
+        case XMM20: a.movaps(xmm20, xmmword_ptr(addr)); break;
+        case XMM21: a.movaps(xmm21, xmmword_ptr(addr)); break;
+        case XMM22: a.movaps(xmm22, xmmword_ptr(addr)); break;
+        case XMM23: a.movaps(xmm23, xmmword_ptr(addr)); break;
+        case XMM24: a.movaps(xmm24, xmmword_ptr(addr)); break;
+        case XMM25: a.movaps(xmm25, xmmword_ptr(addr)); break;
+        case XMM26: a.movaps(xmm26, xmmword_ptr(addr)); break;
+        case XMM27: a.movaps(xmm27, xmmword_ptr(addr)); break;
+        case XMM28: a.movaps(xmm28, xmmword_ptr(addr)); break;
+        case XMM29: a.movaps(xmm29, xmmword_ptr(addr)); break;
+        case XMM30: a.movaps(xmm30, xmmword_ptr(addr)); break;
+        case XMM31: a.movaps(xmm31, xmmword_ptr(addr)); break;
+#endif // AVX512
+#endif // ENV32BIT
 
         // ========================================================================
-        // >> 256-bit XMM registers
+        // >> 256-bit YMM registers
         // ========================================================================
 #ifdef ENV64BIT
         case YMM0: a.vmovaps(ymm0, ymmword_ptr(addr)); break;
@@ -845,7 +936,63 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         case YMM13: a.vmovaps(ymm13, ymmword_ptr(addr)); break;
         case YMM14: a.vmovaps(ymm14, ymmword_ptr(addr)); break;
         case YMM15: a.vmovaps(ymm15, ymmword_ptr(addr)); break;
+#ifdef AVX512
+        case YMM16: a.vmovaps(ymm16, ymmword_ptr(addr)); break;
+        case YMM17: a.vmovaps(ymm17, ymmword_ptr(addr)); break;
+        case YMM18: a.vmovaps(ymm18, ymmword_ptr(addr)); break;
+        case YMM19: a.vmovaps(ymm19, ymmword_ptr(addr)); break;
+        case YMM20: a.vmovaps(ymm20, ymmword_ptr(addr)); break;
+        case YMM21: a.vmovaps(ymm21, ymmword_ptr(addr)); break;
+        case YMM22: a.vmovaps(ymm22, ymmword_ptr(addr)); break;
+        case YMM23: a.vmovaps(ymm23, ymmword_ptr(addr)); break;
+        case YMM24: a.vmovaps(ymm24, ymmword_ptr(addr)); break;
+        case YMM25: a.vmovaps(ymm25, ymmword_ptr(addr)); break;
+        case YMM26: a.vmovaps(ymm26, ymmword_ptr(addr)); break;
+        case YMM27: a.vmovaps(ymm27, ymmword_ptr(addr)); break;
+        case YMM28: a.vmovaps(ymm28, ymmword_ptr(addr)); break;
+        case YMM29: a.vmovaps(ymm29, ymmword_ptr(addr)); break;
+        case YMM30: a.vmovaps(ymm30, ymmword_ptr(addr)); break;
+        case YMM31: a.vmovaps(ymm31, ymmword_ptr(addr)); break;
+#endif // AVX512
 #endif // ENV64BIT
+
+        // ========================================================================
+        // >> 512-bit ZMM registers
+        // ========================================================================
+#ifdef AVX512
+        case ZMM0: a.vmovaps(zmm0, zmmword_ptr(addr)); break;
+        case ZMM1: a.vmovaps(zmm1, zmmword_ptr(addr)); break;
+        case ZMM2: a.vmovaps(zmm2, zmmword_ptr(addr)); break;
+        case ZMM3: a.vmovaps(zmm3, zmmword_ptr(addr)); break;
+        case ZMM4: a.vmovaps(zmm4, zmmword_ptr(addr)); break;
+        case ZMM5: a.vmovaps(zmm5, zmmword_ptr(addr)); break;
+        case ZMM6: a.vmovaps(zmm6, zmmword_ptr(addr)); break;
+        case ZMM7: a.vmovaps(zmm7, zmmword_ptr(addr)); break;
+        case ZMM8: a.vmovaps(zmm8, zmmword_ptr(addr)); break;
+        case ZMM9: a.vmovaps(zmm9, zmmword_ptr(addr)); break;
+        case ZMM10: a.vmovaps(zmm10, zmmword_ptr(addr)); break;
+        case ZMM11: a.vmovaps(zmm11, zmmword_ptr(addr)); break;
+        case ZMM12: a.vmovaps(zmm12, zmmword_ptr(addr)); break;
+        case ZMM13: a.vmovaps(zmm13, zmmword_ptr(addr)); break;
+        case ZMM14: a.vmovaps(zmm14, zmmword_ptr(addr)); break;
+        case ZMM15: a.vmovaps(zmm15, zmmword_ptr(addr)); break;
+        case ZMM16: a.vmovaps(zmm16, zmmword_ptr(addr)); break;
+        case ZMM17: a.vmovaps(zmm17, zmmword_ptr(addr)); break;
+        case ZMM18: a.vmovaps(zmm18, zmmword_ptr(addr)); break;
+        case ZMM19: a.vmovaps(zmm19, zmmword_ptr(addr)); break;
+        case ZMM20: a.vmovaps(zmm20, zmmword_ptr(addr)); break;
+        case ZMM21: a.vmovaps(zmm21, zmmword_ptr(addr)); break;
+        case ZMM22: a.vmovaps(zmm22, zmmword_ptr(addr)); break;
+        case ZMM23: a.vmovaps(zmm23, zmmword_ptr(addr)); break;
+        case ZMM24: a.vmovaps(zmm24, zmmword_ptr(addr)); break;
+        case ZMM25: a.vmovaps(zmm25, zmmword_ptr(addr)); break;
+        case ZMM26: a.vmovaps(zmm26, zmmword_ptr(addr)); break;
+        case ZMM27: a.vmovaps(zmm27, zmmword_ptr(addr)); break;
+        case ZMM28: a.vmovaps(zmm28, zmmword_ptr(addr)); break;
+        case ZMM29: a.vmovaps(zmm29, zmmword_ptr(addr)); break;
+        case ZMM30: a.vmovaps(zmm30, zmmword_ptr(addr)); break;
+        case ZMM31: a.vmovaps(zmm31, zmmword_ptr(addr)); break;
+#endif // AVX512
 
         // ========================================================================
         // >> 16-bit Segment registers

@@ -164,7 +164,7 @@ size_t WriteAbsoluteJump64(void* absJumpMemory, void* addrToJumpTo) {
     uintptr_t addrToJumpTo32 = (uintptr_t) addrToJumpTo;
     memcpy(&absJumpInstructions[1], &addrToJumpTo32, sizeof(addrToJumpTo32));
     memcpy(absJumpMemory, absJumpInstructions, sizeof(absJumpInstructions));
-#endif
+#endif // ENV64BIT
 
     return sizeof(absJumpInstructions);
 }
@@ -198,7 +198,7 @@ uint32_t AddCallToAbsTable(cs_insn& call, uint8_t* absTableMem, uint8_t* jumpBac
     uint8_t callAsmBytes[] = { 0xB8, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xD0 };
 
     memcpy(&callAsmBytes[1], &targetAddr, sizeof(targetAddr));
-#endif
+#endif // ENV64BIT
 
     memcpy(dstMem, &callAsmBytes, sizeof(callAsmBytes));
     dstMem += sizeof(callAsmBytes);

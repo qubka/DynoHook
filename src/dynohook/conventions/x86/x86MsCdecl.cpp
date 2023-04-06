@@ -45,7 +45,7 @@ std::vector<RegisterType> x86MsCdecl::getRegisters() {
 }
 
 void** x86MsCdecl::getStackArgumentPtr(const Registers& registers) {
-    return (void**) (registers[ESP].getValue<uintptr_t>() + sizeof(void*));
+    return (void**) (registers[ESP].getValue<uintptr_t>() + 4);
 }
 
 void* x86MsCdecl::getArgumentPtr(size_t index, const Registers& registers) {
@@ -57,7 +57,7 @@ void* x86MsCdecl::getArgumentPtr(size_t index, const Registers& registers) {
     if (regType != NONE)
         return *registers[regType];
 
-    size_t offset = sizeof(void*);
+    size_t offset = 4;
     for (size_t i = 0; i < index; ++i) {
         const auto& [type, reg, size] = m_Arguments[i];
         if (reg == NONE)
@@ -92,4 +92,4 @@ void x86MsCdecl::returnPtrChanged(const Registers& registers, void* returnPtr) {
     }
 }
 
-#endif
+#endif // ENV32BIT

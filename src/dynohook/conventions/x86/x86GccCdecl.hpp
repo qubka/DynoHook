@@ -8,4 +8,4 @@ namespace dyno {
     typedef x86MsCdecl x86GccCdecl;
 }
 
-#endif
+#endif // ENV32BIT

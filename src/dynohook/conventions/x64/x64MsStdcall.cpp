@@ -6,37 +6,18 @@ using namespace dyno;
 
 x64MsStdcall::x64MsStdcall(std::vector<DataTypeSized> arguments, DataTypeSized returnType, size_t alignment) :
         ICallingConvention{std::move(arguments), returnType, alignment} {
-    size_t argSize = m_Arguments.size();
 
-    // Don't force the register on the user.
-    // Why choose Fastcall if you set your own argument registers though..
+    RegisterType registers[] = { RCX, RDX, R8, R9 };
+    RegisterType xmmRegisters[] = { XMM0, XMM1, XMM2, XMM3 };
 
-    // First argument is passed in rcx9/xmm0.
-    if (argSize > 0) {
-        DataTypeSized& type = m_Arguments[0];
-        if (type.reg == NONE)
-            type.reg = type.isFloating() ? XMM0 : RCX;
-    }
+    size_t argSize = std::min(4, (int) m_Arguments.size());
 
-    // Second argument is passed in rdx9/xmm1.
-    if (argSize > 1) {
-        DataTypeSized& type = m_Arguments[1];
-        if (type.reg == NONE)
-            type.reg = type.isFloating() ? XMM1 : RDX;
-    }
+    for (size_t i = 0; i < argSize; ++i) {
+        DataTypeSized& type = m_Arguments[i];
 
-    // Third argument is passed in r8/xmm2.
-    if (argSize > 2) {
-        DataTypeSized& type = m_Arguments[2];
-        if (type.reg == NONE)
-            type.reg = type.isFloating() ? XMM2 : R8;
-    }
-
-    // Forth argument is passed in r9/xmm3.
-    if (argSize > 3) {
-        DataTypeSized& type = m_Arguments[3];
-        if (type.reg == NONE)
-            type.reg = type.isFloating() ? XMM3 : R9;
+        if (type.reg == NONE) {
+            type.reg = type.isFloating() ? xmmRegisters[i] : registers[i];
+        }
     }
 
     init();
@@ -68,7 +49,7 @@ std::vector<RegisterType> x64MsStdcall::getRegisters() {
 }
 
 void** x64MsStdcall::getStackArgumentPtr(const Registers& registers) {
-    return (void**) (registers[RSP].getValue<uintptr_t>() + sizeof(void*));
+    return (void**) (registers[RSP].getValue<uintptr_t>() + 8);
 }
 
 void* x64MsStdcall::getArgumentPtr(size_t index, const Registers& registers) {
@@ -83,7 +64,7 @@ void* x64MsStdcall::getArgumentPtr(size_t index, const Registers& registers) {
     // In the Microsoft x64 calling convention, it is the caller's responsibility to allocate 32 bytes of "shadow space" on the stack right before calling the function (regardless of the actual number of parameters used),
     // and to pop the stack after the call. The shadow space is used to spill RCX, RDX, R8, and R9,[24] but must be made available to all functions, even those with fewer than four parameters.
 
-    size_t offset = sizeof(void*);
+    size_t offset = 8;
     for (size_t i = 0; i < index; ++i) {
         const auto& [type, reg, size] = m_Arguments[i];
         if (reg == NONE)
@@ -100,4 +81,4 @@ void* x64MsStdcall::getReturnPtr(const Registers& registers) {
     return *registers.at(nonScalar ? XMM0 : RAX, true);
 }
 
-#endif
+#endif // ENV64BIT

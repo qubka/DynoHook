@@ -16,4 +16,4 @@ size_t x86MsStdcall::getPopSize() {
     return m_iStackSize;
 }
 
-#endif
+#endif // ENV32BIT

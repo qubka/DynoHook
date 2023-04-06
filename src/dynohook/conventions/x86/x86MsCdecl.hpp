@@ -44,4 +44,4 @@ namespace dyno {
     };
 }
 
-#endif
+#endif // ENV32BIT
