@@ -1,4 +1,5 @@
 # DynoHook
+![ezgif com-webp-to-jpg-removebg-preview (1)](https://user-images.githubusercontent.com/17956432/230238380-5787b9bd-8f31-4f27-a104-195c289af545.png)
 ## Introduction
 DynoHooks is a versatile and powerful C++ library designed to provide developers with an easy way to create dynamic function hooks for any call convention with pre and post callbacks. This library is built using AsmJit machine code generation library and Capstone Disassembler library to achieve dynamic function hooking for x86 architecture with support for 32/64-bit modes on Windows and Linux platforms. The library is designed to be used with C++17 or later. It is based on Ayuto's DynamicHooks library.
 
@@ -8,7 +9,7 @@ DynoHooks offers a simple and intuitive API that makes it easy for developers to
 
 The library comes with pre and post callbacks, enabling developers to catch the behavior of the function before and after its execution. In addition, this allows developers to implement a wide range of use cases, such as logging, tracing, and error handling. Also, the pre and post callback functions used to modify the input and output parameters of the function call.
 
-Libray supports different call conventions, such as *__cdecl*, *__stdcall*, *__fastcall* and *__vectorcall* and other modern x64 call conventions. Developers can customize the callback functions based on their specific use case, and they can choose to override or supplement the behavior of the original function.
+Library supports different call conventions, such as *__cdecl*, *__stdcall*, *__fastcall* and *__vectorcall* and other modern x64 call conventions. Developers can customize the callback functions based on their specific use case, and they can choose to override or supplement the behavior of the original function.
 
 Another unique features of DynoHooks is the ability to handle return values from the hooked function callbacks. The library provides return action feature, which defines the possible actions that the callback function can take with respect to the return value. The ReturnAction can be set to Ignored, Handled, Override, or Supercede, depending on the desired behavior.
 
@@ -194,9 +195,9 @@ cmake -G "Visual Studio 15 2017" ..
 ## Credits
 - [Ayuto](https://github.com/Ayuto/) - DynamicHooks library
 - [peace-maker](https://github.com/peace-maker) - DHooks with detour support
-- [Kailo](https://github.com/Kailo97) - Help with assembly porting from x32 to x64 and f
+- [Kailo](https://github.com/Kailo97) - Help with assembly porting from x32 to x64 and fixing crashes
 
 ## Links
 - [X64 Function Hooking by Example](http://kylehalladay.com/blog/2020/11/13/Hooking-By-Example.html)
 - [Ayuto's DynamicHooks x32 Library](https://github.com/Ayuto/DynamicHooks)
-- [Sourcemod's DHook extention](https://forums.alliedmods.net/showpost.php?p=2588686&postcount=589)lliedmods.net/showpost.php?p=2588686&postcount=589)
+- [Sourcemod's DHook extention](https://forums.alliedmods.net/showpost.php?p=2588686&postcount=589)
