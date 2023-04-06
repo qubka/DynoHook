@@ -1,32 +1,35 @@
-#include "x64MsStdcall.hpp"
+#include "x64MsFastcall.hpp"
 
 #ifdef ENV64BIT
 
 using namespace dyno;
 
-x64MsStdcall::x64MsStdcall(std::vector<DataTypeSized> arguments, DataTypeSized returnType, size_t alignment) :
+x64MsFastcall::x64MsFastcall(std::vector<DataTypeSized> arguments, DataTypeSized returnType, size_t alignment) :
         ICallingConvention{std::move(arguments), returnType, alignment} {
-
+    // Don't force the register on the user.
     RegisterType registers[] = { RCX, RDX, R8, R9 };
-    RegisterType xmmRegisters[] = { XMM0, XMM1, XMM2, XMM3 };
+    RegisterType sseRegisters[] = { XMM0, XMM1, XMM2, XMM3 };
 
     size_t argSize = std::min(4, (int) m_Arguments.size());
 
     for (size_t i = 0; i < argSize; ++i) {
-        DataTypeSized& type = m_Arguments[i];
+        DataTypeSized& arg = m_Arguments[i];
 
-        if (type.reg == NONE) {
-            type.reg = type.isFloating() ? xmmRegisters[i] : registers[i];
-        }
+        // RCX, RDX, R8, R9 for integer, struct or pointer arguments (in that order), and XMM0, XMM1, XMM2, XMM3 for floating point arguments
+        if (arg.reg == NONE)
+            arg.reg = arg.isFlt() || arg.type == DATA_TYPE_M128 ? sseRegisters[i] : registers[i];
     }
+
+    if (m_ReturnType.reg == NONE)
+        m_ReturnType.reg = m_ReturnType.isFlt() || m_ReturnType.type == DATA_TYPE_M128 ? XMM0 : RAX;
 
     init();
 }
 
-x64MsStdcall::~x64MsStdcall() {
+x64MsFastcall::~x64MsFastcall() {
 }
 
-std::vector<RegisterType> x64MsStdcall::getRegisters() {
+std::vector<RegisterType> x64MsFastcall::getRegisters() {
     std::vector<RegisterType> registers;
 
     registers.push_back(RSP);
@@ -40,19 +43,16 @@ std::vector<RegisterType> x64MsStdcall::getRegisters() {
     }
 
     // Save return register as last
-    if (m_ReturnType.isFloating() || m_ReturnType.type == DATA_TYPE_M128) {
-        registers.push_back(XMM0);
-    } else
-        registers.push_back(RAX);
+    registers.push_back(m_ReturnType.reg);
 
     return registers;
 }
 
-void** x64MsStdcall::getStackArgumentPtr(const Registers& registers) {
+void** x64MsFastcall::getStackArgumentPtr(const Registers& registers) {
     return (void**) (registers[RSP].getValue<uintptr_t>() + 8);
 }
 
-void* x64MsStdcall::getArgumentPtr(size_t index, const Registers& registers) {
+void* x64MsFastcall::getArgumentPtr(size_t index, const Registers& registers) {
     if (index >= m_Arguments.size())
         return nullptr;
 
@@ -76,9 +76,8 @@ void* x64MsStdcall::getArgumentPtr(size_t index, const Registers& registers) {
     return (void*) (registers[RSP].getValue<uintptr_t>() + offset);
 }
 
-void* x64MsStdcall::getReturnPtr(const Registers& registers) {
-    bool nonScalar = m_ReturnType.isFloating() || m_ReturnType.type == DATA_TYPE_M128;
-    return *registers.at(nonScalar ? XMM0 : RAX, true);
+void* x64MsFastcall::getReturnPtr(const Registers& registers) {
+    return *registers.at(m_ReturnType.reg, true);
 }
 
 #endif // ENV64BIT

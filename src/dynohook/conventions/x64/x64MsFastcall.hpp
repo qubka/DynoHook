@@ -25,10 +25,10 @@
         - floating pointer types are returned via the xmm0 register
 */
 namespace dyno {
-    class x64MsStdcall : public ICallingConvention {
+    class x64MsFastcall : public ICallingConvention {
     public:
-        x64MsStdcall(std::vector<DataTypeSized> arguments, DataTypeSized returnType, size_t alignment = 8);
-        ~x64MsStdcall() override;
+        x64MsFastcall(std::vector<DataTypeSized> arguments, DataTypeSized returnType, size_t alignment = 8);
+        ~x64MsFastcall() override;
 
         std::vector<RegisterType> getRegisters() override;
 

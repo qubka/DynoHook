@@ -72,7 +72,7 @@ namespace dyno {
         void setArgument(size_t index, T value) {
             void* argumentPtr = m_pCallingConvention->getArgumentPtr(index, m_Registers);
             *(T*) argumentPtr = value;
-            m_pCallingConvention->argumentPtrChanged(index, m_Registers, argumentPtr);
+            m_pCallingConvention->onArgumentPtrChanged(index, m_Registers, argumentPtr);
         }
 
         template<class T>
@@ -84,7 +84,7 @@ namespace dyno {
         void setReturnValue(T value) {
             void* retunrPtr = m_pCallingConvention->getReturnPtr(m_Registers);
             *(T*) retunrPtr = value;
-            m_pCallingConvention->returnPtrChanged(m_Registers, retunrPtr);
+            m_pCallingConvention->onReturnPtrChanged(m_Registers, retunrPtr);
         }
 
     private:

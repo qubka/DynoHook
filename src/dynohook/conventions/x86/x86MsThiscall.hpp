@@ -35,10 +35,10 @@ namespace dyno {
         void** getStackArgumentPtr(const Registers& registers) override;
 
         void* getArgumentPtr(size_t index, const Registers& registers) override;
-        void argumentPtrChanged(size_t index, const Registers& registers, void* argumentPtr) override;
+        void onArgumentPtrChanged(size_t index, const Registers& registers, void* argumentPtr) override;
 
         void* getReturnPtr(const Registers& registers) override;
-        void returnPtrChanged(const Registers& registers, void* returnPtr) override;
+        void onReturnPtrChanged(const Registers& registers, void* returnPtr) override;
 
     private:
         void* m_pReturnBuffer;

@@ -75,7 +75,7 @@ if (DYNOHOOK_BUILD_TESTS)
 
     if(WIN32)
         if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-            create_dynamic_hooks_test(x64 __fastcall x64MsStdcall)
+            create_dynamic_hooks_test(x64 __fastcall x64MsFastcall)
         elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
             create_dynamic_hooks_test(x86 __cdecl x86MsCdecl)
             create_dynamic_hooks_test(x86 __stdcall x86MsStdcall)

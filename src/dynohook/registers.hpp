@@ -1,6 +1,6 @@
 #pragma once
 
-#define AVX512
+//#define AVX512
 
 namespace dyno {
     enum RegisterType : uint8_t {
@@ -259,9 +259,11 @@ namespace dyno {
 #endif // ENV32BIT
     };
 
-    static size_t TypeToSize(RegisterType regType);
-    static size_t TypeToAlignment(RegisterType regType);
-    static size_t TypeToIndex(RegisterType regType);
+    size_t RegisterTypeToSize(RegisterType regType);
+    size_t RegisterTypeToAlignment(RegisterType regType);
+
+    size_t RegisterTypeToSSEIndex(RegisterType regType);
+    RegisterType SSEIndexToRegisterType(size_t index, size_t size = 0);
 
     enum RegisterSize : uint8_t {
         SIZE_BYTE = 1,

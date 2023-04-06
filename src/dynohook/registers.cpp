@@ -6,7 +6,7 @@ Registers::Registers(const std::vector<RegisterType>& registers) {
     m_Registers.reserve(registers.size());
 
     for (RegisterType regType : registers) {
-        m_Registers.emplace_back(regType, TypeToSize(regType), TypeToAlignment(regType));
+        m_Registers.emplace_back(regType, RegisterTypeToSize(regType), RegisterTypeToAlignment(regType));
     }
 }
 
@@ -35,7 +35,7 @@ const Register& Registers::at(RegisterType regType, bool reverse) const {
     return s_None;
 }
 
-size_t dyno::TypeToSize(RegisterType regType) {
+static size_t dyno::RegisterTypeToSize(RegisterType regType) {
     switch (regType) {
         // ========================================================================
         // >> 8-bit General purpose registers
@@ -291,12 +291,24 @@ size_t dyno::TypeToSize(RegisterType regType) {
     return 0;
 }
 
-size_t dyno::TypeToAlignment(RegisterType regType) {
+static size_t dyno::RegisterTypeToAlignment(RegisterType regType) {
     switch (regType) {
         /**
          * The primary exceptions are the stack pointer, which are 16-byte aligned to aid performance.
          */
         case RSP: return SIZE_XMMWORD;
+
+        // ========================================================================
+        // >> 64-bit MM (MMX) registers
+        // ========================================================================
+        case MM0: return SIZE_QWORD;
+        case MM1: return SIZE_QWORD;
+        case MM2: return SIZE_QWORD;
+        case MM3: return SIZE_QWORD;
+        case MM4: return SIZE_QWORD;
+        case MM5: return SIZE_QWORD;
+        case MM6: return SIZE_QWORD;
+        case MM7: return SIZE_QWORD;
 
         // ========================================================================
         // >> 128-bit XMM registers
@@ -419,7 +431,7 @@ size_t dyno::TypeToAlignment(RegisterType regType) {
     return 0;
 }
 
-size_t dyno::TypeToIndex(RegisterType regType) {
+static size_t dyno::RegisterTypeToSSEIndex(RegisterType regType) {
     switch (regType) {
         // ========================================================================
         // >> 128-bit XMM registers
@@ -538,20 +550,141 @@ size_t dyno::TypeToIndex(RegisterType regType) {
         case ZMM30: return 30;
         case ZMM31: return 31;
 #endif // AVX512
-
-        // ========================================================================
-        // >> 80-bit FPU registers
-        // ========================================================================
-#ifdef ENV32BIT
-        case ST0: return 0;
-        case ST1: return 1;
-        case ST2: return 2;
-        case ST3: return 3;
-        case ST4: return 4;
-        case ST5: return 5;
-        case ST6: return 6;
-        case ST7: return 7;
-#endif // ENV32BIT
     }
     return 0;
+}
+
+static RegisterType dyno::SSEIndexToRegisterType(size_t index, size_t size) {
+    switch (size) {
+        // ========================================================================
+        // >> 128-bit XMM registers
+        // ========================================================================
+        default:
+            switch (index) {
+                case 0: return XMM0;
+                case 1: return XMM1;
+                case 2: return XMM2;
+                case 3: return XMM3;
+                case 4: return XMM4;
+                case 5: return XMM5;
+                case 6: return XMM6;
+                case 7: return XMM7;
+#ifdef ENV64BIT
+                case 8: return XMM8;
+                case 9: return XMM9;
+                case 10: return XMM10;
+                case 11: return XMM11;
+                case 12: return XMM12;
+                case 13: return XMM13;
+                case 14: return XMM14;
+                case 15: return XMM15;
+#ifdef AVX512
+                case 16: return XMM16;
+                case 17: return XMM17;
+                case 18: return XMM18;
+                case 19: return XMM19;
+                case 20: return XMM20;
+                case 21: return XMM21;
+                case 22: return XMM22;
+                case 23: return XMM23;
+                case 24: return XMM24;
+                case 25: return XMM25;
+                case 26: return XMM26;
+                case 27: return XMM27;
+                case 28: return XMM28;
+                case 29: return XMM29;
+                case 30: return XMM30;
+                case 31: return XMM31;
+#endif // AVX512
+#endif // ENV64BIT
+            }
+            break;
+
+        // ========================================================================
+        // >> 256-bit YMM registers
+        // ========================================================================
+#ifdef ENV64BIT
+        case SIZE_YMMWORD:
+            switch (index) {
+                case 0: return YMM0;
+                case 1: return YMM1;
+                case 2: return YMM2;
+                case 3: return YMM3;
+                case 4: return YMM4;
+                case 5: return YMM5;
+                case 6: return YMM6;
+                case 7: return YMM7;
+                case 8: return YMM8;
+                case 9: return YMM9;
+                case 10: return YMM10;
+                case 11: return YMM11;
+                case 12: return YMM12;
+                case 13: return YMM13;
+                case 14: return YMM14;
+                case 15: return YMM15;
+#ifdef AVX512
+                case 16: return YMM16;
+                case 17: return YMM17;
+                case 18: return YMM18;
+                case 19: return YMM19;
+                case 20: return YMM20;
+                case 21: return YMM21;
+                case 22: return YMM22;
+                case 23: return YMM23;
+                case 24: return YMM24;
+                case 25: return YMM25;
+                case 26: return YMM26;
+                case 27: return YMM27;
+                case 28: return YMM28;
+                case 29: return YMM29;
+                case 30: return YMM30;
+                case 31: return YMM31;
+#endif // AVX512
+            }
+            break;
+#endif // ENV64BIT
+
+        // ========================================================================
+        // >> 512-bit ZMM registers
+        // ========================================================================
+#ifdef AVX512
+        case SIZE_ZMMWORD:
+            switch (index) {
+                case 0: return ZMM0;
+                case 1: return ZMM1;
+                case 2: return ZMM2;
+                case 3: return ZMM3;
+                case 4: return ZMM4;
+                case 5: return ZMM5;
+                case 6: return ZMM6;
+                case 7: return ZMM7;
+                case 8: return ZMM8;
+                case 9: return ZMM9;
+                case 10: return ZMM10;
+                case 11: return ZMM11;
+                case 12: return ZMM12;
+                case 13: return ZMM13;
+                case 14: return ZMM14;
+                case 15: return ZMM15;
+                case 16: return ZMM16;
+                case 17: return ZMM17;
+                case 18: return ZMM18;
+                case 19: return ZMM19;
+                case 20: return ZMM20;
+                case 21: return ZMM21;
+                case 22: return ZMM22;
+                case 23: return ZMM23;
+                case 24: return ZMM24;
+                case 25: return ZMM25;
+                case 26: return ZMM26;
+                case 27: return ZMM27;
+                case 28: return ZMM28;
+                case 29: return ZMM29;
+                case 30: return ZMM30;
+                case 31: return ZMM31;
+            }
+            break;
+#endif // AVX512
+    }
+    return NONE;
 }

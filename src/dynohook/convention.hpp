@@ -33,7 +33,8 @@ namespace dyno {
 
         DataTypeSized(DataType type, RegisterType reg = NONE, uint16_t size = 0) : type{type}, reg{reg}, size{size} {}
 
-        bool isFloating() const { return type == DATA_TYPE_FLOAT || type == DATA_TYPE_DOUBLE; }
+        bool isFlt() const { return type == DATA_TYPE_FLOAT || type == DATA_TYPE_DOUBLE; }
+        bool isSSE() const { return type == DATA_TYPE_M128 || type == DATA_TYPE_M256 || type == DATA_TYPE_M512; }
     };
 
     /**
@@ -105,6 +106,14 @@ namespace dyno {
     }
 
     /**
+     * @return Rounds x to the next dividable by m.
+     */
+    template<typename T>
+    inline T round(T x, T m) {
+        return x + m - x % m;
+    }
+
+    /**
      * This is the base class for every calling convention.
      * Inherit from this class to create your own calling convention.
      */
@@ -150,7 +159,7 @@ namespace dyno {
          * @param registers A snapshot of all saved registers.
          * @param argumentPtr A pointer to the argument at the given index.
          */
-        virtual void argumentPtrChanged(size_t index, const Registers& registers, void* argumentPtr) {
+        virtual void onArgumentPtrChanged(size_t index, const Registers& registers, void* argumentPtr) {
         }
 
         /**
@@ -165,7 +174,7 @@ namespace dyno {
          * @param registers A snapshot of all saved registers.
          * @param returnPtr A pointer to the return value.
          */
-        virtual void returnPtrChanged(const Registers& registers, void* returnPtr) {
+        virtual void onReturnPtrChanged(const Registers& registers, void* returnPtr) {
         }
 
         /**
@@ -185,7 +194,7 @@ namespace dyno {
         virtual void restoreReturnValue(const Registers& registers) {
             uint8_t* savedReturnValue = m_SavedReturnBuffers.back().get();
             memcpy(getReturnPtr(registers), savedReturnValue, m_ReturnType.size);
-            returnPtrChanged(registers, savedReturnValue);
+            onReturnPtrChanged(registers, savedReturnValue);
             m_SavedReturnBuffers.pop_back();
         }
 
