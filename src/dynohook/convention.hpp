@@ -34,7 +34,7 @@ namespace dyno {
         DataTypeSized(DataType type, RegisterType reg = NONE, uint16_t size = 0) : type{type}, reg{reg}, size{size} {}
 
         bool isFlt() const { return type == DATA_TYPE_FLOAT || type == DATA_TYPE_DOUBLE; }
-        bool isSSE() const { return type == DATA_TYPE_M128 || type == DATA_TYPE_M256 || type == DATA_TYPE_M512; }
+        bool isHva() const { return type == DATA_TYPE_M128 || type == DATA_TYPE_M256 || type == DATA_TYPE_M512; }
     };
 
     /**

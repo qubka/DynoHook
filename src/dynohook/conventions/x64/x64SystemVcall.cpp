@@ -15,7 +15,7 @@ x64SystemVcall::x64SystemVcall(std::vector<DataTypeSized> arguments, DataTypeSiz
 
         if (arg.reg == NONE) {
             // Floating Point Arguments 1-8 ([XYZ]MM0 - [XYZ]MM7)
-            if (k < 8 && (arg.isFlt() || arg.isSSE()))
+            if (k < 8 && (arg.isFlt() || arg.isHva()))
                 arg.reg = SSEIndexToRegisterType(k++, arg.size);
             // Integer/Pointer Arguments 1-6 (RDI, RSI, RDX, RCX, R8, R9)
             else if (j < 6)
@@ -25,10 +25,10 @@ x64SystemVcall::x64SystemVcall(std::vector<DataTypeSized> arguments, DataTypeSiz
         }
     }
 
-    bool nonScalar = m_ReturnType.isFlt() || m_ReturnType.isSSE();
+    bool nonScalar = m_ReturnType.isFlt() || m_ReturnType.isHva();
 
     // Integer return values up to 64 bits in size are stored in RAX while values up to 128 bit are stored in RAX and RDX.
-    // Floating-point return values are similarly stored in [XYZ]MM0 and [XYZ]MM1. TODO: We used [XYZ]MM0 by default, how we can detect ?
+    // Floating-point return values are similarly stored in [XYZ]MM0 and [XYZ]MM1. TODO: We used [XYZ]MM0 by default, how we can detect another ?
 
     if (!nonScalar && m_ReturnType.size > 8)
         m_pReturnBuffer = malloc(m_ReturnType.size);

@@ -370,7 +370,7 @@ void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
 #else // __linux__
     a.mov(sil, hookType);
     a.mov(rdi, imm(uintptr_t(this)));
-    a.call((void*&) getReturnAddress);
+    a.call((void*&) hookHandler);
 #endif
 #else // ENV32BIT
 	// Subtract 4 bytes to preserve 16-Byte stack alignment for Linux
@@ -396,33 +396,6 @@ std::vector<RegisterType> Hook::createScratchRegisters() const {
     registers.push_back(R9);
     registers.push_back(R10);
     registers.push_back(R11);
-
-    // XMM0-XMM5 volatile. When present, the upper portions of YMM0-YMM15 and ZMM0-ZMM15 are also volatile.
-    if (*m_Registers[XMM5]) {
-        registers.push_back(YMM0);
-        registers.push_back(YMM1);
-        registers.push_back(YMM2);
-        registers.push_back(YMM3);
-        registers.push_back(YMM4);
-        registers.push_back(YMM5);
-        registers.push_back(YMM6);
-        registers.push_back(YMM7);
-        registers.push_back(YMM8);
-        registers.push_back(YMM9);
-        registers.push_back(YMM10);
-        registers.push_back(YMM11);
-        registers.push_back(YMM12);
-        registers.push_back(YMM13);
-        registers.push_back(YMM14);
-        registers.push_back(YMM15);
-    } else {
-        registers.push_back(XMM0);
-        registers.push_back(XMM1);
-        registers.push_back(XMM2);
-        registers.push_back(XMM3);
-        registers.push_back(XMM4);
-        registers.push_back(XMM5);
-    }
 #else // __linux__
     registers.push_back(RAX);
     registers.push_back(RDI);
@@ -433,7 +406,42 @@ std::vector<RegisterType> Hook::createScratchRegisters() const {
     registers.push_back(R9);
     registers.push_back(R10);
     registers.push_back(R11);
-
+#endif
+// TODO: Do we need to save all sse registers ?
+#ifdef AVX512
+    registers.push_back(ZMM0);
+    registers.push_back(ZMM1);
+    registers.push_back(ZMM2);
+    registers.push_back(ZMM3);
+    registers.push_back(ZMM4);
+    registers.push_back(ZMM5);
+    registers.push_back(ZMM6);
+    registers.push_back(ZMM7);
+    registers.push_back(ZMM8);
+    registers.push_back(ZMM9);
+    registers.push_back(ZMM10);
+    registers.push_back(ZMM11);
+    registers.push_back(ZMM12);
+    registers.push_back(ZMM13);
+    registers.push_back(ZMM14);
+    registers.push_back(ZMM15);
+    registers.push_back(ZMM16);
+    registers.push_back(ZMM17);
+    registers.push_back(ZMM18);
+    registers.push_back(ZMM19);
+    registers.push_back(ZMM20);
+    registers.push_back(ZMM21);
+    registers.push_back(ZMM22);
+    registers.push_back(ZMM23);
+    registers.push_back(ZMM24);
+    registers.push_back(ZMM25);
+    registers.push_back(ZMM26);
+    registers.push_back(ZMM27);
+    registers.push_back(ZMM28);
+    registers.push_back(ZMM29);
+    registers.push_back(ZMM30);
+    registers.push_back(ZMM31);
+#else
     registers.push_back(YMM0);
     registers.push_back(YMM1);
     registers.push_back(YMM2);
@@ -442,11 +450,30 @@ std::vector<RegisterType> Hook::createScratchRegisters() const {
     registers.push_back(YMM5);
     registers.push_back(YMM6);
     registers.push_back(YMM7);
-#endif
+    registers.push_back(YMM8);
+    registers.push_back(YMM9);
+    registers.push_back(YMM10);
+    registers.push_back(YMM11);
+    registers.push_back(YMM12);
+    registers.push_back(YMM13);
+    registers.push_back(YMM14);
+    registers.push_back(YMM15);
+#endif // AVX512
 #else // ENV32BIT
     registers.push_back(EAX);
     registers.push_back(ECX);
     registers.push_back(EDX);
+
+    /*
+        registers.push_back(XMM0);
+        registers.push_back(XMM1);
+        registers.push_back(XMM2);
+        registers.push_back(XMM3);
+        registers.push_back(XMM4);
+        registers.push_back(XMM5);
+        registers.push_back(XMM6);
+        registers.push_back(XMM7);
+     */
 #endif
     
     return registers;
@@ -643,6 +670,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         // >> 256-bit YMM registers
         // ========================================================================
 #ifdef ENV64BIT
+        case YMM0: a.vmovaps(ymmword_ptr(addr), ymm0); break;
         case YMM1: a.vmovaps(ymmword_ptr(addr), ymm1); break;
         case YMM2: a.vmovaps(ymmword_ptr(addr), ymm2); break;
         case YMM3: a.vmovaps(ymmword_ptr(addr), ymm3); break;
@@ -682,6 +710,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         // >> 512-bit ZMM registers
         // ========================================================================
 #ifdef AVX512
+        case ZMM0: a.vmovaps(zmmword_ptr(addr), zmm0); break;
         case ZMM1: a.vmovaps(zmmword_ptr(addr), zmm1); break;
         case ZMM2: a.vmovaps(zmmword_ptr(addr), zmm2); break;
         case ZMM3: a.vmovaps(zmmword_ptr(addr), zmm3); break;
