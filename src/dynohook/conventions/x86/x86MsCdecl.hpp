@@ -1,6 +1,6 @@
 #pragma once
 
-#ifndef ENV32BIT
+#ifdef ENV32BIT
 
 #include "dynohook/convention.hpp"
 

@@ -3,6 +3,7 @@
 #ifdef ENV32BIT
 
 #include "dynohook/convention.hpp"
+#include "x86MsStdcall.hpp"
 
 /*
     Source: DynCall manual and Windows docs
@@ -26,19 +27,10 @@
         - floating pointer types are returned via the st0 register
 */
 namespace dyno {
-    class x86MsThiscall : public ICallingConvention {
+    class x86MsThiscall : public x86MsStdcall {
     public:
         x86MsThiscall(std::vector<DataTypeSized> arguments, DataTypeSized returnType, size_t alignment = 4);
         ~x86MsThiscall() override;
-
-        std::vector<RegisterType> getRegisters() override;
-        void** getStackArgumentPtr(const Registers& registers) override;
-
-        void* getArgumentPtr(size_t index, const Registers& registers) override;
-        void onArgumentPtrChanged(size_t index, const Registers& registers, void* argumentPtr) override;
-
-        void* getReturnPtr(const Registers& registers) override;
-        void onReturnPtrChanged(const Registers& registers, void* returnPtr) override;
 
     private:
         void* m_pReturnBuffer;

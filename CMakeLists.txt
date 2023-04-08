@@ -41,11 +41,11 @@ add_library(${DYNOHOOK} ${DYNOHOOK_SRC_FILES} ${DYNOHOOK_HDR_FILES})
 target_link_libraries(${DYNOHOOK} PUBLIC asmjit)
 target_link_libraries(${DYNOHOOK} PUBLIC capstone-static)
 target_precompile_headers(${DYNOHOOK} PUBLIC ${DYNOHOOK_PCH_FILE})
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+if (CMAKE_SIZEOF_VOID_P EQUAL 8)
     target_compile_definitions(${DYNOHOOK} PUBLIC ENV64BIT)
-elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
     target_compile_definitions(${DYNOHOOK} PUBLIC ENV32BIT)
-endif()
+endif ()
 
 #######################
 
@@ -58,28 +58,56 @@ if (DYNOHOOK_BUILD_TESTS)
     list(LENGTH DYNOHOOK_TEST_TEMPLATES DYNOHOOK_TEST_COUNT)
     math(EXPR DYNOHOOK_TEST_COUNT "${DYNOHOOK_TEST_COUNT}-1")
 
-    macro (create_dynamic_hooks_test mode call obj)
-        set(DYNOHOOK_TEST_CONV "${call}")
-        set(DYNOHOOK_TEST_OBJECT "${obj}")
-        set(DYNOHOOK_TEST_HEADER "${mode}/${obj}")
-        foreach (i RANGE ${DYNOHOOK_TEST_COUNT})
-            set(FILE "test${obj}${i}.hpp")
-            set(DYNOHOOK_TEST_NAME "${obj}${i}")
-            set(DYNOHOOK_TEST_NAMESPACE "test${obj}${i}")
-            list(APPEND DYNOHOOK_TEST_HDR_FILES "tests/${FILE}")
-            set(DYNOHOOK_TEST_ENTRIES "${DYNOHOOK_TEST_ENTRIES}\n\ttest${obj}${i}::test();")
-            set(DYNOHOOK_TEST_CONTENTS "${DYNOHOOK_TEST_CONTENTS}\n#include \"${FILE}\"")
-            configure_file("tests/test${i}.hpp.in" "tests/${FILE}" @ONLY)
-        endforeach ()
-    endmacro()
+    macro (create_dyno_hooks_test mode call obj)
+        # Cannot use ARGN directly with list() command,
+        # so copy it to a variable first.
+        set(extra_args ${ARGN})
+        set(optional_test -1)
 
-    if(WIN32)
-        if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-            create_dynamic_hooks_test(x64 __fastcall x64MsFastcall)
-        elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-            create_dynamic_hooks_test(x86 __cdecl x86MsCdecl)
-            create_dynamic_hooks_test(x86 __stdcall x86MsStdcall)
-            create_dynamic_hooks_test(x86 __fastcall x86MsFastcall)
+        # Did we get any optional args?
+        list(LENGTH extra_args extra_count)
+        if (${extra_count} GREATER 0)
+            list(GET extra_args 0 optional_test)
+            message ("Got an optional test: ${optional_test}")
+        endif ()
+
+        # Generate required tests
+        foreach (i RANGE ${DYNOHOOK_TEST_COUNT})
+            if (${optional_test} EQUAL -1 OR ${optional_test} EQUAL ${i})
+                # Append generated file to header list
+                set(FILE "test${obj}${i}.hpp")
+                list(APPEND DYNOHOOK_TEST_HDR_FILES "tests/${FILE}")
+
+                # Pass data into configuration file
+                set(DYNOHOOK_TEST_CONV "${call}")
+                set(DYNOHOOK_TEST_OBJECT "${obj}")
+                set(DYNOHOOK_TEST_HEADER "${mode}/${obj}")
+                set(DYNOHOOK_TEST_NAME "${obj}${i}")
+                set(DYNOHOOK_TEST_NAMESPACE "test${DYNOHOOK_TEST_NAME}")
+                set(DYNOHOOK_TEST_ENTRIES "${DYNOHOOK_TEST_ENTRIES}\n\t${DYNOHOOK_TEST_NAMESPACE}::test();")
+                set(DYNOHOOK_TEST_CONTENTS "${DYNOHOOK_TEST_CONTENTS}\n#include \"${FILE}\"")
+
+                # Generate test file
+                configure_file("tests/test${i}.hpp.in" "tests/${FILE}" @ONLY)
+            endif ()
+        endforeach ()
+    endmacro ()
+
+    if (WIN32)
+        if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+            create_dyno_hooks_test(x64 __fastcall x64MsFastcall)
+        elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
+            create_dyno_hooks_test(x86 __cdecl x86MsCdecl)
+            create_dyno_hooks_test(x86 __stdcall x86MsStdcall)
+            create_dyno_hooks_test(x86 __fastcall x86MsFastcall)
+            create_dyno_hooks_test(x86 __thiscall x86MsThiscall 6) # Only generate test6.hpp
+        endif()
+    else ()
+        if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+            create_dyno_hooks_test(x64 "__attribute__((sysv_abi))" x64MsFastcall)
+        elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
+            create_dyno_hooks_test(x86 "__attribute__((__cdecl__))" x86GccCdecl)
+            create_dyno_hooks_test(x86 "__attribute__((noinline))" x86GccThiscall 6) # Only generate test6.hpp
         endif()
     endif()
 

@@ -296,7 +296,9 @@ static size_t dyno::RegisterTypeToAlignment(RegisterType regType) {
         /**
          * The primary exceptions are the stack pointer, which are 16-byte aligned to aid performance.
          */
+#ifdef ENV64BIT
         case RSP: return SIZE_XMMWORD;
+#endif // ENV64BIT
 
         // ========================================================================
         // >> 64-bit MM (MMX) registers
