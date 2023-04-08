@@ -7,7 +7,9 @@
 #else
 #include <sys/mman.h>
 #include <unistd.h>
-#define PAGE_EXECUTE_READWRITE PROT_READ | PROT_WRITE | PROT_EXEC
+#include <fcntl.h>
+#include <climits>
+#define PAGE_EXECUTE_READWRITE (PROT_READ | PROT_WRITE | PROT_EXEC)
 #endif
 
 // From: http://kylehalladay.com/blog/2020/11/13/Hooking-By-Example.html
@@ -33,7 +35,10 @@ bool ProtectMemory(void* addr, size_t size) {
     DWORD oldProt;
     return VirtualProtect(addr, size, PAGE_EXECUTE_READWRITE, &oldProt);
 #else
-    return mprotect(addr, size, PAGE_EXECUTE_READWRITE) != -1;
+    const size_t pageSize = sysconf(_SC_PAGE_SIZE);
+    uintptr_t pageAddr = (uintptr_t) addr;
+    pageAddr = pageAddr - (pageAddr % pageSize);
+    return mprotect((void*) pageAddr, size, PAGE_EXECUTE_READWRITE) != -1;
 #endif
 }
 
@@ -41,37 +46,38 @@ void* AllocatePageNearAddress(void* targetAddr) {
 #if _WIN32
     SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
-    const size_t PAGE_SIZE = sysInfo.dwPageSize;
+    const size_t pageSize = sysInfo.dwPageSize;
+    uintptr_t minAddr = (uintptr_t) sysInfo.lpMinimumApplicationAddress;
+    uintptr_t maxAddr = (uintptr_t) sysInfo.lpMaximumApplicationAddress;
 #else
-    const size_t PAGE_SIZE = sysconf(_SC_PAGE_SIZE);
+    const size_t pageSize = sysconf(_SC_PAGE_SIZE);
+    uintptr_t minAddr;
+    uintptr_t maxAddr;
+    get_application_range(&minAddr, &maxAddr);
 #endif
-    uintptr_t startAddr = (uintptr_t(targetAddr) & ~(PAGE_SIZE - 1)); //round down to nearest page boundary
+    uintptr_t startAddr = (uintptr_t(targetAddr) & ~(pageSize - 1)); //round down to nearest page boundary
 
-#if _WIN32
-    uintptr_t minAddr = min(startAddr - 0x7FFFFF00, (uintptr_t) sysInfo.lpMinimumApplicationAddress);
-    uintptr_t maxAddr = max(startAddr + 0x7FFFFF00, (uintptr_t) sysInfo.lpMaximumApplicationAddress);
-#else
-    uintptr_t minAddr = PAGE_SIZE;
-    uintptr_t maxAddr = uintptr_t(-1) - PAGE_SIZE;
-#endif
-    uintptr_t startPage = (startAddr - (startAddr % PAGE_SIZE));
+    minAddr = min(startAddr - 0x7FFFFF00, minAddr);
+    maxAddr = max(startAddr + 0x7FFFFF00, maxAddr);
+
+    uintptr_t startPage = (startAddr - (startAddr % pageSize));
     uintptr_t pageOffset = 1;
 
     while (true) {
-        uintptr_t byteOffset = pageOffset * PAGE_SIZE;
+        uintptr_t byteOffset = pageOffset * pageSize;
         uintptr_t highAddr = startPage + byteOffset;
         uintptr_t lowAddr = (startPage > byteOffset) ? startPage - byteOffset : 0;
 
         bool needsExit = highAddr > maxAddr && lowAddr < minAddr;
 
         if (highAddr < maxAddr) {
-            void* outAddr = AllocateMemory((void*) highAddr, PAGE_SIZE);
+            void* outAddr = AllocateMemory((void*) highAddr, pageSize);
             if (outAddr)
                 return outAddr;
         }
 
         if (lowAddr > minAddr) {
-            void* outAddr = AllocateMemory((void*) lowAddr, PAGE_SIZE);
+            void* outAddr = AllocateMemory((void*) lowAddr, pageSize);
             if (outAddr != nullptr)
                 return outAddr;
         }
@@ -89,11 +95,11 @@ void FreePage(void* pageAdr) {
 #if _WIN32
     SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
-    const size_t PAGE_SIZE = sysInfo.dwPageSize;
+    const size_t pageSize = sysInfo.dwPageSize;
 #else
-    const size_t PAGE_SIZE = sysconf(_SC_PAGE_SIZE);
+    const size_t pageSize = sysconf(_SC_PAGE_SIZE);
 #endif
-    FreeMemory(pageAdr, PAGE_SIZE);
+    FreeMemory(pageAdr, pageSize);
 }
 
 bool IsRelativeJump(const cs_insn& inst) {

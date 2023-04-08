@@ -17,7 +17,8 @@ Hook::Hook(asmjit::JitRuntime& jit, void* func2hook, ICallingConvention* convent
     uint32_t trampolineSize = BuildTrampoline(func2hook, m_pTrampoline, m_OriginalInstructions);
 
     // Create the bridge function
-    createBridge();
+    //./createBridge();
+    createPostCallback();
 
     // Write a jump to the bridge
     void* bridgeFuncMemory = (int8_t*) m_pTrampoline + trampolineSize;
@@ -166,7 +167,7 @@ void Hook::setReturnAddress(void* retAddr, void* stackPtr) {
 }
 
 // Used to print generated assembly
-#if 0
+#if 1
 FileLogger logger(stdout);
 #define LOGGER(a) a.setLogger(&logger);
 #else
@@ -212,7 +213,10 @@ void Hook::createBridge() const {
         a.ret();
 
     // Generate code
-    m_Jit.add(&m_pBridge, &code);
+    Error err = m_Jit.add(&m_pBridge, &code);
+    if (err) {
+        printf("AsmJit failed: %s\n", DebugUtils::errorAsString(err));
+    }
 }
 
 void Hook::writeModifyReturnAddress(Assembler& a) const {
@@ -350,7 +354,10 @@ void Hook::createPostCallback() const {
 #endif
 
     // Generate code
-    m_Jit.add(&m_pNewRetAddr, &code);
+    Error err = m_Jit.add(&m_pNewRetAddr, &code);
+    if (err) {
+        printf("AsmJit failed: %s\n", DebugUtils::errorAsString(err));
+    }
 }
 
 void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
