@@ -3,7 +3,7 @@
 #include "registers.hpp"
 #include "convention.hpp"
 
-#include <asmjit/asmjit.h>
+#include "asmjit/asmjit.h"
 
 namespace dyno {
     enum class HookType : bool {

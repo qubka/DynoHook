@@ -40,7 +40,7 @@ Hook::~Hook() {
     // Probably hook wasn't generated successfully
     if (!m_OriginalInstructions.empty())
         // Copy back the previously copied bytes
-        memcpy(m_pFunc, &m_OriginalInstructions[0], m_OriginalInstructions.size());
+        memcpy(m_pFunc, m_OriginalInstructions.data(), m_OriginalInstructions.size());
 }
 
 void Hook::addCallback(HookType hookType, HookHandler* pCallback) {
@@ -504,7 +504,7 @@ void Hook::writeRestoreRegisters(Assembler& a, HookType hookType) const {
 }
 
 void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) const {
-    uintptr_t addr = uintptr_t(*reg);
+    uintptr_t addr = reg.getAddress<uintptr_t>();
     switch (reg.getType()) {
         // ========================================================================
         // >> 8-bit General purpose registers
@@ -783,7 +783,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
 }
 
 void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) const {
-    uintptr_t addr = uintptr_t(*reg);
+    uintptr_t addr = reg.getAddress<uintptr_t>();
     switch (reg.getType()) {
         // ========================================================================
         // >> 8-bit General purpose registers

@@ -104,7 +104,7 @@ if (DYNOHOOK_BUILD_TESTS)
         endif()
     else ()
         if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-            create_dyno_hooks_test(x64 /*SYSV_ABI*/ x64SystemVcall)
+            create_dyno_hooks_test(x64 /*SYSV_ABI*/\ x64SystemVcall)
         elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
             create_dyno_hooks_test(x86 ASMJIT_CDECL x86GccCdecl)
             create_dyno_hooks_test(x86 /*ASMJIT_THISCALL*/ x86GccThiscall 6) # Only generate test6.hpp

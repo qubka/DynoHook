@@ -281,7 +281,7 @@ namespace dyno {
         friend class Registers;
 
     public:
-        Register(RegisterType type, size_t size, size_t alignment = 0) : m_iSize(size), m_iAlignment(alignment), m_eType{type} {
+        Register(RegisterType type, size_t size, size_t alignment = 0) : m_iSize(size), m_iAlignment(alignment), m_nType{type} {
             if (size == 0)
                 m_pAddress = nullptr;
             else if (alignment > 0)
@@ -310,7 +310,7 @@ namespace dyno {
         Register(const Register& other) {
             m_iSize = other.m_iSize;
             m_iAlignment = other.m_iAlignment;
-            m_eType = other.m_eType;
+            m_nType = other.m_nType;
             if (m_iAlignment > 0)
 #ifdef _WIN32
                 m_pAddress = _aligned_malloc(m_iSize, m_iAlignment);
@@ -326,7 +326,7 @@ namespace dyno {
             m_pAddress = other.m_pAddress;
             m_iSize = other.m_iSize;
             m_iAlignment = other.m_iAlignment;
-            m_eType = other.m_eType;
+            m_nType = other.m_nType;
             other.m_pAddress = nullptr;
         }
 
@@ -334,8 +334,13 @@ namespace dyno {
             return m_pAddress;
         }
 
-        void* getPointer() const {
-            return m_pAddress;
+        template<class T>
+        T getAddress() const {
+            return (T) m_pAddress;
+        }
+
+        size_t getSize() const {
+            return m_iSize;
         }
 
         template<class T>
@@ -359,11 +364,7 @@ namespace dyno {
         }
 
         RegisterType getType() const {
-            return m_eType;
-        }
-
-        size_t getSize() const {
-            return m_iSize;
+            return m_nType;
         }
 
         size_t getAlignment() const {
@@ -373,7 +374,7 @@ namespace dyno {
     private:
         void* m_pAddress;
         uint16_t m_iSize;
-        RegisterType m_eType;
+        RegisterType m_nType;
         uint8_t m_iAlignment;
     };
 

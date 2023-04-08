@@ -1,6 +1,6 @@
 #include "utilities.hpp"
 
-#include <capstone/capstone.h>
+#include "capstone/capstone.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -309,7 +309,7 @@ uint32_t BuildTrampoline(void* func2hook, void* dstMemForTrampoline, std::vector
 
     // Save original instructions
     dstOriginalInstructions.resize(byteCount);
-    memcpy(&dstOriginalInstructions[0], func2hook, byteCount);
+    memcpy(dstOriginalInstructions.data(), func2hook, byteCount);
 
     // Replace instructions in target func with NOPs
     memset(func2hook, 0x90, byteCount);
