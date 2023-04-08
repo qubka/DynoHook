@@ -288,7 +288,7 @@ namespace dyno {
 #ifdef _WIN32
                 m_pAddress = _aligned_malloc(size, alignment);
 #else
-                m_pAddress = aligned_alloc(iAlignment, iSize);
+                m_pAddress = aligned_alloc(alignment, size);
 #endif
             else
                 m_pAddress = malloc(size);
@@ -315,7 +315,7 @@ namespace dyno {
 #ifdef _WIN32
                 m_pAddress = _aligned_malloc(m_iSize, m_iAlignment);
 #else
-                m_pAddress = aligned_alloc(iAlignment, iSize);
+                m_pAddress = aligned_alloc(m_iAlignment, m_iSize);
 #endif
             else
                 m_pAddress = malloc(m_iSize);

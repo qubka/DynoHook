@@ -35,7 +35,7 @@ const Register& Registers::at(RegisterType regType, bool reverse) const {
     return s_None;
 }
 
-static size_t dyno::RegisterTypeToSize(RegisterType regType) {
+size_t dyno::RegisterTypeToSize(RegisterType regType) {
     switch (regType) {
         // ========================================================================
         // >> 8-bit General purpose registers
@@ -291,7 +291,7 @@ static size_t dyno::RegisterTypeToSize(RegisterType regType) {
     return 0;
 }
 
-static size_t dyno::RegisterTypeToAlignment(RegisterType regType) {
+size_t dyno::RegisterTypeToAlignment(RegisterType regType) {
     switch (regType) {
         /**
          * The primary exceptions are the stack pointer, which are 16-byte aligned to aid performance.
@@ -433,7 +433,7 @@ static size_t dyno::RegisterTypeToAlignment(RegisterType regType) {
     return 0;
 }
 
-static size_t dyno::RegisterTypeToSSEIndex(RegisterType regType) {
+size_t dyno::RegisterTypeToSSEIndex(RegisterType regType) {
     switch (regType) {
         // ========================================================================
         // >> 128-bit XMM registers
@@ -556,7 +556,7 @@ static size_t dyno::RegisterTypeToSSEIndex(RegisterType regType) {
     return 0;
 }
 
-static RegisterType dyno::SSEIndexToRegisterType(size_t index, size_t size) {
+RegisterType dyno::SSEIndexToRegisterType(size_t index, size_t size) {
     switch (size) {
         // ========================================================================
         // >> 128-bit XMM registers

@@ -24,7 +24,7 @@ void FreeMemory(void* addr, size_t size) {
 #ifdef _WIN32
     VirtualFree(addr, size, MEM_RELEASE);
 #else
-    return munmap(addr, size);
+    munmap(addr, size);
 #endif
 }
 
@@ -169,16 +169,22 @@ size_t WriteAbsoluteJump64(void* absJumpMemory, void* addrToJumpTo) {
     return sizeof(absJumpInstructions);
 }
 
+#ifdef ENV64BIT
+#define CONVERT(S) strtoull(S, nullptr, 0)
+#else
+#define CONVERT(S) strtoul(S, nullptr, 0)
+#endif
+
 uint32_t AddJmpToAbsTable(cs_insn& jmp, uint8_t* absTableMem) {
     char* targetAddrStr = jmp.op_str; //where the instruction intended to go
-    uintptr_t targetAddr = _strtoui64(targetAddrStr, nullptr, 0);
+    uintptr_t targetAddr = CONVERT(targetAddrStr);
 
     return WriteAbsoluteJump64(absTableMem, (void*) targetAddr);
 }
 
 uint32_t AddCallToAbsTable(cs_insn& call, uint8_t* absTableMem, uint8_t* jumpBackToHookedFunc) {
     char* targetAddrStr = call.op_str; //where the instruction intended to go
-    uintptr_t targetAddr = _strtoui64(targetAddrStr, nullptr, 0);
+    uintptr_t targetAddr = CONVERT(targetAddrStr);
 
     uint8_t* dstMem = absTableMem;
 #ifdef ENV64BIT

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.21)
 set(DYNOHOOK dynohook)
 project(${DYNOHOOK})
 
@@ -95,19 +95,19 @@ if (DYNOHOOK_BUILD_TESTS)
 
     if (WIN32)
         if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-            create_dyno_hooks_test(x64 __fastcall x64MsFastcall)
+            create_dyno_hooks_test(x64 /*MS_ABI*/ x64MsFastcall)
         elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
-            create_dyno_hooks_test(x86 __cdecl x86MsCdecl)
-            create_dyno_hooks_test(x86 __stdcall x86MsStdcall)
-            create_dyno_hooks_test(x86 __fastcall x86MsFastcall)
-            create_dyno_hooks_test(x86 __thiscall x86MsThiscall 6) # Only generate test6.hpp
+            create_dyno_hooks_test(x86 ASMJIT_CDECL x86MsCdecl)
+            create_dyno_hooks_test(x86 ASMJIT_STDCALL x86MsStdcall)
+            create_dyno_hooks_test(x86 ASMJIT_FASTCALL x86MsFastcall)
+            create_dyno_hooks_test(x86 /*ASMJIT_THISCALL*/ x86MsThiscall 6) # Only generate test6.hpp
         endif()
     else ()
         if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-            create_dyno_hooks_test(x64 "__attribute__((sysv_abi))" x64MsFastcall)
+            create_dyno_hooks_test(x64 /*SYSV_ABI*/ x64SystemVcall)
         elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
-            create_dyno_hooks_test(x86 "__attribute__((__cdecl__))" x86GccCdecl)
-            create_dyno_hooks_test(x86 "__attribute__((noinline))" x86GccThiscall 6) # Only generate test6.hpp
+            create_dyno_hooks_test(x86 ASMJIT_CDECL x86GccCdecl)
+            create_dyno_hooks_test(x86 /*ASMJIT_THISCALL*/ x86GccThiscall 6) # Only generate test6.hpp
         endif()
     endif()
 
