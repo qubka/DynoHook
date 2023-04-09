@@ -541,88 +541,87 @@ void Hook::writeRestoreRegisters(Assembler& a, HookType hookType) const {
     }
 }
 
+#ifdef ENV64BIT
 void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) const {
+    /**
+     * The moffs8, moffs16, moffs32 and moffs64 operands specify a simple offset relative to the segment base,
+     * where 8, 16, 32 and 64 refer to the size of the data. The address-size attribute of the instruction determines the size of the offset, either 16, 32 or 64 bits.
+     * Supported only by RAX, EAX, AX, AL registers.
+     */
     uintptr_t addr = reg.getAddress<uintptr_t>();
     switch (reg.getType()) {
         // ========================================================================
         // >> 8-bit General purpose registers
         // ========================================================================
-        case AL: a.mov(byte_ptr(addr), al); break;
-        case CL: a.mov(byte_ptr(addr), cl); break;
-        case DL: a.mov(byte_ptr(addr), dl); break;
-        case BL: a.mov(byte_ptr(addr), bl); break;
+        case AL: a.mov(rax, addr); a.mov(byte_ptr(rax), al); break;
+        case CL: a.mov(rax, addr); a.mov(byte_ptr(rax), cl); break;
+        case DL: a.mov(rax, addr); a.mov(byte_ptr(rax), dl); break;
+        case BL: a.mov(rax, addr); a.mov(byte_ptr(rax), bl); break;
 
-#ifdef ENV64BIT
-        case SPL: a.mov(byte_ptr(addr), spl); break;
-        case BPL: a.mov(byte_ptr(addr), bpl); break;
-        case SIL: a.mov(byte_ptr(addr), sil); break;
-        case DIL: a.mov(byte_ptr(addr), dil); break;
-        case R8B: a.mov(byte_ptr(addr), r8b); break;
-        case R9B: a.mov(byte_ptr(addr), r9b); break;
-        case R10B: a.mov(byte_ptr(addr), r10b); break;
-        case R11B: a.mov(byte_ptr(addr), r11b); break;
-        case R12B: a.mov(byte_ptr(addr), r12b); break;
-        case R13B: a.mov(byte_ptr(addr), r13b); break;
-        case R14B: a.mov(byte_ptr(addr), r14b); break;
-        case R15B: a.mov(byte_ptr(addr), r15b); break;
-#endif // ENV64BIT
+        case SPL: a.mov(rax, addr); a.mov(byte_ptr(rax), spl); break;
+        case BPL: a.mov(rax, addr); a.mov(byte_ptr(rax), bpl); break;
+        case SIL: a.mov(rax, addr); a.mov(byte_ptr(rax), sil); break;
+        case DIL: a.mov(rax, addr); a.mov(byte_ptr(rax), dil); break;
+        case R8B: a.mov(rax, addr); a.mov(byte_ptr(rax), r8b); break;
+        case R9B: a.mov(rax, addr); a.mov(byte_ptr(rax), r9b); break;
+        case R10B: a.mov(rax, addr); a.mov(byte_ptr(rax), r10b); break;
+        case R11B: a.mov(rax, addr); a.mov(byte_ptr(rax), r11b); break;
+        case R12B: a.mov(rax, addr); a.mov(byte_ptr(rax), r12b); break;
+        case R13B: a.mov(rax, addr); a.mov(byte_ptr(rax), r13b); break;
+        case R14B: a.mov(rax, addr); a.mov(byte_ptr(rax), r14b); break;
+        case R15B: a.mov(rax, addr); a.mov(byte_ptr(rax), r15b); break;
 
-        case AH: a.mov(byte_ptr(addr), ah); break;
-        case CH: a.mov(byte_ptr(addr), ch); break;
-        case DH: a.mov(byte_ptr(addr), dh); break;
-        case BH: a.mov(byte_ptr(addr), bh); break;
+        case AH: a.mov(rax, addr); a.mov(byte_ptr(rax), ah); break;
+        case CH: a.mov(rax, addr); a.mov(byte_ptr(rax), ch); break;
+        case DH: a.mov(rax, addr); a.mov(byte_ptr(rax), dh); break;
+        case BH: a.mov(rax, addr); a.mov(byte_ptr(rax), bh); break;
 
         // ========================================================================
         // >> 16-bit General purpose registers
         // ========================================================================
-        case AX: a.mov(word_ptr(addr), ax); break;
-        case CX: a.mov(word_ptr(addr), cx); break;
-        case DX: a.mov(word_ptr(addr), dx); break;
-        case BX: a.mov(word_ptr(addr), bx); break;
-        case SP: a.mov(word_ptr(addr), sp); break;
-        case BP: a.mov(word_ptr(addr), bp); break;
-        case SI: a.mov(word_ptr(addr), si); break;
-        case DI: a.mov(word_ptr(addr), di); break;
+        case AX: a.mov(rax, addr); a.mov(word_ptr(rax), ax); break;
+        case CX: a.mov(rax, addr); a.mov(word_ptr(rax), cx); break;
+        case DX: a.mov(rax, addr); a.mov(word_ptr(rax), dx); break;
+        case BX: a.mov(rax, addr); a.mov(word_ptr(rax), bx); break;
+        case SP: a.mov(rax, addr); a.mov(word_ptr(rax), sp); break;
+        case BP: a.mov(rax, addr); a.mov(word_ptr(rax), bp); break;
+        case SI: a.mov(rax, addr); a.mov(word_ptr(rax), si); break;
+        case DI: a.mov(rax, addr); a.mov(word_ptr(rax), di); break;
 
-#ifdef ENV64BIT
-        case R8W: a.mov(word_ptr(addr), r8w); break;
-        case R9W: a.mov(word_ptr(addr), r9w); break;
-        case R10W: a.mov(word_ptr(addr), r10w); break;
-        case R11W: a.mov(word_ptr(addr), r11w); break;
-        case R12W: a.mov(word_ptr(addr), r12w); break;
-        case R13W: a.mov(word_ptr(addr), r13w); break;
-        case R14W: a.mov(word_ptr(addr), r14w); break;
-        case R15W: a.mov(word_ptr(addr), r15w); break;
-#endif // ENV64BIT
+        case R8W: a.mov(rax, addr); a.mov(word_ptr(rax), r8w); break;
+        case R9W: a.mov(rax, addr); a.mov(word_ptr(rax), r9w); break;
+        case R10W: a.mov(rax, addr); a.mov(word_ptr(rax), r10w); break;
+        case R11W: a.mov(rax, addr); a.mov(word_ptr(rax), r11w); break;
+        case R12W: a.mov(rax, addr); a.mov(word_ptr(rax), r12w); break;
+        case R13W: a.mov(rax, addr); a.mov(word_ptr(rax), r13w); break;
+        case R14W: a.mov(rax, addr); a.mov(word_ptr(rax), r14w); break;
+        case R15W: a.mov(rax, addr); a.mov(word_ptr(rax), r15w); break;
 
         // ========================================================================
         // >> 32-bit General purpose registers
         // ========================================================================
-        case EAX: a.mov(dword_ptr(addr), eax); break;
-        case ECX: a.mov(dword_ptr(addr), ecx); break;
-        case EDX: a.mov(dword_ptr(addr), edx); break;
-        case EBX: a.mov(dword_ptr(addr), ebx); break;
-        case ESP: a.mov(dword_ptr(addr), esp); break;
-        case EBP: a.mov(dword_ptr(addr), ebp); break;
-        case ESI: a.mov(dword_ptr(addr), esi); break;
-        case EDI: a.mov(dword_ptr(addr), edi); break;
+        case EAX: a.mov(rax, addr); a.mov(dword_ptr(rax), eax); break;
+        case ECX: a.mov(rax, addr); a.mov(dword_ptr(rax), ecx); break;
+        case EDX: a.mov(rax, addr); a.mov(dword_ptr(rax), edx); break;
+        case EBX: a.mov(rax, addr); a.mov(dword_ptr(rax), ebx); break;
+        case ESP: a.mov(rax, addr); a.mov(dword_ptr(rax), esp); break;
+        case EBP: a.mov(rax, addr); a.mov(dword_ptr(rax), ebp); break;
+        case ESI: a.mov(rax, addr); a.mov(dword_ptr(rax), esi); break;
+        case EDI: a.mov(rax, addr); a.mov(dword_ptr(rax), edi); break;
 
-#ifdef ENV64BIT
-        case R8D: a.mov(dword_ptr(addr), r8d); break;
-        case R9D: a.mov(dword_ptr(addr), r9d); break;
-        case R10D: a.mov(dword_ptr(addr), r10d); break;
-        case R11D: a.mov(dword_ptr(addr), r11d); break;
-        case R12D: a.mov(dword_ptr(addr), r12d); break;
-        case R13D: a.mov(dword_ptr(addr), r13d); break;
-        case R14D: a.mov(dword_ptr(addr), r14d); break;
-        case R15D: a.mov(dword_ptr(addr), r15d); break;
-#endif // ENV64BIT
+        case R8D: a.mov(rax, addr); a.mov(dword_ptr(rax), r8d); break;
+        case R9D: a.mov(rax, addr); a.mov(dword_ptr(rax), r9d); break;
+        case R10D: a.mov(rax, addr); a.mov(dword_ptr(rax), r10d); break;
+        case R11D: a.mov(rax, addr); a.mov(dword_ptr(rax), r11d); break;
+        case R12D: a.mov(rax, addr); a.mov(dword_ptr(rax), r12d); break;
+        case R13D: a.mov(rax, addr); a.mov(dword_ptr(rax), r13d); break;
+        case R14D: a.mov(rax, addr); a.mov(dword_ptr(rax), r14d); break;
+        case R15D: a.mov(rax, addr); a.mov(dword_ptr(rax), r15d); break;
 
         // ========================================================================
         // >> 64-bit General purpose registers
         // ========================================================================
-#ifdef ENV64BIT
-        case RAX: a.mov(qword_ptr(addr), rax); break;
+        case RAX: a.mov(rax, addr); a.mov(qword_ptr(rax), rax); break;
         case RCX: a.mov(rax, addr); a.mov(qword_ptr(rax), rcx); break;
         case RDX: a.mov(rax, addr); a.mov(qword_ptr(rax), rdx); break;
         case RBX: a.mov(rax, addr); a.mov(qword_ptr(rax), rbx); break;
@@ -630,9 +629,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         case RBP: a.mov(rax, addr); a.mov(qword_ptr(rax), rbp); break;
         case RSI: a.mov(rax, addr); a.mov(qword_ptr(rax), rsi); break;
         case RDI: a.mov(rax, addr); a.mov(qword_ptr(rax), rdi); break;
-#endif // ENV64BIT
 
-#ifdef ENV64BIT
         case R8: a.mov(rax, addr); a.mov(qword_ptr(rax), r8); break;
         case R9: a.mov(rax, addr); a.mov(qword_ptr(rax), r9); break;
         case R10: a.mov(rax, addr); a.mov(qword_ptr(rax), r10); break;
@@ -641,33 +638,22 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         case R13: a.mov(rax, addr); a.mov(qword_ptr(rax), r13); break;
         case R14: a.mov(rax, addr); a.mov(qword_ptr(rax), r14); break;
         case R15: a.mov(rax, addr); a.mov(qword_ptr(rax), r15); break;
-#endif // ENV64BIT
 
         // ========================================================================
         // >> 64-bit MM (MMX) registers
         // ========================================================================
-        case MM0: a.movq(qword_ptr(addr), mm0); break;
-        case MM1: a.movq(qword_ptr(addr), mm1); break;
-        case MM2: a.movq(qword_ptr(addr), mm2); break;
-        case MM3: a.movq(qword_ptr(addr), mm3); break;
-        case MM4: a.movq(qword_ptr(addr), mm4); break;
-        case MM5: a.movq(qword_ptr(addr), mm5); break;
-        case MM6: a.movq(qword_ptr(addr), mm6); break;
-        case MM7: a.movq(qword_ptr(addr), mm7); break;
+        case MM0: a.mov(rax, addr); a.movq(qword_ptr(rax), mm0); break;
+        case MM1: a.mov(rax, addr); a.movq(qword_ptr(rax), mm1); break;
+        case MM2: a.mov(rax, addr); a.movq(qword_ptr(rax), mm2); break;
+        case MM3: a.mov(rax, addr); a.movq(qword_ptr(rax), mm3); break;
+        case MM4: a.mov(rax, addr); a.movq(qword_ptr(rax), mm4); break;
+        case MM5: a.mov(rax, addr); a.movq(qword_ptr(rax), mm5); break;
+        case MM6: a.mov(rax, addr); a.movq(qword_ptr(rax), mm6); break;
+        case MM7: a.mov(rax, addr); a.movq(qword_ptr(rax), mm7); break;
 
         // ========================================================================
         // >> 128-bit XMM registers
         // ========================================================================
-#ifdef ENV32BIT
-        case XMM0: a.movaps(dqword_ptr(addr), xmm0); break;
-        case XMM1: a.movaps(dqword_ptr(addr), xmm1); break;
-        case XMM2: a.movaps(dqword_ptr(addr), xmm2); break;
-        case XMM3: a.movaps(dqword_ptr(addr), xmm3); break;
-        case XMM4: a.movaps(dqword_ptr(addr), xmm4); break;
-        case XMM5: a.movaps(dqword_ptr(addr), xmm5); break;
-        case XMM6: a.movaps(dqword_ptr(addr), xmm6); break;
-        case XMM7: a.movaps(dqword_ptr(addr), xmm7); break;
-#else // ENV32BIT
         case XMM0: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm0); break;
         case XMM1: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm1); break;
         case XMM2: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm2); break;
@@ -685,7 +671,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         case XMM14: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm14); break;
         case XMM15: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm15); break;
 #ifdef AVX512
-        case XMM16: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm16); break;
+            case XMM16: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm16); break;
         case XMM17: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm17); break;
         case XMM18: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm18); break;
         case XMM19: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm19); break;
@@ -702,12 +688,10 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         case XMM30: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm30); break;
         case XMM31: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm31); break;
 #endif // AVX512
-#endif // ENV32BIT
 
         // ========================================================================
         // >> 256-bit YMM registers
         // ========================================================================
-#ifdef ENV64BIT
         case YMM0: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm0); break;
         case YMM1: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm1); break;
         case YMM2: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm2); break;
@@ -742,7 +726,6 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         case YMM30: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm30); break;
         case YMM31: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm31); break;
 #endif // AVX512
-#endif // ENV64BIT
 
         // ========================================================================
         // >> 512-bit ZMM registers
@@ -785,122 +768,97 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         // ========================================================================
         // >> 16-bit Segment registers
         // ========================================================================
-        case CS: a.mov(word_ptr(addr), cs); break;
-        case SS: a.mov(word_ptr(addr), ss); break;
-        case DS: a.mov(word_ptr(addr), ds); break;
-        case ES: a.mov(word_ptr(addr), es); break;
-        case FS: a.mov(word_ptr(addr), fs); break;
-        case GS: a.mov(word_ptr(addr), gs); break;
-
-        // ========================================================================
-        // >> 80-bit FPU registers
-        // ========================================================================
-#ifdef ENV32BIT
-        case ST0:
-            // Don't mess with the FPU stack in a pre-hook. The float return is returned in st0,
-            // so only load it in a post hook to avoid writing back NaN.
-            if (hookType == HookType::Post) {
-                switch (m_pCallingConvention->getReturnType().size) {
-                    case SIZE_DWORD: a.fstp(dword_ptr(addr)); break;
-                    case SIZE_QWORD: a.fstp(qword_ptr(addr)); break;
-                    case SIZE_TWORD: a.fstp(tword_ptr(addr)); break;
-                }
-            }
-            break;
-        //case ST1: a.movl(tword_ptr(addr), st1); break;
-        //case ST2: a.movl(tword_ptr(addr), st2); break;
-        //case ST3: a.movl(tword_ptr(addr), st3); break;
-        //case ST4: a.movl(tword_ptr(addr), st4); break;
-        //case ST5: a.movl(tword_ptr(addr), st5); break;
-        //case ST6: a.movl(tword_ptr(addr), st6); break;
-        //case ST7: a.movl(tword_ptr(addr), st7); break;
-#endif // ENV32BIT
+        case CS: a.mov(rax, addr); a.mov(word_ptr(rax), cs); break;
+        case SS: a.mov(rax, addr); a.mov(word_ptr(rax), ss); break;
+        case DS: a.mov(rax, addr); a.mov(word_ptr(rax), ds); break;
+        case ES: a.mov(rax, addr); a.mov(word_ptr(rax), es); break;
+        case FS: a.mov(rax, addr); a.mov(word_ptr(rax), fs); break;
+        case GS: a.mov(rax, addr); a.mov(word_ptr(rax), gs); break;
 
         default: puts("Unsupported register.");
     }
 }
 
 void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) const {
+    /**
+     * The moffs8, moffs16, moffs32 and moffs64 operands specify a simple offset relative to the segment base,
+     * where 8, 16, 32 and 64 refer to the size of the data. The address-size attribute of the instruction determines the size of the offset, either 16, 32 or 64 bits.
+     * Supported only by RAX, EAX, AX, AL registers.
+     */
+
     uintptr_t addr = reg.getAddress<uintptr_t>();
     switch (reg.getType()) {
         // ========================================================================
         // >> 8-bit General purpose registers
         // ========================================================================
         case AL: a.mov(al, byte_ptr(addr)); break;
-        case CL: a.mov(cl, byte_ptr(addr)); break;
-        case DL: a.mov(dl, byte_ptr(addr)); break;
-        case BL: a.mov(bl, byte_ptr(addr)); break;
+        case CL: a.mov(rax, addr); a.mov(cl, byte_ptr(rax)); break;
+        case DL: a.mov(rax, addr); a.mov(dl, byte_ptr(rax)); break;
+        case BL: a.mov(rax, addr); a.mov(bl, byte_ptr(rax)); break;
 
-#ifdef ENV64BIT
-        case SPL: a.mov(spl, byte_ptr(addr)); break;
-        case BPL: a.mov(bpl, byte_ptr(addr)); break;
-        case SIL: a.mov(sil, byte_ptr(addr)); break;
-        case DIL: a.mov(dil, byte_ptr(addr)); break;
-        case R8B: a.mov(r8b, byte_ptr(addr)); break;
-        case R9B: a.mov(r9b, byte_ptr(addr)); break;
-        case R10B: a.mov(r10b, byte_ptr(addr)); break;
-        case R11B: a.mov(r11b, byte_ptr(addr)); break;
-        case R12B: a.mov(r12b, byte_ptr(addr)); break;
-        case R13B: a.mov(r13b, byte_ptr(addr)); break;
-        case R14B: a.mov(r14b, byte_ptr(addr)); break;
-        case R15B: a.mov(r15b, byte_ptr(addr)); break;
-#endif // ENV64BIT
+        case SPL: a.mov(rax, addr); a.mov(spl, byte_ptr(rax)); break;
+        case BPL: a.mov(rax, addr); a.mov(bpl, byte_ptr(rax)); break;
+        case SIL: a.mov(rax, addr); a.mov(sil, byte_ptr(rax)); break;
+        case DIL: a.mov(rax, addr); a.mov(dil, byte_ptr(rax)); break;
+        case R8B: a.mov(rax, addr); a.mov(r8b, byte_ptr(rax)); break;
+        case R9B: a.mov(rax, addr); a.mov(r9b, byte_ptr(rax)); break;
+        case R10B: a.mov(rax, addr); a.mov(r10b, byte_ptr(rax)); break;
+        case R11B: a.mov(rax, addr); a.mov(r11b, byte_ptr(rax)); break;
+        case R12B: a.mov(rax, addr); a.mov(r12b, byte_ptr(rax)); break;
+        case R13B: a.mov(rax, addr); a.mov(r13b, byte_ptr(rax)); break;
+        case R14B: a.mov(rax, addr); a.mov(r14b, byte_ptr(rax)); break;
+        case R15B: a.mov(rax, addr); a.mov(r15b, byte_ptr(rax)); break;
 
-        case AH: a.mov(ah, byte_ptr(addr)); break;
-        case CH: a.mov(ch, byte_ptr(addr)); break;
-        case DH: a.mov(dh, byte_ptr(addr)); break;
-        case BH: a.mov(bh, byte_ptr(addr)); break;
+        case AH: a.mov(rax, addr); a.mov(ah, byte_ptr(rax)); break;
+        case CH: a.mov(rax, addr); a.mov(ch, byte_ptr(rax)); break;
+        case DH: a.mov(rax, addr); a.mov(dh, byte_ptr(rax)); break;
+        case BH: a.mov(rax, addr); a.mov(bh, byte_ptr(rax)); break;
 
         // ========================================================================
         // >> 16-bit General purpose registers
         // ========================================================================
         case AX: a.mov(ax, word_ptr(addr)); break;
-        case CX: a.mov(cx, word_ptr(addr)); break;
-        case DX: a.mov(dx, word_ptr(addr)); break;
-        case BX: a.mov(bx, word_ptr(addr)); break;
-        case SP: a.mov(sp, word_ptr(addr)); break;
-        case BP: a.mov(bp, word_ptr(addr)); break;
-        case SI: a.mov(si, word_ptr(addr)); break;
-        case DI: a.mov(di, word_ptr(addr)); break;
+        case CX: a.mov(rax, addr); a.mov(cx, word_ptr(rax)); break;
+        case DX: a.mov(rax, addr); a.mov(dx, word_ptr(rax)); break;
+        case BX: a.mov(rax, addr); a.mov(bx, word_ptr(rax)); break;
+        case SP: a.mov(rax, addr); a.mov(sp, word_ptr(rax)); break;
+        case BP: a.mov(rax, addr); a.mov(bp, word_ptr(rax)); break;
+        case SI: a.mov(rax, addr); a.mov(si, word_ptr(rax)); break;
+        case DI: a.mov(rax, addr); a.mov(di, word_ptr(rax)); break;
 
-#ifdef ENV64BIT
-        case R8W: a.mov(r8w, word_ptr(addr)); break;
-        case R9W: a.mov(r9w, word_ptr(addr)); break;
-        case R10W: a.mov(r10w, word_ptr(addr)); break;
-        case R11W: a.mov(r11w, word_ptr(addr)); break;
-        case R12W: a.mov(r12w, word_ptr(addr)); break;
-        case R13W: a.mov(r13w, word_ptr(addr)); break;
-        case R14W: a.mov(r14w, word_ptr(addr)); break;
-        case R15W: a.mov(r15w, word_ptr(addr)); break;
-#endif // ENV64BIT
+        case R8W: a.mov(rax, addr); a.mov(r8w, word_ptr(rax)); break;
+        case R9W: a.mov(rax, addr); a.mov(r9w, word_ptr(rax)); break;
+        case R10W: a.mov(rax, addr); a.mov(r10w, word_ptr(rax)); break;
+        case R11W: a.mov(rax, addr); a.mov(r11w, word_ptr(rax)); break;
+        case R12W: a.mov(rax, addr); a.mov(r12w, word_ptr(rax)); break;
+        case R13W: a.mov(rax, addr); a.mov(r13w, word_ptr(rax)); break;
+        case R14W: a.mov(rax, addr); a.mov(r14w, word_ptr(rax)); break;
+        case R15W: a.mov(rax, addr); a.mov(r15w, word_ptr(rax)); break;
 
         // ========================================================================
         // >> 32-bit General purpose registers
         // ========================================================================
         case EAX: a.mov(eax, dword_ptr(addr)); break;
-        case ECX: a.mov(ecx, dword_ptr(addr)); break;
-        case EDX: a.mov(edx, dword_ptr(addr)); break;
-        case EBX: a.mov(ebx, dword_ptr(addr)); break;
-        case ESP: a.mov(esp, dword_ptr(addr)); break;
-        case EBP: a.mov(ebp, dword_ptr(addr)); break;
-        case ESI: a.mov(esi, dword_ptr(addr)); break;
-        case EDI: a.mov(edi, dword_ptr(addr)); break;
+        case ECX: a.mov(rax, addr); a.mov(ecx, dword_ptr(rax)); break;
+        case EDX: a.mov(rax, addr); a.mov(edx, dword_ptr(rax)); break;
+        case EBX: a.mov(rax, addr); a.mov(ebx, dword_ptr(rax)); break;
+        case ESP: a.mov(rax, addr); a.mov(esp, dword_ptr(rax)); break;
+        case EBP: a.mov(rax, addr); a.mov(ebp, dword_ptr(rax)); break;
+        case ESI: a.mov(rax, addr); a.mov(esi, dword_ptr(rax)); break;
+        case EDI: a.mov(rax, addr); a.mov(edi, dword_ptr(rax)); break;
 
-#ifdef ENV64BIT
-        case R8D: a.mov(r8d, dword_ptr(addr)); break;
-        case R9D: a.mov(r9d, dword_ptr(addr)); break;
-        case R10D: a.mov(r10d, dword_ptr(addr)); break;
-        case R11D: a.mov(r11d, dword_ptr(addr)); break;
-        case R12D: a.mov(r12d, dword_ptr(addr)); break;
-        case R13D: a.mov(r13d, dword_ptr(addr)); break;
-        case R14D: a.mov(r14d, dword_ptr(addr)); break;
-        case R15D: a.mov(r15d, dword_ptr(addr)); break;
-#endif // ENV64BIT
+        case R8D: a.mov(rax, addr); a.mov(r8d, dword_ptr(rax)); break;
+        case R9D: a.mov(rax, addr); a.mov(r9d, dword_ptr(rax)); break;
+        case R10D: a.mov(rax, addr); a.mov(r10d, dword_ptr(rax)); break;
+        case R11D: a.mov(rax, addr); a.mov(r11d, dword_ptr(rax)); break;
+        case R12D: a.mov(rax, addr); a.mov(r12d, dword_ptr(rax)); break;
+        case R13D: a.mov(rax, addr); a.mov(r13d, dword_ptr(rax)); break;
+        case R14D: a.mov(rax, addr); a.mov(r14d, dword_ptr(rax)); break;
+        case R15D: a.mov(rax, addr); a.mov(r15d, dword_ptr(rax)); break;
 
         // ========================================================================
         // >> 64-bit General purpose registers
         // ========================================================================
-#ifdef ENV64BIT
         case RAX: a.mov(rax, qword_ptr(addr)); break;
         case RCX: a.mov(rax, addr); a.mov(rcx, qword_ptr(rax)); break;
         case RDX: a.mov(rax, addr); a.mov(rdx, qword_ptr(rax)); break;
@@ -909,9 +867,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         case RBP: a.mov(rax, addr); a.mov(rbp, qword_ptr(rax)); break;
         case RSI: a.mov(rax, addr); a.mov(rsi, qword_ptr(rax)); break;
         case RDI: a.mov(rax, addr); a.mov(rdi, qword_ptr(rax)); break;
-#endif // ENV64BIT
 
-#ifdef ENV64BIT
         case R8: a.mov(rax, addr); a.mov(r8, qword_ptr(rax)); break;
         case R9: a.mov(rax, addr); a.mov(r9, qword_ptr(rax)); break;
         case R10: a.mov(rax, addr); a.mov(r10, qword_ptr(rax)); break;
@@ -920,33 +876,22 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         case R13: a.mov(rax, addr); a.mov(r13, qword_ptr(rax)); break;
         case R14: a.mov(rax, addr); a.mov(r14, qword_ptr(rax)); break;
         case R15: a.mov(rax, addr); a.mov(r15, qword_ptr(rax)); break;
-#endif // ENV64BIT
 
         // ========================================================================
         // >> 64-bit MM (MMX) registers
         // ========================================================================
-        case MM0: a.movq(mm0, qword_ptr(addr)); break;
-        case MM1: a.movq(mm1, qword_ptr(addr)); break;
-        case MM2: a.movq(mm2, qword_ptr(addr)); break;
-        case MM3: a.movq(mm3, qword_ptr(addr)); break;
-        case MM4: a.movq(mm4, qword_ptr(addr)); break;
-        case MM5: a.movq(mm5, qword_ptr(addr)); break;
-        case MM6: a.movq(mm6, qword_ptr(addr)); break;
-        case MM7: a.movq(mm7, qword_ptr(addr)); break;
+        case MM0: a.mov(rax, addr); a.movq(mm0, qword_ptr(rax)); break;
+        case MM1: a.mov(rax, addr); a.movq(mm1, qword_ptr(rax)); break;
+        case MM2: a.mov(rax, addr); a.movq(mm2, qword_ptr(rax)); break;
+        case MM3: a.mov(rax, addr); a.movq(mm3, qword_ptr(rax)); break;
+        case MM4: a.mov(rax, addr); a.movq(mm4, qword_ptr(rax)); break;
+        case MM5: a.mov(rax, addr); a.movq(mm5, qword_ptr(rax)); break;
+        case MM6: a.mov(rax, addr); a.movq(mm6, qword_ptr(rax)); break;
+        case MM7: a.mov(rax, addr); a.movq(mm7, qword_ptr(rax)); break;
 
         // ========================================================================
         // >> 128-bit XMM registers
         // ========================================================================
-#ifdef ENV32BIT
-        case XMM0: a.movaps(xmm0, dqword_ptr(addr)); break;
-        case XMM1: a.movaps(xmm1, dqword_ptr(addr)); break;
-        case XMM2: a.movaps(xmm2, dqword_ptr(addr)); break;
-        case XMM3: a.movaps(xmm3, dqword_ptr(addr)); break;
-        case XMM4: a.movaps(xmm4, dqword_ptr(addr)); break;
-        case XMM5: a.movaps(xmm5, dqword_ptr(addr)); break;
-        case XMM6: a.movaps(xmm6, dqword_ptr(addr)); break;
-        case XMM7: a.movaps(xmm7, dqword_ptr(addr)); break;
-#else // ENV64BIT
         case XMM0: a.mov(rax, addr); a.movaps(xmm0, xmmword_ptr(rax)); break;
         case XMM1: a.mov(rax, addr); a.movaps(xmm1, xmmword_ptr(rax)); break;
         case XMM2: a.mov(rax, addr); a.movaps(xmm2, xmmword_ptr(rax)); break;
@@ -981,12 +926,10 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         case XMM30: a.mov(rax, addr); a.movaps(xmm30, xmmword_ptr(rax)); break;
         case XMM31: a.mov(rax, addr); a.movaps(xmm31, xmmword_ptr(rax)); break;
 #endif // AVX512
-#endif // ENV32BIT
 
         // ========================================================================
         // >> 256-bit YMM registers
         // ========================================================================
-#ifdef ENV64BIT
         case YMM0: a.mov(rax, addr); a.vmovaps(ymm0, ymmword_ptr(rax)); break;
         case YMM1: a.mov(rax, addr); a.vmovaps(ymm1, ymmword_ptr(rax)); break;
         case YMM2: a.mov(rax, addr); a.vmovaps(ymm2, ymmword_ptr(rax)); break;
@@ -1021,7 +964,6 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         case YMM30: a.mov(rax, addr); a.vmovaps(ymm30, ymmword_ptr(rax)); break;
         case YMM31: a.mov(rax, addr); a.vmovaps(ymm31, ymmword_ptr(rax)); break;
 #endif // AVX512
-#endif // ENV64BIT
 
         // ========================================================================
         // >> 512-bit ZMM registers
@@ -1064,6 +1006,184 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         // ========================================================================
         // >> 16-bit Segment registers
         // ========================================================================
+        case CS: a.mov(rax, addr); a.mov(cs, word_ptr(rax)); break;
+        case SS: a.mov(rax, addr); a.mov(ss, word_ptr(rax)); break;
+        case DS: a.mov(rax, addr); a.mov(ds, word_ptr(rax)); break;
+        case ES: a.mov(rax, addr); a.mov(es, word_ptr(rax)); break;
+        case FS: a.mov(rax, addr); a.mov(fs, word_ptr(rax)); break;
+        case GS: a.mov(rax, addr); a.mov(gs, word_ptr(rax)); break;
+
+        default: puts("Unsupported register.");
+    }
+}
+#else // ENV32BIT
+void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) const {
+    uintptr_t addr = reg.getAddress<uintptr_t>();
+    switch (reg.getType()) {
+        // ========================================================================
+        // >> 8-bit General purpose registers
+        // ========================================================================
+        case AL: a.mov(byte_ptr(addr), al); break;
+        case CL: a.mov(byte_ptr(addr), cl); break;
+        case DL: a.mov(byte_ptr(addr), dl); break;
+        case BL: a.mov(byte_ptr(addr), bl); break;
+
+        case AH: a.mov(byte_ptr(addr), ah); break;
+        case CH: a.mov(byte_ptr(addr), ch); break;
+        case DH: a.mov(byte_ptr(addr), dh); break;
+        case BH: a.mov(byte_ptr(addr), bh); break;
+
+        // ========================================================================
+        // >> 16-bit General purpose registers
+        // ========================================================================
+        case AX: a.mov(word_ptr(addr), ax); break;
+        case CX: a.mov(word_ptr(addr), cx); break;
+        case DX: a.mov(word_ptr(addr), dx); break;
+        case BX: a.mov(word_ptr(addr), bx); break;
+        case SP: a.mov(word_ptr(addr), sp); break;
+        case BP: a.mov(word_ptr(addr), bp); break;
+        case SI: a.mov(word_ptr(addr), si); break;
+        case DI: a.mov(word_ptr(addr), di); break;
+
+        // ========================================================================
+        // >> 32-bit General purpose registers
+        // ========================================================================
+        case EAX: a.mov(dword_ptr(addr), eax); break;
+        case ECX: a.mov(dword_ptr(addr), ecx); break;
+        case EDX: a.mov(dword_ptr(addr), edx); break;
+        case EBX: a.mov(dword_ptr(addr), ebx); break;
+        case ESP: a.mov(dword_ptr(addr), esp); break;
+        case EBP: a.mov(dword_ptr(addr), ebp); break;
+        case ESI: a.mov(dword_ptr(addr), esi); break;
+        case EDI: a.mov(dword_ptr(addr), edi); break;
+
+        // ========================================================================
+        // >> 64-bit MM (MMX) registers
+        // ========================================================================
+        case MM0: a.movq(qword_ptr(addr), mm0); break;
+        case MM1: a.movq(qword_ptr(addr), mm1); break;
+        case MM2: a.movq(qword_ptr(addr), mm2); break;
+        case MM3: a.movq(qword_ptr(addr), mm3); break;
+        case MM4: a.movq(qword_ptr(addr), mm4); break;
+        case MM5: a.movq(qword_ptr(addr), mm5); break;
+        case MM6: a.movq(qword_ptr(addr), mm6); break;
+        case MM7: a.movq(qword_ptr(addr), mm7); break;
+
+        // ========================================================================
+        // >> 128-bit XMM registers
+        // ========================================================================
+        case XMM0: a.movaps(dqword_ptr(addr), xmm0); break;
+        case XMM1: a.movaps(dqword_ptr(addr), xmm1); break;
+        case XMM2: a.movaps(dqword_ptr(addr), xmm2); break;
+        case XMM3: a.movaps(dqword_ptr(addr), xmm3); break;
+        case XMM4: a.movaps(dqword_ptr(addr), xmm4); break;
+        case XMM5: a.movaps(dqword_ptr(addr), xmm5); break;
+        case XMM6: a.movaps(dqword_ptr(addr), xmm6); break;
+        case XMM7: a.movaps(dqword_ptr(addr), xmm7); break;
+
+        // ========================================================================
+        // >> 16-bit Segment registers
+        // ========================================================================
+        case CS: a.mov(word_ptr(addr), cs); break;
+        case SS: a.mov(word_ptr(addr), ss); break;
+        case DS: a.mov(word_ptr(addr), ds); break;
+        case ES: a.mov(word_ptr(addr), es); break;
+        case FS: a.mov(word_ptr(addr), fs); break;
+        case GS: a.mov(word_ptr(addr), gs); break;
+
+        // ========================================================================
+        // >> 80-bit FPU registers
+        // ========================================================================
+        case ST0:
+            // Don't mess with the FPU stack in a pre-hook. The float return is returned in st0,
+            // so only load it in a post hook to avoid writing back NaN.
+            if (hookType == HookType::Post) {
+                switch (m_pCallingConvention->getReturnType().size) {
+                    case SIZE_DWORD: a.fstp(dword_ptr(addr)); break;
+                    case SIZE_QWORD: a.fstp(qword_ptr(addr)); break;
+                    case SIZE_TWORD: a.fstp(tword_ptr(addr)); break;
+                }
+            }
+            break;
+        //case ST1: a.movl(tword_ptr(addr), st1); break;
+        //case ST2: a.movl(tword_ptr(addr), st2); break;
+        //case ST3: a.movl(tword_ptr(addr), st3); break;
+        //case ST4: a.movl(tword_ptr(addr), st4); break;
+        //case ST5: a.movl(tword_ptr(addr), st5); break;
+        //case ST6: a.movl(tword_ptr(addr), st6); break;
+        //case ST7: a.movl(tword_ptr(addr), st7); break;
+
+        default: puts("Unsupported register.");
+    }
+}
+
+void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) const {
+    uintptr_t addr = reg.getAddress<uintptr_t>();
+    switch (reg.getType()) {
+        // ========================================================================
+        // >> 8-bit General purpose registers
+        // ========================================================================
+        case AL: a.mov(al, byte_ptr(addr)); break;
+        case CL: a.mov(cl, byte_ptr(addr)); break;
+        case DL: a.mov(dl, byte_ptr(addr)); break;
+        case BL: a.mov(bl, byte_ptr(addr)); break;
+
+        case AH: a.mov(ah, byte_ptr(addr)); break;
+        case CH: a.mov(ch, byte_ptr(addr)); break;
+        case DH: a.mov(dh, byte_ptr(addr)); break;
+        case BH: a.mov(bh, byte_ptr(addr)); break;
+
+        // ========================================================================
+        // >> 16-bit General purpose registers
+        // ========================================================================
+        case AX: a.mov(ax, word_ptr(addr)); break;
+        case CX: a.mov(cx, word_ptr(addr)); break;
+        case DX: a.mov(dx, word_ptr(addr)); break;
+        case BX: a.mov(bx, word_ptr(addr)); break;
+        case SP: a.mov(sp, word_ptr(addr)); break;
+        case BP: a.mov(bp, word_ptr(addr)); break;
+        case SI: a.mov(si, word_ptr(addr)); break;
+        case DI: a.mov(di, word_ptr(addr)); break;
+
+        // ========================================================================
+        // >> 32-bit General purpose registers
+        // ========================================================================
+        case EAX: a.mov(eax, dword_ptr(addr)); break;
+        case ECX: a.mov(ecx, dword_ptr(addr)); break;
+        case EDX: a.mov(edx, dword_ptr(addr)); break;
+        case EBX: a.mov(ebx, dword_ptr(addr)); break;
+        case ESP: a.mov(esp, dword_ptr(addr)); break;
+        case EBP: a.mov(ebp, dword_ptr(addr)); break;
+        case ESI: a.mov(esi, dword_ptr(addr)); break;
+        case EDI: a.mov(edi, dword_ptr(addr)); break;
+
+        // ========================================================================
+        // >> 64-bit MM (MMX) registers
+        // ========================================================================
+        case MM0: a.movq(mm0, qword_ptr(addr)); break;
+        case MM1: a.movq(mm1, qword_ptr(addr)); break;
+        case MM2: a.movq(mm2, qword_ptr(addr)); break;
+        case MM3: a.movq(mm3, qword_ptr(addr)); break;
+        case MM4: a.movq(mm4, qword_ptr(addr)); break;
+        case MM5: a.movq(mm5, qword_ptr(addr)); break;
+        case MM6: a.movq(mm6, qword_ptr(addr)); break;
+        case MM7: a.movq(mm7, qword_ptr(addr)); break;
+
+        // ========================================================================
+        // >> 128-bit XMM registers
+        // ========================================================================
+        case XMM0: a.movaps(xmm0, dqword_ptr(addr)); break;
+        case XMM1: a.movaps(xmm1, dqword_ptr(addr)); break;
+        case XMM2: a.movaps(xmm2, dqword_ptr(addr)); break;
+        case XMM3: a.movaps(xmm3, dqword_ptr(addr)); break;
+        case XMM4: a.movaps(xmm4, dqword_ptr(addr)); break;
+        case XMM5: a.movaps(xmm5, dqword_ptr(addr)); break;
+        case XMM6: a.movaps(xmm6, dqword_ptr(addr)); break;
+        case XMM7: a.movaps(xmm7, dqword_ptr(addr)); break;
+
+        // ========================================================================
+        // >> 16-bit Segment registers
+        // ========================================================================
         case CS: a.mov(cs, word_ptr(addr)); break;
         case SS: a.mov(ss, word_ptr(addr)); break;
         case DS: a.mov(ds, word_ptr(addr)); break;
@@ -1074,7 +1194,6 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         // ========================================================================
         // >> 80-bit FPU registers
         // ========================================================================
-#ifdef ENV32BIT
         case ST0:
             if (hookType == HookType::Post) {
                 // Replace the top of the FPU stack.
@@ -1097,8 +1216,8 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         //case ST5: a.movl(st5, tword_ptr(addr)); break;
         //case ST6: a.movl(st6, tword_ptr(addr)); break;
         //case ST7: a.movl(st7, tword_ptr(addr)); break;
-#endif // ENV32BIT
 
         default: puts("Unsupported register.");
     }
 }
+#endif // ENV32BIT
