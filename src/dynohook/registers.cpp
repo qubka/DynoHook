@@ -553,7 +553,7 @@ size_t dyno::RegisterTypeToSSEIndex(RegisterType regType) {
         case ZMM31: return 31;
 #endif // AVX512
     }
-    return 0;
+    return -1;
 }
 
 RegisterType dyno::SSEIndexToRegisterType(size_t index, size_t size) {

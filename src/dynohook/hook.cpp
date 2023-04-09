@@ -198,7 +198,12 @@ void Hook::createBridge() const {
     a.je(override);
 
     // Jump to the trampoline
+#ifdef ENV64BIT
+    a.mov(rax, m_pTrampoline); // TODO:
+    a.jmp(rax);
+#else // ENV32BIT
     a.jmp(m_pTrampoline);
+#endif
 
     // This code will be executed if a pre-hook returns true
     a.bind(override);
@@ -482,25 +487,48 @@ std::vector<RegisterType> Hook::createScratchRegisters() const {
 
 void Hook::writeSaveScratchRegisters(Assembler& a) const {
     for (const auto& reg : m_ScratchRegisters) {
-        writeRegToMem(a, reg);
+        if (reg.getSize() < SIZE_XMMWORD)
+            writeRegToMem(a, reg);
+    }
+    for (const auto& reg : m_ScratchRegisters) {
+        if (reg.getSize() >= SIZE_XMMWORD)
+            writeRegToMem(a, reg);
     }
 }
 
 void Hook::writeRestoreScratchRegisters(Assembler& a) const {
     for (const auto& reg : m_ScratchRegisters) {
-        writeMemToReg(a, reg);
+        if (reg.getSize() >= SIZE_XMMWORD)
+            writeMemToReg(a, reg);
+    }
+    
+    for (const auto& reg : m_ScratchRegisters) {
+        if (reg.getSize() < SIZE_XMMWORD)
+            writeMemToReg(a, reg);
     }
 }
 
 void Hook::writeSaveRegisters(Assembler& a, HookType hookType) const {
     for (const auto& reg : m_Registers) {
-        writeRegToMem(a, reg, hookType);
+        if (reg.getSize() < SIZE_XMMWORD)
+            writeRegToMem(a, reg, hookType);
+    }
+
+    for (const auto& reg : m_Registers) {
+        if (reg.getSize() >= SIZE_XMMWORD)
+            writeRegToMem(a, reg, hookType);
     }
 }
 
 void Hook::writeRestoreRegisters(Assembler& a, HookType hookType) const {
     for (const auto& reg : m_Registers) {
-        writeMemToReg(a, reg, hookType);
+        if (reg.getSize() >= SIZE_XMMWORD)
+            writeMemToReg(a, reg, hookType);
+    }
+
+    for (const auto& reg : m_Registers) {
+        if (reg.getSize() < SIZE_XMMWORD)
+            writeMemToReg(a, reg, hookType);
     }
 }
 
@@ -631,39 +659,39 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         case XMM6: a.movaps(dqword_ptr(addr), xmm6); break;
         case XMM7: a.movaps(dqword_ptr(addr), xmm7); break;
 #else // ENV32BIT
-        case XMM0: a.movaps(xmmword_ptr(addr), xmm0); break;
-        case XMM1: a.movaps(xmmword_ptr(addr), xmm1); break;
-        case XMM2: a.movaps(xmmword_ptr(addr), xmm2); break;
-        case XMM3: a.movaps(xmmword_ptr(addr), xmm3); break;
-        case XMM4: a.movaps(xmmword_ptr(addr), xmm4); break;
-        case XMM5: a.movaps(xmmword_ptr(addr), xmm5); break;
-        case XMM6: a.movaps(xmmword_ptr(addr), xmm6); break;
-        case XMM7: a.movaps(xmmword_ptr(addr), xmm7); break;
-        case XMM8: a.movaps(xmmword_ptr(addr), xmm8); break;
-        case XMM9: a.movaps(xmmword_ptr(addr), xmm9); break;
-        case XMM10: a.movaps(xmmword_ptr(addr), xmm10); break;
-        case XMM11: a.movaps(xmmword_ptr(addr), xmm11); break;
-        case XMM12: a.movaps(xmmword_ptr(addr), xmm12); break;
-        case XMM13: a.movaps(xmmword_ptr(addr), xmm13); break;
-        case XMM14: a.movaps(xmmword_ptr(addr), xmm14); break;
-        case XMM15: a.movaps(xmmword_ptr(addr), xmm15); break;
+        case XMM0: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm0); break;
+        case XMM1: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm1); break;
+        case XMM2: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm2); break;
+        case XMM3: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm3); break;
+        case XMM4: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm4); break;
+        case XMM5: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm5); break;
+        case XMM6: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm6); break;
+        case XMM7: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm7); break;
+        case XMM8: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm8); break;
+        case XMM9: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm9); break;
+        case XMM10: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm10); break;
+        case XMM11: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm11); break;
+        case XMM12: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm12); break;
+        case XMM13: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm13); break;
+        case XMM14: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm14); break;
+        case XMM15: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm15); break;
 #ifdef AVX512
-        case XMM16: a.movaps(xmmword_ptr(addr), xmm16); break;
-        case XMM17: a.movaps(xmmword_ptr(addr), xmm17); break;
-        case XMM18: a.movaps(xmmword_ptr(addr), xmm18); break;
-        case XMM19: a.movaps(xmmword_ptr(addr), xmm19); break;
-        case XMM20: a.movaps(xmmword_ptr(addr), xmm20); break;
-        case XMM21: a.movaps(xmmword_ptr(addr), xmm21); break;
-        case XMM22: a.movaps(xmmword_ptr(addr), xmm22); break;
-        case XMM23: a.movaps(xmmword_ptr(addr), xmm23); break;
-        case XMM24: a.movaps(xmmword_ptr(addr), xmm24); break;
-        case XMM25: a.movaps(xmmword_ptr(addr), xmm25); break;
-        case XMM26: a.movaps(xmmword_ptr(addr), xmm26); break;
-        case XMM27: a.movaps(xmmword_ptr(addr), xmm27); break;
-        case XMM28: a.movaps(xmmword_ptr(addr), xmm28); break;
-        case XMM29: a.movaps(xmmword_ptr(addr), xmm29); break;
-        case XMM30: a.movaps(xmmword_ptr(addr), xmm30); break;
-        case XMM31: a.movaps(xmmword_ptr(addr), xmm31); break;
+        case XMM16: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm16); break;
+        case XMM17: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm17); break;
+        case XMM18: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm18); break;
+        case XMM19: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm19); break;
+        case XMM20: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm20); break;
+        case XMM21: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm21); break;
+        case XMM22: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm22); break;
+        case XMM23: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm23); break;
+        case XMM24: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm24); break;
+        case XMM25: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm25); break;
+        case XMM26: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm26); break;
+        case XMM27: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm27); break;
+        case XMM28: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm28); break;
+        case XMM29: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm29); break;
+        case XMM30: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm30); break;
+        case XMM31: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm31); break;
 #endif // AVX512
 #endif // ENV32BIT
 
@@ -671,39 +699,39 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         // >> 256-bit YMM registers
         // ========================================================================
 #ifdef ENV64BIT
-        case YMM0: a.vmovaps(ymmword_ptr(addr), ymm0); break;
-        case YMM1: a.vmovaps(ymmword_ptr(addr), ymm1); break;
-        case YMM2: a.vmovaps(ymmword_ptr(addr), ymm2); break;
-        case YMM3: a.vmovaps(ymmword_ptr(addr), ymm3); break;
-        case YMM4: a.vmovaps(ymmword_ptr(addr), ymm4); break;
-        case YMM5: a.vmovaps(ymmword_ptr(addr), ymm5); break;
-        case YMM6: a.vmovaps(ymmword_ptr(addr), ymm6); break;
-        case YMM7: a.vmovaps(ymmword_ptr(addr), ymm7); break;
-        case YMM8: a.vmovaps(ymmword_ptr(addr), ymm8); break;
-        case YMM9: a.vmovaps(ymmword_ptr(addr), ymm9); break;
-        case YMM10: a.vmovaps(ymmword_ptr(addr), ymm10); break;
-        case YMM11: a.vmovaps(ymmword_ptr(addr), ymm11); break;
-        case YMM12: a.vmovaps(ymmword_ptr(addr), ymm12); break;
-        case YMM13: a.vmovaps(ymmword_ptr(addr), ymm13); break;
-        case YMM14: a.vmovaps(ymmword_ptr(addr), ymm14); break;
-        case YMM15: a.vmovaps(ymmword_ptr(addr), ymm15); break;
+        case YMM0: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm0); break;
+        case YMM1: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm1); break;
+        case YMM2: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm2); break;
+        case YMM3: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm3); break;
+        case YMM4: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm4); break;
+        case YMM5: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm5); break;
+        case YMM6: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm6); break;
+        case YMM7: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm7); break;
+        case YMM8: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm8); break;
+        case YMM9: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm9); break;
+        case YMM10: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm10); break;
+        case YMM11: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm11); break;
+        case YMM12: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm12); break;
+        case YMM13: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm13); break;
+        case YMM14: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm14); break;
+        case YMM15: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm15); break;
 #ifdef AVX512
-        case YMM16: a.vmovaps(ymmword_ptr(addr), ymm16); break;
-        case YMM17: a.vmovaps(ymmword_ptr(addr), ymm17); break;
-        case YMM18: a.vmovaps(ymmword_ptr(addr), ymm18); break;
-        case YMM19: a.vmovaps(ymmword_ptr(addr), ymm19); break;
-        case YMM20: a.vmovaps(ymmword_ptr(addr), ymm20); break;
-        case YMM21: a.vmovaps(ymmword_ptr(addr), ymm21); break;
-        case YMM22: a.vmovaps(ymmword_ptr(addr), ymm22); break;
-        case YMM23: a.vmovaps(ymmword_ptr(addr), ymm23); break;
-        case YMM24: a.vmovaps(ymmword_ptr(addr), ymm24); break;
-        case YMM25: a.vmovaps(ymmword_ptr(addr), ymm25); break;
-        case YMM26: a.vmovaps(ymmword_ptr(addr), ymm26); break;
-        case YMM27: a.vmovaps(ymmword_ptr(addr), ymm27); break;
-        case YMM28: a.vmovaps(ymmword_ptr(addr), ymm28); break;
-        case YMM29: a.vmovaps(ymmword_ptr(addr), ymm29); break;
-        case YMM30: a.vmovaps(ymmword_ptr(addr), ymm30); break;
-        case YMM31: a.vmovaps(ymmword_ptr(addr), ymm31); break;
+        case YMM16: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm16); break;
+        case YMM17: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm17); break;
+        case YMM18: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm18); break;
+        case YMM19: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm19); break;
+        case YMM20: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm20); break;
+        case YMM21: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm21); break;
+        case YMM22: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm22); break;
+        case YMM23: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm23); break;
+        case YMM24: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm24); break;
+        case YMM25: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm25); break;
+        case YMM26: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm26); break;
+        case YMM27: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm27); break;
+        case YMM28: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm28); break;
+        case YMM29: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm29); break;
+        case YMM30: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm30); break;
+        case YMM31: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm31); break;
 #endif // AVX512
 #endif // ENV64BIT
 
@@ -711,38 +739,38 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         // >> 512-bit ZMM registers
         // ========================================================================
 #ifdef AVX512
-        case ZMM0: a.vmovaps(zmmword_ptr(addr), zmm0); break;
-        case ZMM1: a.vmovaps(zmmword_ptr(addr), zmm1); break;
-        case ZMM2: a.vmovaps(zmmword_ptr(addr), zmm2); break;
-        case ZMM3: a.vmovaps(zmmword_ptr(addr), zmm3); break;
-        case ZMM4: a.vmovaps(zmmword_ptr(addr), zmm4); break;
-        case ZMM5: a.vmovaps(zmmword_ptr(addr), zmm5); break;
-        case ZMM6: a.vmovaps(zmmword_ptr(addr), zmm6); break;
-        case ZMM7: a.vmovaps(zmmword_ptr(addr), zmm7); break;
-        case ZMM8: a.vmovaps(zmmword_ptr(addr), zmm8); break;
-        case ZMM9: a.vmovaps(zmmword_ptr(addr), zmm9); break;
-        case ZMM10: a.vmovaps(zmmword_ptr(addr), zmm10); break;
-        case ZMM11: a.vmovaps(zmmword_ptr(addr), zmm11); break;
-        case ZMM12: a.vmovaps(zmmword_ptr(addr), zmm12); break;
-        case ZMM13: a.vmovaps(zmmword_ptr(addr), zmm13); break;
-        case ZMM14: a.vmovaps(zmmword_ptr(addr), zmm14); break;
-        case ZMM15: a.vmovaps(zmmword_ptr(addr), zmm15); break;
-        case ZMM16: a.vmovaps(zmmword_ptr(addr), zmm16); break;
-        case ZMM17: a.vmovaps(zmmword_ptr(addr), zmm17); break;
-        case ZMM18: a.vmovaps(zmmword_ptr(addr), zmm18); break;
-        case ZMM19: a.vmovaps(zmmword_ptr(addr), zmm19); break;
-        case ZMM20: a.vmovaps(zmmword_ptr(addr), zmm20); break;
-        case ZMM21: a.vmovaps(zmmword_ptr(addr), zmm21); break;
-        case ZMM22: a.vmovaps(zmmword_ptr(addr), zmm22); break;
-        case ZMM23: a.vmovaps(zmmword_ptr(addr), zmm23); break;
-        case ZMM24: a.vmovaps(zmmword_ptr(addr), zmm24); break;
-        case ZMM25: a.vmovaps(zmmword_ptr(addr), zmm25); break;
-        case ZMM26: a.vmovaps(zmmword_ptr(addr), zmm26); break;
-        case ZMM27: a.vmovaps(zmmword_ptr(addr), zmm27); break;
-        case ZMM28: a.vmovaps(zmmword_ptr(addr), zmm28); break;
-        case ZMM29: a.vmovaps(zmmword_ptr(addr), zmm29); break;
-        case ZMM30: a.vmovaps(zmmword_ptr(addr), zmm30); break;
-        case ZMM31: a.vmovaps(zmmword_ptr(addr), zmm31); break;
+        case ZMM0: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm0); break;
+        case ZMM1: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm1); break;
+        case ZMM2: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm2); break;
+        case ZMM3: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm3); break;
+        case ZMM4: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm4); break;
+        case ZMM5: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm5); break;
+        case ZMM6: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm6); break;
+        case ZMM7: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm7); break;
+        case ZMM8: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm8); break;
+        case ZMM9: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm9); break;
+        case ZMM10: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm10); break;
+        case ZMM11: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm11); break;
+        case ZMM12: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm12); break;
+        case ZMM13: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm13); break;
+        case ZMM14: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm14); break;
+        case ZMM15: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm15); break;
+        case ZMM16: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm16); break;
+        case ZMM17: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm17); break;
+        case ZMM18: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm18); break;
+        case ZMM19: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm19); break;
+        case ZMM20: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm20); break;
+        case ZMM21: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm21); break;
+        case ZMM22: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm22); break;
+        case ZMM23: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm23); break;
+        case ZMM24: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm24); break;
+        case ZMM25: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm25); break;
+        case ZMM26: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm26); break;
+        case ZMM27: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm27); break;
+        case ZMM28: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm28); break;
+        case ZMM29: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm29); break;
+        case ZMM30: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm30); break;
+        case ZMM31: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm31); break;
 #endif // AVX512
 
         // ========================================================================
@@ -864,7 +892,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         // >> 64-bit General purpose registers
         // ========================================================================
 #ifdef ENV64BIT
-        case RAX: a.mov(rax, qword_ptr(addr)); break;
+        case RAX: a.mov(rax, addr); a.mov(rax, qword_ptr(addr)); break;
         case RCX: a.mov(rcx, qword_ptr(addr)); break;
         case RDX: a.mov(rdx, qword_ptr(addr)); break;
         case RBX: a.mov(rbx, qword_ptr(addr)); break;
@@ -910,39 +938,39 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         case XMM6: a.movaps(xmm6, dqword_ptr(addr)); break;
         case XMM7: a.movaps(xmm7, dqword_ptr(addr)); break;
 #else // ENV64BIT
-        case XMM0: a.movaps(xmm0, xmmword_ptr(addr)); break;
-        case XMM1: a.movaps(xmm1, xmmword_ptr(addr)); break;
-        case XMM2: a.movaps(xmm2, xmmword_ptr(addr)); break;
-        case XMM3: a.movaps(xmm3, xmmword_ptr(addr)); break;
-        case XMM4: a.movaps(xmm4, xmmword_ptr(addr)); break;
-        case XMM5: a.movaps(xmm5, xmmword_ptr(addr)); break;
-        case XMM6: a.movaps(xmm6, xmmword_ptr(addr)); break;
-        case XMM7: a.movaps(xmm7, xmmword_ptr(addr)); break;
-        case XMM8: a.movaps(xmm8, xmmword_ptr(addr)); break;
-        case XMM9: a.movaps(xmm9, xmmword_ptr(addr)); break;
-        case XMM10: a.movaps(xmm10, xmmword_ptr(addr)); break;
-        case XMM11: a.movaps(xmm11, xmmword_ptr(addr)); break;
-        case XMM12: a.movaps(xmm12, xmmword_ptr(addr)); break;
-        case XMM13: a.movaps(xmm13, xmmword_ptr(addr)); break;
-        case XMM14: a.movaps(xmm14, xmmword_ptr(addr)); break;
-        case XMM15: a.movaps(xmm15, xmmword_ptr(addr)); break;
+        case XMM0: a.mov(rax, addr); a.movaps(xmm0, xmmword_ptr(rax)); break;
+        case XMM1: a.mov(rax, addr); a.movaps(xmm1, xmmword_ptr(rax)); break;
+        case XMM2: a.mov(rax, addr); a.movaps(xmm2, xmmword_ptr(rax)); break;
+        case XMM3: a.mov(rax, addr); a.movaps(xmm3, xmmword_ptr(rax)); break;
+        case XMM4: a.mov(rax, addr); a.movaps(xmm4, xmmword_ptr(rax)); break;
+        case XMM5: a.mov(rax, addr); a.movaps(xmm5, xmmword_ptr(rax)); break;
+        case XMM6: a.mov(rax, addr); a.movaps(xmm6, xmmword_ptr(rax)); break;
+        case XMM7: a.mov(rax, addr); a.movaps(xmm7, xmmword_ptr(rax)); break;
+        case XMM8: a.mov(rax, addr); a.movaps(xmm8, xmmword_ptr(rax)); break;
+        case XMM9: a.mov(rax, addr); a.movaps(xmm9, xmmword_ptr(rax)); break;
+        case XMM10: a.mov(rax, addr); a.movaps(xmm10, xmmword_ptr(rax)); break;
+        case XMM11: a.mov(rax, addr); a.movaps(xmm11, xmmword_ptr(rax)); break;
+        case XMM12: a.mov(rax, addr); a.movaps(xmm12, xmmword_ptr(rax)); break;
+        case XMM13: a.mov(rax, addr); a.movaps(xmm13, xmmword_ptr(rax)); break;
+        case XMM14: a.mov(rax, addr); a.movaps(xmm14, xmmword_ptr(rax)); break;
+        case XMM15: a.mov(rax, addr); a.movaps(xmm15, xmmword_ptr(rax)); break;
 #ifdef AVX512
-        case XMM16: a.movaps(xmm16, xmmword_ptr(addr)); break;
-        case XMM17: a.movaps(xmm17, xmmword_ptr(addr)); break;
-        case XMM18: a.movaps(xmm18, xmmword_ptr(addr)); break;
-        case XMM19: a.movaps(xmm19, xmmword_ptr(addr)); break;
-        case XMM20: a.movaps(xmm20, xmmword_ptr(addr)); break;
-        case XMM21: a.movaps(xmm21, xmmword_ptr(addr)); break;
-        case XMM22: a.movaps(xmm22, xmmword_ptr(addr)); break;
-        case XMM23: a.movaps(xmm23, xmmword_ptr(addr)); break;
-        case XMM24: a.movaps(xmm24, xmmword_ptr(addr)); break;
-        case XMM25: a.movaps(xmm25, xmmword_ptr(addr)); break;
-        case XMM26: a.movaps(xmm26, xmmword_ptr(addr)); break;
-        case XMM27: a.movaps(xmm27, xmmword_ptr(addr)); break;
-        case XMM28: a.movaps(xmm28, xmmword_ptr(addr)); break;
-        case XMM29: a.movaps(xmm29, xmmword_ptr(addr)); break;
-        case XMM30: a.movaps(xmm30, xmmword_ptr(addr)); break;
-        case XMM31: a.movaps(xmm31, xmmword_ptr(addr)); break;
+        case XMM16: a.mov(rax, addr); a.movaps(xmm16, xmmword_ptr(rax)); break;
+        case XMM17: a.mov(rax, addr); a.movaps(xmm17, xmmword_ptr(rax)); break;
+        case XMM18: a.mov(rax, addr); a.movaps(xmm18, xmmword_ptr(rax)); break;
+        case XMM19: a.mov(rax, addr); a.movaps(xmm19, xmmword_ptr(rax)); break;
+        case XMM20: a.mov(rax, addr); a.movaps(xmm20, xmmword_ptr(rax)); break;
+        case XMM21: a.mov(rax, addr); a.movaps(xmm21, xmmword_ptr(rax)); break;
+        case XMM22: a.mov(rax, addr); a.movaps(xmm22, xmmword_ptr(rax)); break;
+        case XMM23: a.mov(rax, addr); a.movaps(xmm23, xmmword_ptr(rax)); break;
+        case XMM24: a.mov(rax, addr); a.movaps(xmm24, xmmword_ptr(rax)); break;
+        case XMM25: a.mov(rax, addr); a.movaps(xmm25, xmmword_ptr(rax)); break;
+        case XMM26: a.mov(rax, addr); a.movaps(xmm26, xmmword_ptr(rax)); break;
+        case XMM27: a.mov(rax, addr); a.movaps(xmm27, xmmword_ptr(rax)); break;
+        case XMM28: a.mov(rax, addr); a.movaps(xmm28, xmmword_ptr(rax)); break;
+        case XMM29: a.mov(rax, addr); a.movaps(xmm29, xmmword_ptr(rax)); break;
+        case XMM30: a.mov(rax, addr); a.movaps(xmm30, xmmword_ptr(rax)); break;
+        case XMM31: a.mov(rax, addr); a.movaps(xmm31, xmmword_ptr(rax)); break;
 #endif // AVX512
 #endif // ENV32BIT
 
@@ -950,39 +978,39 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         // >> 256-bit YMM registers
         // ========================================================================
 #ifdef ENV64BIT
-        case YMM0: a.vmovaps(ymm0, ymmword_ptr(addr)); break;
-        case YMM1: a.vmovaps(ymm1, ymmword_ptr(addr)); break;
-        case YMM2: a.vmovaps(ymm2, ymmword_ptr(addr)); break;
-        case YMM3: a.vmovaps(ymm3, ymmword_ptr(addr)); break;
-        case YMM4: a.vmovaps(ymm4, ymmword_ptr(addr)); break;
-        case YMM5: a.vmovaps(ymm5, ymmword_ptr(addr)); break;
-        case YMM6: a.vmovaps(ymm6, ymmword_ptr(addr)); break;
-        case YMM7: a.vmovaps(ymm7, ymmword_ptr(addr)); break;
-        case YMM8: a.vmovaps(ymm8, ymmword_ptr(addr)); break;
-        case YMM9: a.vmovaps(ymm9, ymmword_ptr(addr)); break;
-        case YMM10: a.vmovaps(ymm10, ymmword_ptr(addr)); break;
-        case YMM11: a.vmovaps(ymm11, ymmword_ptr(addr)); break;
-        case YMM12: a.vmovaps(ymm12, ymmword_ptr(addr)); break;
-        case YMM13: a.vmovaps(ymm13, ymmword_ptr(addr)); break;
-        case YMM14: a.vmovaps(ymm14, ymmword_ptr(addr)); break;
-        case YMM15: a.vmovaps(ymm15, ymmword_ptr(addr)); break;
+        case YMM0: a.mov(rax, addr); a.vmovaps(ymm0, ymmword_ptr(rax)); break;
+        case YMM1: a.mov(rax, addr); a.vmovaps(ymm1, ymmword_ptr(rax)); break;
+        case YMM2: a.mov(rax, addr); a.vmovaps(ymm2, ymmword_ptr(rax)); break;
+        case YMM3: a.mov(rax, addr); a.vmovaps(ymm3, ymmword_ptr(rax)); break;
+        case YMM4: a.mov(rax, addr); a.vmovaps(ymm4, ymmword_ptr(rax)); break;
+        case YMM5: a.mov(rax, addr); a.vmovaps(ymm5, ymmword_ptr(rax)); break;
+        case YMM6: a.mov(rax, addr); a.vmovaps(ymm6, ymmword_ptr(rax)); break;
+        case YMM7: a.mov(rax, addr); a.vmovaps(ymm7, ymmword_ptr(rax)); break;
+        case YMM8: a.mov(rax, addr); a.vmovaps(ymm8, ymmword_ptr(rax)); break;
+        case YMM9: a.mov(rax, addr); a.vmovaps(ymm9, ymmword_ptr(rax)); break;
+        case YMM10: a.mov(rax, addr); a.vmovaps(ymm10, ymmword_ptr(rax)); break;
+        case YMM11: a.mov(rax, addr); a.vmovaps(ymm11, ymmword_ptr(rax)); break;
+        case YMM12: a.mov(rax, addr); a.vmovaps(ymm12, ymmword_ptr(rax)); break;
+        case YMM13: a.mov(rax, addr); a.vmovaps(ymm13, ymmword_ptr(rax)); break;
+        case YMM14: a.mov(rax, addr); a.vmovaps(ymm14, ymmword_ptr(rax)); break;
+        case YMM15: a.mov(rax, addr); a.vmovaps(ymm15, ymmword_ptr(rax)); break;
 #ifdef AVX512
-        case YMM16: a.vmovaps(ymm16, ymmword_ptr(addr)); break;
-        case YMM17: a.vmovaps(ymm17, ymmword_ptr(addr)); break;
-        case YMM18: a.vmovaps(ymm18, ymmword_ptr(addr)); break;
-        case YMM19: a.vmovaps(ymm19, ymmword_ptr(addr)); break;
-        case YMM20: a.vmovaps(ymm20, ymmword_ptr(addr)); break;
-        case YMM21: a.vmovaps(ymm21, ymmword_ptr(addr)); break;
-        case YMM22: a.vmovaps(ymm22, ymmword_ptr(addr)); break;
-        case YMM23: a.vmovaps(ymm23, ymmword_ptr(addr)); break;
-        case YMM24: a.vmovaps(ymm24, ymmword_ptr(addr)); break;
-        case YMM25: a.vmovaps(ymm25, ymmword_ptr(addr)); break;
-        case YMM26: a.vmovaps(ymm26, ymmword_ptr(addr)); break;
-        case YMM27: a.vmovaps(ymm27, ymmword_ptr(addr)); break;
-        case YMM28: a.vmovaps(ymm28, ymmword_ptr(addr)); break;
-        case YMM29: a.vmovaps(ymm29, ymmword_ptr(addr)); break;
-        case YMM30: a.vmovaps(ymm30, ymmword_ptr(addr)); break;
-        case YMM31: a.vmovaps(ymm31, ymmword_ptr(addr)); break;
+        case YMM16: a.mov(rax, addr); a.vmovaps(ymm16, ymmword_ptr(rax)); break;
+        case YMM17: a.mov(rax, addr); a.vmovaps(ymm17, ymmword_ptr(rax)); break;
+        case YMM18: a.mov(rax, addr); a.vmovaps(ymm18, ymmword_ptr(rax)); break;
+        case YMM19: a.mov(rax, addr); a.vmovaps(ymm19, ymmword_ptr(rax)); break;
+        case YMM20: a.mov(rax, addr); a.vmovaps(ymm20, ymmword_ptr(rax)); break;
+        case YMM21: a.mov(rax, addr); a.vmovaps(ymm21, ymmword_ptr(rax)); break;
+        case YMM22: a.mov(rax, addr); a.vmovaps(ymm22, ymmword_ptr(rax)); break;
+        case YMM23: a.mov(rax, addr); a.vmovaps(ymm23, ymmword_ptr(rax)); break;
+        case YMM24: a.mov(rax, addr); a.vmovaps(ymm24, ymmword_ptr(rax)); break;
+        case YMM25: a.mov(rax, addr); a.vmovaps(ymm25, ymmword_ptr(rax)); break;
+        case YMM26: a.mov(rax, addr); a.vmovaps(ymm26, ymmword_ptr(rax)); break;
+        case YMM27: a.mov(rax, addr); a.vmovaps(ymm27, ymmword_ptr(rax)); break;
+        case YMM28: a.mov(rax, addr); a.vmovaps(ymm28, ymmword_ptr(rax)); break;
+        case YMM29: a.mov(rax, addr); a.vmovaps(ymm29, ymmword_ptr(rax)); break;
+        case YMM30: a.mov(rax, addr); a.vmovaps(ymm30, ymmword_ptr(rax)); break;
+        case YMM31: a.mov(rax, addr); a.vmovaps(ymm31, ymmword_ptr(rax)); break;
 #endif // AVX512
 #endif // ENV64BIT
 
@@ -990,38 +1018,38 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         // >> 512-bit ZMM registers
         // ========================================================================
 #ifdef AVX512
-        case ZMM0: a.vmovaps(zmm0, zmmword_ptr(addr)); break;
-        case ZMM1: a.vmovaps(zmm1, zmmword_ptr(addr)); break;
-        case ZMM2: a.vmovaps(zmm2, zmmword_ptr(addr)); break;
-        case ZMM3: a.vmovaps(zmm3, zmmword_ptr(addr)); break;
-        case ZMM4: a.vmovaps(zmm4, zmmword_ptr(addr)); break;
-        case ZMM5: a.vmovaps(zmm5, zmmword_ptr(addr)); break;
-        case ZMM6: a.vmovaps(zmm6, zmmword_ptr(addr)); break;
-        case ZMM7: a.vmovaps(zmm7, zmmword_ptr(addr)); break;
-        case ZMM8: a.vmovaps(zmm8, zmmword_ptr(addr)); break;
-        case ZMM9: a.vmovaps(zmm9, zmmword_ptr(addr)); break;
-        case ZMM10: a.vmovaps(zmm10, zmmword_ptr(addr)); break;
-        case ZMM11: a.vmovaps(zmm11, zmmword_ptr(addr)); break;
-        case ZMM12: a.vmovaps(zmm12, zmmword_ptr(addr)); break;
-        case ZMM13: a.vmovaps(zmm13, zmmword_ptr(addr)); break;
-        case ZMM14: a.vmovaps(zmm14, zmmword_ptr(addr)); break;
-        case ZMM15: a.vmovaps(zmm15, zmmword_ptr(addr)); break;
-        case ZMM16: a.vmovaps(zmm16, zmmword_ptr(addr)); break;
-        case ZMM17: a.vmovaps(zmm17, zmmword_ptr(addr)); break;
-        case ZMM18: a.vmovaps(zmm18, zmmword_ptr(addr)); break;
-        case ZMM19: a.vmovaps(zmm19, zmmword_ptr(addr)); break;
-        case ZMM20: a.vmovaps(zmm20, zmmword_ptr(addr)); break;
-        case ZMM21: a.vmovaps(zmm21, zmmword_ptr(addr)); break;
-        case ZMM22: a.vmovaps(zmm22, zmmword_ptr(addr)); break;
-        case ZMM23: a.vmovaps(zmm23, zmmword_ptr(addr)); break;
-        case ZMM24: a.vmovaps(zmm24, zmmword_ptr(addr)); break;
-        case ZMM25: a.vmovaps(zmm25, zmmword_ptr(addr)); break;
-        case ZMM26: a.vmovaps(zmm26, zmmword_ptr(addr)); break;
-        case ZMM27: a.vmovaps(zmm27, zmmword_ptr(addr)); break;
-        case ZMM28: a.vmovaps(zmm28, zmmword_ptr(addr)); break;
-        case ZMM29: a.vmovaps(zmm29, zmmword_ptr(addr)); break;
-        case ZMM30: a.vmovaps(zmm30, zmmword_ptr(addr)); break;
-        case ZMM31: a.vmovaps(zmm31, zmmword_ptr(addr)); break;
+        case ZMM0: a.mov(rax, addr); a.vmovaps(zmm0, zmmword_ptr(rax)); break;
+        case ZMM1: a.mov(rax, addr); a.vmovaps(zmm1, zmmword_ptr(rax)); break;
+        case ZMM2: a.mov(rax, addr); a.vmovaps(zmm2, zmmword_ptr(rax)); break;
+        case ZMM3: a.mov(rax, addr); a.vmovaps(zmm3, zmmword_ptr(rax)); break;
+        case ZMM4: a.mov(rax, addr); a.vmovaps(zmm4, zmmword_ptr(rax)); break;
+        case ZMM5: a.mov(rax, addr); a.vmovaps(zmm5, zmmword_ptr(rax)); break;
+        case ZMM6: a.mov(rax, addr); a.vmovaps(zmm6, zmmword_ptr(rax)); break;
+        case ZMM7: a.mov(rax, addr); a.vmovaps(zmm7, zmmword_ptr(rax)); break;
+        case ZMM8: a.mov(rax, addr); a.vmovaps(zmm8, zmmword_ptr(rax)); break;
+        case ZMM9: a.mov(rax, addr); a.vmovaps(zmm9, zmmword_ptr(rax)); break;
+        case ZMM10: a.mov(rax, addr); a.vmovaps(zmm10, zmmword_ptr(rax)); break;
+        case ZMM11: a.mov(rax, addr); a.vmovaps(zmm11, zmmword_ptr(rax)); break;
+        case ZMM12: a.mov(rax, addr); a.vmovaps(zmm12, zmmword_ptr(rax)); break;
+        case ZMM13: a.mov(rax, addr); a.vmovaps(zmm13, zmmword_ptr(rax)); break;
+        case ZMM14: a.mov(rax, addr); a.vmovaps(zmm14, zmmword_ptr(rax)); break;
+        case ZMM15: a.mov(rax, addr); a.vmovaps(zmm15, zmmword_ptr(rax)); break;
+        case ZMM16: a.mov(rax, addr); a.vmovaps(zmm16, zmmword_ptr(rax)); break;
+        case ZMM17: a.mov(rax, addr); a.vmovaps(zmm17, zmmword_ptr(rax)); break;
+        case ZMM18: a.mov(rax, addr); a.vmovaps(zmm18, zmmword_ptr(rax)); break;
+        case ZMM19: a.mov(rax, addr); a.vmovaps(zmm19, zmmword_ptr(rax)); break;
+        case ZMM20: a.mov(rax, addr); a.vmovaps(zmm20, zmmword_ptr(rax)); break;
+        case ZMM21: a.mov(rax, addr); a.vmovaps(zmm21, zmmword_ptr(rax)); break;
+        case ZMM22: a.mov(rax, addr); a.vmovaps(zmm22, zmmword_ptr(rax)); break;
+        case ZMM23: a.mov(rax, addr); a.vmovaps(zmm23, zmmword_ptr(rax)); break;
+        case ZMM24: a.mov(rax, addr); a.vmovaps(zmm24, zmmword_ptr(rax)); break;
+        case ZMM25: a.mov(rax, addr); a.vmovaps(zmm25, zmmword_ptr(rax)); break;
+        case ZMM26: a.mov(rax, addr); a.vmovaps(zmm26, zmmword_ptr(rax)); break;
+        case ZMM27: a.mov(rax, addr); a.vmovaps(zmm27, zmmword_ptr(rax)); break;
+        case ZMM28: a.mov(rax, addr); a.vmovaps(zmm28, zmmword_ptr(rax)); break;
+        case ZMM29: a.mov(rax, addr); a.vmovaps(zmm29, zmmword_ptr(rax)); break;
+        case ZMM30: a.mov(rax, addr); a.vmovaps(zmm30, zmmword_ptr(rax)); break;
+        case ZMM31: a.mov(rax, addr); a.vmovaps(zmm31, zmmword_ptr(rax)); break;
 #endif // AVX512
 
         // ========================================================================
