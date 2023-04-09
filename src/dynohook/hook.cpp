@@ -17,8 +17,7 @@ Hook::Hook(asmjit::JitRuntime& jit, void* func2hook, ICallingConvention* convent
     uint32_t trampolineSize = BuildTrampoline(func2hook, m_pTrampoline, m_OriginalInstructions);
 
     // Create the bridge function
-    //./createBridge();
-    createPostCallback();
+    createBridge();
 
     // Write a jump to the bridge
     void* bridgeFuncMemory = (int8_t*) m_pTrampoline + trampolineSize;

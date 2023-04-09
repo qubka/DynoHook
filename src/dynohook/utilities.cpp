@@ -51,9 +51,8 @@ void* AllocatePageNearAddress(void* targetAddr) {
     uintptr_t maxAddr = (uintptr_t) sysInfo.lpMaximumApplicationAddress;
 #else
     const size_t pageSize = sysconf(_SC_PAGE_SIZE);
-    uintptr_t minAddr;
-    uintptr_t maxAddr;
-    get_application_range(&minAddr, &maxAddr);
+    uintptr_t minAddr = (uintptr_t) pageSize;
+    uintptr_t maxAddr = (uintptr_t) (128ull * 1024 * 1024 * 1024 * 1024);
 #endif
     uintptr_t startAddr = (uintptr_t(targetAddr) & ~(pageSize - 1)); //round down to nearest page boundary
 
@@ -72,14 +71,18 @@ void* AllocatePageNearAddress(void* targetAddr) {
 
         if (highAddr < maxAddr) {
             void* outAddr = AllocateMemory((void*) highAddr, pageSize);
-            if (outAddr)
+            if (outAddr != nullptr && outAddr != (void *)-1)
                 return outAddr;
+            else
+                puts("AllocateMemory failed");
         }
 
         if (lowAddr > minAddr) {
             void* outAddr = AllocateMemory((void*) lowAddr, pageSize);
-            if (outAddr != nullptr)
+            if (outAddr != nullptr && outAddr != (void *)-1)
                 return outAddr;
+            else
+                puts("AllocateMemory failed");
         }
 
         pageOffset++;
