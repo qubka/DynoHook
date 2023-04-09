@@ -487,48 +487,57 @@ std::vector<RegisterType> Hook::createScratchRegisters() const {
 
 void Hook::writeSaveScratchRegisters(Assembler& a) const {
     for (const auto& reg : m_ScratchRegisters) {
-        if (reg.getSize() < SIZE_XMMWORD)
+        if (reg.getType() == RAX) {
             writeRegToMem(a, reg);
+            break;
+        }
     }
+
     for (const auto& reg : m_ScratchRegisters) {
-        if (reg.getSize() >= SIZE_XMMWORD)
+        if (reg.getType() != RAX)
             writeRegToMem(a, reg);
     }
 }
 
 void Hook::writeRestoreScratchRegisters(Assembler& a) const {
     for (const auto& reg : m_ScratchRegisters) {
-        if (reg.getSize() >= SIZE_XMMWORD)
+        if (reg.getType() != RAX)
             writeMemToReg(a, reg);
     }
-    
+
     for (const auto& reg : m_ScratchRegisters) {
-        if (reg.getSize() < SIZE_XMMWORD)
+        if (reg.getType() == RAX) {
             writeMemToReg(a, reg);
+            break;
+        }
     }
 }
 
 void Hook::writeSaveRegisters(Assembler& a, HookType hookType) const {
     for (const auto& reg : m_Registers) {
-        if (reg.getSize() < SIZE_XMMWORD)
-            writeRegToMem(a, reg, hookType);
+        if (reg.getType() == RAX) {
+            writeRegToMem(a, reg);
+            break;
+        }
     }
 
     for (const auto& reg : m_Registers) {
-        if (reg.getSize() >= SIZE_XMMWORD)
-            writeRegToMem(a, reg, hookType);
+        if (reg.getType() != RAX)
+            writeRegToMem(a, reg);
     }
 }
 
 void Hook::writeRestoreRegisters(Assembler& a, HookType hookType) const {
     for (const auto& reg : m_Registers) {
-        if (reg.getSize() >= SIZE_XMMWORD)
-            writeMemToReg(a, reg, hookType);
+        if (reg.getType() != RAX)
+            writeMemToReg(a, reg);
     }
 
     for (const auto& reg : m_Registers) {
-        if (reg.getSize() < SIZE_XMMWORD)
-            writeMemToReg(a, reg, hookType);
+        if (reg.getType() == RAX) {
+            writeMemToReg(a, reg);
+            break;
+        }
     }
 }
 
@@ -614,24 +623,24 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         // ========================================================================
 #ifdef ENV64BIT
         case RAX: a.mov(qword_ptr(addr), rax); break;
-        case RCX: a.mov(qword_ptr(addr), rcx); break;
-        case RDX: a.mov(qword_ptr(addr), rdx); break;
-        case RBX: a.mov(qword_ptr(addr), rbx); break;
-        case RSP: a.mov(qword_ptr(addr), rsp); break;
-        case RBP: a.mov(qword_ptr(addr), rbp); break;
-        case RSI: a.mov(qword_ptr(addr), rsi); break;
-        case RDI: a.mov(qword_ptr(addr), rdi); break;
+        case RCX: a.mov(rax, addr); a.mov(qword_ptr(rax), rcx); break;
+        case RDX: a.mov(rax, addr); a.mov(qword_ptr(rax), rdx); break;
+        case RBX: a.mov(rax, addr); a.mov(qword_ptr(rax), rbx); break;
+        case RSP: a.mov(rax, addr); a.mov(qword_ptr(rax), rsp); break;
+        case RBP: a.mov(rax, addr); a.mov(qword_ptr(rax), rbp); break;
+        case RSI: a.mov(rax, addr); a.mov(qword_ptr(rax), rsi); break;
+        case RDI: a.mov(rax, addr); a.mov(qword_ptr(rax), rdi); break;
 #endif // ENV64BIT
 
 #ifdef ENV64BIT
-        case R8: a.mov(qword_ptr(addr), r8); break;
-        case R9: a.mov(qword_ptr(addr), r9); break;
-        case R10: a.mov(qword_ptr(addr), r10); break;
-        case R11: a.mov(qword_ptr(addr), r11); break;
-        case R12: a.mov(qword_ptr(addr), r12); break;
-        case R13: a.mov(qword_ptr(addr), r13); break;
-        case R14: a.mov(qword_ptr(addr), r14); break;
-        case R15: a.mov(qword_ptr(addr), r15); break;
+        case R8: a.mov(rax, addr); a.mov(qword_ptr(rax), r8); break;
+        case R9: a.mov(rax, addr); a.mov(qword_ptr(rax), r9); break;
+        case R10: a.mov(rax, addr); a.mov(qword_ptr(rax), r10); break;
+        case R11: a.mov(rax, addr); a.mov(qword_ptr(rax), r11); break;
+        case R12: a.mov(rax, addr); a.mov(qword_ptr(rax), r12); break;
+        case R13: a.mov(rax, addr); a.mov(qword_ptr(rax), r13); break;
+        case R14: a.mov(rax, addr); a.mov(qword_ptr(rax), r14); break;
+        case R15: a.mov(rax, addr); a.mov(qword_ptr(rax), r15); break;
 #endif // ENV64BIT
 
         // ========================================================================
@@ -892,25 +901,25 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         // >> 64-bit General purpose registers
         // ========================================================================
 #ifdef ENV64BIT
-        case RAX: a.mov(rax, addr); a.mov(rax, qword_ptr(addr)); break;
-        case RCX: a.mov(rcx, qword_ptr(addr)); break;
-        case RDX: a.mov(rdx, qword_ptr(addr)); break;
-        case RBX: a.mov(rbx, qword_ptr(addr)); break;
-        case RSP: a.mov(rsp, qword_ptr(addr)); break;
-        case RBP: a.mov(rbp, qword_ptr(addr)); break;
-        case RSI: a.mov(rsi, qword_ptr(addr)); break;
-        case RDI: a.mov(rdi, qword_ptr(addr)); break;
+        case RAX: a.mov(rax, qword_ptr(addr)); break;
+        case RCX: a.mov(rax, addr); a.mov(rcx, qword_ptr(rax)); break;
+        case RDX: a.mov(rax, addr); a.mov(rdx, qword_ptr(rax)); break;
+        case RBX: a.mov(rax, addr); a.mov(rbx, qword_ptr(rax)); break;
+        case RSP: a.mov(rax, addr); a.mov(rsp, qword_ptr(rax)); break;
+        case RBP: a.mov(rax, addr); a.mov(rbp, qword_ptr(rax)); break;
+        case RSI: a.mov(rax, addr); a.mov(rsi, qword_ptr(rax)); break;
+        case RDI: a.mov(rax, addr); a.mov(rdi, qword_ptr(rax)); break;
 #endif // ENV64BIT
 
 #ifdef ENV64BIT
-        case R8: a.mov(r8, qword_ptr(addr)); break;
-        case R9: a.mov(r9, qword_ptr(addr)); break;
-        case R10: a.mov(r10, qword_ptr(addr)); break;
-        case R11: a.mov(r11, qword_ptr(addr)); break;
-        case R12: a.mov(r12, qword_ptr(addr)); break;
-        case R13: a.mov(r13, qword_ptr(addr)); break;
-        case R14: a.mov(r14, qword_ptr(addr)); break;
-        case R15: a.mov(r15, qword_ptr(addr)); break;
+        case R8: a.mov(rax, addr); a.mov(r8, qword_ptr(rax)); break;
+        case R9: a.mov(rax, addr); a.mov(r9, qword_ptr(rax)); break;
+        case R10: a.mov(rax, addr); a.mov(r10, qword_ptr(rax)); break;
+        case R11: a.mov(rax, addr); a.mov(r11, qword_ptr(rax)); break;
+        case R12: a.mov(rax, addr); a.mov(r12, qword_ptr(rax)); break;
+        case R13: a.mov(rax, addr); a.mov(r13, qword_ptr(rax)); break;
+        case R14: a.mov(rax, addr); a.mov(r14, qword_ptr(rax)); break;
+        case R15: a.mov(rax, addr); a.mov(r15, qword_ptr(rax)); break;
 #endif // ENV64BIT
 
         // ========================================================================
