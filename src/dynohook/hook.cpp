@@ -166,7 +166,7 @@ void Hook::setReturnAddress(void* retAddr, void* stackPtr) {
 }
 
 // Used to print generated assembly
-#if 1
+#if 0
 FileLogger logger(stdout);
 #define LOGGER(a) a.setLogger(&logger);
 #else
@@ -207,7 +207,7 @@ void Hook::createBridge() const {
     // This will still call post hooks, but will skip the original function.
     size_t popSize = m_pCallingConvention->getPopSize();
     if (popSize > 0)
-        a.ret(imm(popSize));
+        a.ret(popSize);
     else
         a.ret();
 
@@ -237,14 +237,16 @@ void Hook::writeModifyReturnAddress(Assembler& a) const {
     a.sub(rsp, 40);
     a.mov(r8, rcx);
     a.mov(rdx, rax);
-    a.mov(rcx, imm(uintptr_t(this)));
-    a.call((void*&) setReturnAddress);
+    a.mov(rcx, this);
+    a.mov(rax, (void *&) setReturnAddress);
+    a.call(rax);
     a.add(rsp, 40);
 #else // __linux__
     a.mov(rdx, rcx);
     a.mov(rsi, rax);
-    a.mov(rdi, imm(uintptr_t(this)));
-    a.call((void*&) setReturnAddress);
+    a.mov(rdi, this);
+    a.mov(rax, (void *&) setReturnAddress);
+    a.call(rax);
 #endif
 #else // ENV32BIT
     // Store the return address in eax
@@ -252,7 +254,7 @@ void Hook::writeModifyReturnAddress(Assembler& a) const {
 
     a.push(esp);
     a.push(eax);
-    a.push(imm(uintptr_t(this)));
+    a.push(this);
     a.call((void*&) setReturnAddress);
     a.add(esp, 12);
 #endif // ENV32BIT
@@ -265,11 +267,11 @@ void Hook::writeModifyReturnAddress(Assembler& a) const {
 #ifdef ENV64BIT
     // Using rax because not possible to MOV r/m64, imm64
     a.push(rax);
-    a.mov(rax, imm(uintptr_t(m_pNewRetAddr)));
+    a.mov(rax, m_pNewRetAddr);
     a.mov(qword_ptr(rsp, 8), rax);
     a.pop(rax);
 #else // ENV32BIT
-    a.mov(dword_ptr(esp), uintptr_t(m_pNewRetAddr));
+    a.mov(dword_ptr(esp), m_pNewRetAddr);
 #endif
 }
 
@@ -289,9 +291,9 @@ void Hook::createPostCallback() const {
     // Subtract the previously added bytes (stack size + return address), so
     // that we can access the arguments again
 #ifdef ENV64BIT
-    a.sub(rsp, imm(popSize));
+    a.sub(rsp, popSize);
 #else // ENV32BIT
-    a.sub(esp, imm(popSize));
+    a.sub(esp, popSize);
 #endif
 
     // Call the post-hook handler
@@ -313,44 +315,35 @@ void Hook::createPostCallback() const {
 #if _WIN64
     a.sub(rsp, 40);
     a.mov(rdx, rax);
-    a.mov(rcx, imm(uintptr_t(this)));
-    a.call((void*&) getReturnAddress);
+    a.mov(rcx, this);
+    a.mov(rax, (void *&) getReturnAddress);
+    a.call(rax);
     a.add(rsp, 40);
 #else // __linux__
     a.mov(rsi, rax);
-    a.mov(rdi, imm(uintptr_t(this)));
-    a.call((void*&) getReturnAddress);
+    a.mov(rdi, this);
+    a.mov(rax, (void *&) getReturnAddress);
+    a.call(rax);
 #endif
     // Save the original return address
-    a.mov(qword_ptr(uintptr_t(&m_pRetAddr)), rax);
+    a.push(rax);
 #else // ENV32BIT
     a.push(esp);
-    a.push(imm(uintptr_t(this)));
+    a.push(this);
     a.call((void*&) getReturnAddress);
     a.add(esp, 8);
 
     // Save the original return address
-    a.mov(dword_ptr(uintptr_t(&m_pRetAddr)), eax);
+    a.push(eax);
 #endif
 
     // Restore scratch registers
     writeRestoreScratchRegisters(a);
 
-#ifdef ENV64BIT
-    // Add the bytes again to the stack (return address), so we
-    // don't corrupt the stack.
-    a.add(rsp, imm(popSize));
-
-    // Jump to the original return address
-    a.jmp(qword_ptr(uintptr_t(&m_pRetAddr)));
-#else // ENV32BIT
+    // Return to the original address
     // Add the bytes again to the stack (stack size + return address), so we
     // don't corrupt the stack.
-    a.add(esp, imm(popSize));
-
-    // Jump to the original return address
-    a.jmp(dword_ptr(uintptr_t(&m_pRetAddr)));
-#endif
+    a.ret(popSize);
 
     // Generate code
     Error err = m_Jit.add(&m_pNewRetAddr, &code);
@@ -370,19 +363,21 @@ void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
 #if _WIN64
     a.sub(rsp, 40);
     a.mov(dl, hookType);
-    a.mov(rcx, imm(uintptr_t(this)));
-    a.call((void *&) hookHandler);
+    a.mov(rcx, this);
+    a.mov(rax, (void *&) hookHandler);
+    a.call(rax);
     a.add(rsp, 40);
 #else // __linux__
     a.mov(sil, hookType);
-    a.mov(rdi, imm(uintptr_t(this)));
-    a.call((void*&) hookHandler);
+    a.mov(rdi, this);
+    a.mov(rax, (void *&) hookHandler);
+    a.call(rax);
 #endif
 #else // ENV32BIT
 	// Subtract 4 bytes to preserve 16-Byte stack alignment for Linux
 	a.sub(esp, 4);
 	a.push(hookType);
-	a.push(imm(uintptr_t(this)));
+	a.push(this);
 	a.call((void *&) hookHandler);
 	a.add(esp, 12);
 #endif

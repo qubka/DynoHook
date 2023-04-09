@@ -137,7 +137,6 @@ namespace dyno {
 
         //
         std::map<void*, std::vector<void*>> m_RetAddr;
-        void* m_pRetAddr;
 
         // Runtime designed for JIT
         asmjit::JitRuntime& m_Jit;
