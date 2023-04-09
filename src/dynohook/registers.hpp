@@ -277,9 +277,6 @@ namespace dyno {
     };
 
     class Register {
-    private:
-        friend class Registers;
-
     public:
         Register(RegisterType type, size_t size, size_t alignment = 0) : m_iSize(size), m_iAlignment(alignment), m_nType{type} {
             if (size == 0)
@@ -334,13 +331,13 @@ namespace dyno {
             return m_pAddress;
         }
 
+        operator RegisterType() const {
+            return m_nType;
+        }
+
         template<class T>
         T getAddress() const {
             return (T) m_pAddress;
-        }
-
-        size_t getSize() const {
-            return m_iSize;
         }
 
         template<class T>
@@ -361,14 +358,6 @@ namespace dyno {
         template<class T>
         void setPointerValue(T value, size_t offset = 0) {
             *(T*) (getValue<uintptr_t>() + offset) = value;
-        }
-
-        RegisterType getType() const {
-            return m_nType;
-        }
-
-        size_t getAlignment() const {
-            return m_iAlignment;
         }
 
     private:

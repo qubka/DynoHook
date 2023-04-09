@@ -17,20 +17,18 @@ const Register& Registers::operator[](RegisterType regType) const {
 const Register& Registers::at(RegisterType regType, bool reverse) const {
     static Register s_None{NONE, 0};
 
-    if (reverse) {
+    if (reverse)
         for (size_t i = m_Registers.size() - 1; i != -1; --i) {
             const auto& reg = m_Registers[i];
-            if (reg.getType() == regType) {
+            if (reg == regType)
                 return reg;
-            }
         }
-    } else {
+    else
         for (const auto& reg : m_Registers) {
-            if (reg.getType() == regType) {
+            if (reg == regType)
                 return reg;
-            }
         }
-    }
+
 
     return s_None;
 }

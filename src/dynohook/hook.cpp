@@ -43,22 +43,22 @@ Hook::~Hook() {
         memcpy(m_pFunc, m_OriginalInstructions.data(), m_OriginalInstructions.size());
 }
 
-void Hook::addCallback(HookType hookType, HookHandler* pCallback) {
-    if (!pCallback)
+void Hook::addCallback(HookType hookType, HookHandler* handler) {
+    if (!handler)
         return;
 
     std::vector<HookHandler*>& callbacks = m_Handlers[hookType];
 
     for (const HookHandler* callback : callbacks) {
-        if (callback == pCallback)
+        if (callback == handler)
             return;
     }
 
-    callbacks.push_back(pCallback);
+    callbacks.push_back(handler);
 }
 
-void Hook::removeCallback(HookType hookType, HookHandler* pCallback) {
-    if (!pCallback)
+void Hook::removeCallback(HookType hookType, HookHandler* handler) {
+    if (!handler)
         return;
 
     auto it = m_Handlers.find(hookType);
@@ -68,14 +68,14 @@ void Hook::removeCallback(HookType hookType, HookHandler* pCallback) {
     std::vector<HookHandler*>& callbacks = it->second;
 
     for (size_t i = 0; i < callbacks.size(); ++i) {
-        if (callbacks[i] == pCallback) {
+        if (callbacks[i] == handler) {
             callbacks.erase(callbacks.begin() + i);
             return;
         }
     }
 }
 
-bool Hook::isCallbackRegistered(HookType hookType, HookHandler* pCallback) const {
+bool Hook::isCallbackRegistered(HookType hookType, HookHandler* handler) const {
     auto it = m_Handlers.find(hookType);
     if (it == m_Handlers.end())
         return false;
@@ -83,7 +83,7 @@ bool Hook::isCallbackRegistered(HookType hookType, HookHandler* pCallback) const
     const std::vector<HookHandler*>& callbacks = it->second;
 
     for (const HookHandler* callback : callbacks) {
-        if (callback == pCallback)
+        if (callback == handler)
             return true;
     }
 
@@ -315,7 +315,7 @@ void Hook::createPostCallback() const {
 
 #ifdef ENV64BIT
     // Save current stack pointer
-    a.mov(rax, rsp);
+    a.mov( rax, rsp);
 
 #if _WIN64
     a.sub(rsp, 40);
@@ -413,8 +413,9 @@ std::vector<RegisterType> Hook::createScratchRegisters() const {
     registers.push_back(R10);
     registers.push_back(R11);
 #endif
+    registers.push_back(XMM0);
 // TODO: Do we need to save all sse registers ?
-#ifdef AVX512
+/*#ifdef AVX512
     registers.push_back(ZMM0);
     registers.push_back(ZMM1);
     registers.push_back(ZMM2);
@@ -448,7 +449,7 @@ std::vector<RegisterType> Hook::createScratchRegisters() const {
     registers.push_back(ZMM30);
     registers.push_back(ZMM31);
 #else
-    registers.push_back(YMM0);
+    /*registers.push_back(YMM0);
     registers.push_back(YMM1);
     registers.push_back(YMM2);
     registers.push_back(YMM3);
@@ -464,49 +465,43 @@ std::vector<RegisterType> Hook::createScratchRegisters() const {
     registers.push_back(YMM13);
     registers.push_back(YMM14);
     registers.push_back(YMM15);
-#endif // AVX512
+#endif // AVX512*/
 #else // ENV32BIT
     registers.push_back(EAX);
     registers.push_back(ECX);
     registers.push_back(EDX);
-
-    /*
-        registers.push_back(XMM0);
-        registers.push_back(XMM1);
-        registers.push_back(XMM2);
-        registers.push_back(XMM3);
-        registers.push_back(XMM4);
-        registers.push_back(XMM5);
-        registers.push_back(XMM6);
-        registers.push_back(XMM7);
-     */
 #endif
     
     return registers;
 }
 
+#ifdef ENV64BIT
 void Hook::writeSaveScratchRegisters(Assembler& a) const {
+    // Save rax first, because we use it to save others
+
     for (const auto& reg : m_ScratchRegisters) {
-        if (reg.getType() == RAX) {
+        if (reg == RAX) {
             writeRegToMem(a, reg);
             break;
         }
     }
 
     for (const auto& reg : m_ScratchRegisters) {
-        if (reg.getType() != RAX)
+        if (reg != RAX)
             writeRegToMem(a, reg);
     }
 }
 
 void Hook::writeRestoreScratchRegisters(Assembler& a) const {
+    // Restore rax last, because we use it to restore others
+
     for (const auto& reg : m_ScratchRegisters) {
-        if (reg.getType() != RAX)
+        if (reg != RAX)
             writeMemToReg(a, reg);
     }
 
     for (const auto& reg : m_ScratchRegisters) {
-        if (reg.getType() == RAX) {
+        if (reg == RAX) {
             writeMemToReg(a, reg);
             break;
         }
@@ -514,34 +509,37 @@ void Hook::writeRestoreScratchRegisters(Assembler& a) const {
 }
 
 void Hook::writeSaveRegisters(Assembler& a, HookType hookType) const {
+    // Save rax first, because we use it to save others
+
     for (const auto& reg : m_Registers) {
-        if (reg.getType() == RAX) {
+        if (reg == RAX) {
             writeRegToMem(a, reg);
             break;
         }
     }
 
     for (const auto& reg : m_Registers) {
-        if (reg.getType() != RAX)
+        if (reg != RAX)
             writeRegToMem(a, reg);
     }
 }
 
 void Hook::writeRestoreRegisters(Assembler& a, HookType hookType) const {
+    // Restore rax last, because we use it to restore others
+
     for (const auto& reg : m_Registers) {
-        if (reg.getType() != RAX)
+        if (reg != RAX)
             writeMemToReg(a, reg);
     }
 
     for (const auto& reg : m_Registers) {
-        if (reg.getType() == RAX) {
+        if (reg == RAX) {
             writeMemToReg(a, reg);
             break;
         }
     }
 }
 
-#ifdef ENV64BIT
 void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) const {
     /**
      * The moffs8, moffs16, moffs32 and moffs64 operands specify a simple offset relative to the segment base,
@@ -549,11 +547,11 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
      * Supported only by RAX, EAX, AX, AL registers.
      */
     uintptr_t addr = reg.getAddress<uintptr_t>();
-    switch (reg.getType()) {
+    switch (reg) {
         // ========================================================================
         // >> 8-bit General purpose registers
         // ========================================================================
-        case AL: a.mov(rax, addr); a.mov(byte_ptr(rax), al); break;
+        case AL: a.mov(byte_ptr(addr), al); break;
         case CL: a.mov(rax, addr); a.mov(byte_ptr(rax), cl); break;
         case DL: a.mov(rax, addr); a.mov(byte_ptr(rax), dl); break;
         case BL: a.mov(rax, addr); a.mov(byte_ptr(rax), bl); break;
@@ -579,7 +577,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         // ========================================================================
         // >> 16-bit General purpose registers
         // ========================================================================
-        case AX: a.mov(rax, addr); a.mov(word_ptr(rax), ax); break;
+        case AX: a.mov(word_ptr(addr), ax); break;
         case CX: a.mov(rax, addr); a.mov(word_ptr(rax), cx); break;
         case DX: a.mov(rax, addr); a.mov(word_ptr(rax), dx); break;
         case BX: a.mov(rax, addr); a.mov(word_ptr(rax), bx); break;
@@ -600,7 +598,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         // ========================================================================
         // >> 32-bit General purpose registers
         // ========================================================================
-        case EAX: a.mov(rax, addr); a.mov(dword_ptr(rax), eax); break;
+        case EAX: a.mov(dword_ptr(addr), eax); break;
         case ECX: a.mov(rax, addr); a.mov(dword_ptr(rax), ecx); break;
         case EDX: a.mov(rax, addr); a.mov(dword_ptr(rax), edx); break;
         case EBX: a.mov(rax, addr); a.mov(dword_ptr(rax), ebx); break;
@@ -621,7 +619,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         // ========================================================================
         // >> 64-bit General purpose registers
         // ========================================================================
-        case RAX: a.mov(rax, addr); a.mov(qword_ptr(rax), rax); break;
+        case RAX: a.mov(qword_ptr(addr), rax); break;
         case RCX: a.mov(rax, addr); a.mov(qword_ptr(rax), rcx); break;
         case RDX: a.mov(rax, addr); a.mov(qword_ptr(rax), rdx); break;
         case RBX: a.mov(rax, addr); a.mov(qword_ptr(rax), rbx); break;
@@ -671,7 +669,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         case XMM14: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm14); break;
         case XMM15: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm15); break;
 #ifdef AVX512
-            case XMM16: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm16); break;
+        case XMM16: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm16); break;
         case XMM17: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm17); break;
         case XMM18: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm18); break;
         case XMM19: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm19); break;
@@ -787,7 +785,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
      */
 
     uintptr_t addr = reg.getAddress<uintptr_t>();
-    switch (reg.getType()) {
+    switch (reg) {
         // ========================================================================
         // >> 8-bit General purpose registers
         // ========================================================================
@@ -1017,9 +1015,33 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
     }
 }
 #else // ENV32BIT
+void Hook::writeSaveScratchRegisters(Assembler& a) const {
+    for (const auto& reg : m_ScratchRegisters) {
+        writeRegToMem(a, reg);
+    }
+}
+
+void Hook::writeRestoreScratchRegisters(Assembler& a) const {
+    for (const auto& reg : m_ScratchRegisters) {
+        writeMemToReg(a, reg);
+    }
+}
+
+void Hook::writeSaveRegisters(Assembler& a, HookType hookType) const {
+    for (const auto& reg : m_Registers) {
+        writeRegToMem(a, reg, hookType);
+    }
+}
+
+void Hook::writeRestoreRegisters(Assembler& a, HookType hookType) const {
+    for (const auto& reg : m_Registers) {
+        writeMemToReg(a, reg, hookType);
+    }
+}
+
 void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) const {
     uintptr_t addr = reg.getAddress<uintptr_t>();
-    switch (reg.getType()) {
+    switch (reg) {
         // ========================================================================
         // >> 8-bit General purpose registers
         // ========================================================================
@@ -1119,7 +1141,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
 
 void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) const {
     uintptr_t addr = reg.getAddress<uintptr_t>();
-    switch (reg.getType()) {
+    switch (reg) {
         // ========================================================================
         // >> 8-bit General purpose registers
         // ========================================================================
