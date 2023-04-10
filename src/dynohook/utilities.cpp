@@ -52,7 +52,7 @@ void* AllocatePageNearAddress(void* targetAddr) {
 #else
     const size_t pageSize = sysconf(_SC_PAGE_SIZE);
     uintptr_t minAddr = (uintptr_t) pageSize;
-    uintptr_t maxAddr = uintptr_t(-1) - minAddr;
+    uintptr_t maxAddr = (uint64_t) (128ull * 1024 * 1024 * 1024 * 1024);
     using namespace std;
 #endif
 
