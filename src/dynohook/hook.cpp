@@ -166,7 +166,7 @@ void Hook::setReturnAddress(void* retAddr, void* stackPtr) {
 }
 
 // Used to print generated assembly
-#if 0
+#if 1
 FileLogger logger(stdout);
 #define LOGGER(a) a.setLogger(&logger);
 #else
@@ -315,7 +315,7 @@ void Hook::createPostCallback() const {
 
 #ifdef ENV64BIT
     // Save current stack pointer
-    a.mov( rax, rsp);
+    a.mov(rax, rsp);
 
 #if _WIN64
     a.sub(rsp, 40);

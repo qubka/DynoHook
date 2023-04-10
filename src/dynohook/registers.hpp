@@ -1,7 +1,5 @@
 #pragma once
 
-//#define AVX512
-
 namespace dyno {
     enum RegisterType : uint8_t {
         // No register at all.
