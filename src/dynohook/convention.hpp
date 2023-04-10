@@ -126,9 +126,9 @@ namespace dyno {
          * @param alignment
          */
         ICallingConvention(std::vector<DataTypeSized> arguments, DataTypeSized returnType, size_t alignment) :
-            m_Arguments{std::move(arguments)},
-            m_ReturnType{returnType},
-            m_iAlignment{alignment} {
+            m_arguments{std::move(arguments)},
+            m_returnType{returnType},
+            m_alignment{alignment} {
         }
         virtual ~ICallingConvention() = default;
 
@@ -182,9 +182,9 @@ namespace dyno {
          * @param registers A snapshot of all saved registers.
          */
         virtual void saveReturnValue(const Registers& registers) {
-            std::unique_ptr<uint8_t[]> savedReturnValue = std::make_unique<uint8_t[]>(m_ReturnType.size);
-            memcpy(savedReturnValue.get(), getReturnPtr(registers), m_ReturnType.size);
-            m_SavedReturnBuffers.push_back(std::move(savedReturnValue));
+            std::unique_ptr<uint8_t[]> savedReturnValue = std::make_unique<uint8_t[]>(m_returnType.size);
+            memcpy(savedReturnValue.get(), getReturnPtr(registers), m_returnType.size);
+            m_savedReturnBuffers.push_back(std::move(savedReturnValue));
         }
 
         /**
@@ -192,10 +192,10 @@ namespace dyno {
          * @param registers A snapshot of all saved registers.
          */
         virtual void restoreReturnValue(const Registers& registers) {
-            uint8_t* savedReturnValue = m_SavedReturnBuffers.back().get();
-            memcpy(getReturnPtr(registers), savedReturnValue, m_ReturnType.size);
+            uint8_t* savedReturnValue = m_savedReturnBuffers.back().get();
+            memcpy(getReturnPtr(registers), savedReturnValue, m_returnType.size);
             onReturnPtrChanged(registers, savedReturnValue);
-            m_SavedReturnBuffers.pop_back();
+            m_savedReturnBuffers.pop_back();
         }
 
         /**
@@ -209,12 +209,12 @@ namespace dyno {
             size_t argTotalSize = getArgStackSize() + getArgRegisterSize();
             std::unique_ptr<uint8_t[]> savedCallArguments = std::make_unique<uint8_t[]>(argTotalSize);
             size_t offset = 0;
-            for (size_t i = 0; i < m_Arguments.size(); ++i) {
-                size_t size = m_Arguments[i].size;
+            for (size_t i = 0; i < m_arguments.size(); ++i) {
+                size_t size = m_arguments[i].size;
                 memcpy((void*) ((uintptr_t) savedCallArguments.get() + offset), getArgumentPtr(i, registers), size);
                 offset += size;
             }
-            m_SavedCallArguments.push_back(std::move(savedCallArguments));
+            m_savedCallArguments.push_back(std::move(savedCallArguments));
         }
 
         /**
@@ -222,14 +222,14 @@ namespace dyno {
          * @param registers A snapshot of all saved registers.
          */
         virtual void restoreCallArguments(const Registers& registers) {
-            uint8_t* savedCallArguments = m_SavedCallArguments.back().get();
+            uint8_t* savedCallArguments = m_savedCallArguments.back().get();
             size_t offset = 0;
-            for (size_t i = 0; i < m_Arguments.size(); ++i) {
-                size_t size = m_Arguments[i].size;
+            for (size_t i = 0; i < m_arguments.size(); ++i) {
+                size_t size = m_arguments[i].size;
                 memcpy(getArgumentPtr(i, registers), (void*) ((uintptr_t) savedCallArguments + offset), size);
                 offset += size;
             }
-            m_SavedCallArguments.pop_back();
+            m_savedCallArguments.pop_back();
         }
 
         /**
@@ -245,7 +245,7 @@ namespace dyno {
          * @return
          */
         size_t getArgStackSize() const {
-            return m_iStackSize;
+            return m_stackSize;
         }
 
         /**
@@ -253,50 +253,50 @@ namespace dyno {
          * @return
          */
         size_t getArgRegisterSize() const {
-            return m_iRegisterSize;
+            return m_registerSize;
         }
 
         const std::vector<DataTypeSized>& getArguments() const {
-            return m_Arguments;
+            return m_arguments;
         }
 
         DataTypeSized getReturnType() const {
-            return m_ReturnType;
+            return m_returnType;
         }
 
         size_t getAlignment() const {
-            return m_iAlignment;
+            return m_alignment;
         }
 
     protected:
         void init() {
-            m_iStackSize = 0;
-            m_iRegisterSize = 0;
+            m_stackSize = 0;
+            m_registerSize = 0;
 
-            for (auto& [type, reg, size] : m_Arguments) {
+            for (auto& [type, reg, size] : m_arguments) {
                 if (!size)
-                    size = GetDataTypeSize(type, m_iAlignment);
+                    size = GetDataTypeSize(type, m_alignment);
 
                 if (reg == NONE)
-                    m_iStackSize += size;
+                    m_stackSize += size;
                 else
-                    m_iRegisterSize += size;
+                    m_registerSize += size;
             }
 
-            if (!m_ReturnType.size)
-                m_ReturnType.size = GetDataTypeSize(m_ReturnType, m_iAlignment);
+            if (!m_returnType.size)
+                m_returnType.size = GetDataTypeSize(m_returnType, m_alignment);
         }
 
     protected:
-        std::vector<DataTypeSized> m_Arguments;
-        DataTypeSized m_ReturnType;
-        size_t m_iAlignment;
-        size_t m_iStackSize;
-        size_t m_iRegisterSize;
+        std::vector<DataTypeSized> m_arguments;
+        DataTypeSized m_returnType;
+        size_t m_alignment;
+        size_t m_stackSize;
+        size_t m_registerSize;
 
         // Save the return in case we call the original function and want to override the return again.
-        std::vector<std::unique_ptr<uint8_t[]>> m_SavedReturnBuffers;
+        std::vector<std::unique_ptr<uint8_t[]>> m_savedReturnBuffers;
         // Save call arguments in case the function reuses the space and overwrites the values for the post hook.
-        std::vector<std::unique_ptr<uint8_t[]>> m_SavedCallArguments;
+        std::vector<std::unique_ptr<uint8_t[]>> m_savedCallArguments;
     };
 }

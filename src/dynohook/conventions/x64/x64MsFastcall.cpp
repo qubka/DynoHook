@@ -10,18 +10,18 @@ x64MsFastcall::x64MsFastcall(std::vector<DataTypeSized> arguments, DataTypeSized
     RegisterType registers[] = { RCX, RDX, R8, R9 };
     RegisterType sseRegisters[] = { XMM0, XMM1, XMM2, XMM3 };
 
-    size_t argSize = std::min(4, (int) m_Arguments.size());
+    size_t argSize = std::min(4, (int) m_arguments.size());
 
     for (size_t i = 0; i < argSize; ++i) {
-        DataTypeSized& arg = m_Arguments[i];
+        DataTypeSized& arg = m_arguments[i];
 
         // RCX, RDX, R8, R9 for integer, struct or pointer arguments (in that order), and XMM0, XMM1, XMM2, XMM3 for floating point arguments
         if (arg.reg == NONE)
             arg.reg = arg.isFlt() || arg.type == DATA_TYPE_M128 ? sseRegisters[i] : registers[i];
     }
 
-    if (m_ReturnType.reg == NONE)
-        m_ReturnType.reg = m_ReturnType.isFlt() || m_ReturnType.type == DATA_TYPE_M128 ? XMM0 : RAX;
+    if (m_returnType.reg == NONE)
+        m_returnType.reg = m_returnType.isFlt() || m_returnType.type == DATA_TYPE_M128 ? XMM0 : RAX;
 
     init();
 }
@@ -35,7 +35,7 @@ std::vector<RegisterType> x64MsFastcall::getRegisters() {
     registers.push_back(RSP);
 
     // Save all the custom calling convention registers as well.
-    for (const auto& [type, reg, size] : m_Arguments) {
+    for (const auto& [type, reg, size] : m_arguments) {
         if (reg == NONE)
             continue;
 
@@ -43,7 +43,7 @@ std::vector<RegisterType> x64MsFastcall::getRegisters() {
     }
 
     // Save return register as last
-    registers.push_back(m_ReturnType.reg);
+    registers.push_back(m_returnType.reg);
 
     return registers;
 }
@@ -53,11 +53,11 @@ void** x64MsFastcall::getStackArgumentPtr(const Registers& registers) {
 }
 
 void* x64MsFastcall::getArgumentPtr(size_t index, const Registers& registers) {
-    if (index >= m_Arguments.size())
+    if (index >= m_arguments.size())
         return nullptr;
 
     // Check if this argument was passed in a register.
-    RegisterType regType = m_Arguments[index].reg;
+    RegisterType regType = m_arguments[index].reg;
     if (regType != NONE)
         return *registers[regType];
 
@@ -66,18 +66,18 @@ void* x64MsFastcall::getArgumentPtr(size_t index, const Registers& registers) {
 
     size_t offset = 8;
     for (size_t i = 0; i < index; ++i) {
-        const auto& [type, reg, size] = m_Arguments[i];
+        const auto& [type, reg, size] = m_arguments[i];
         if (reg == NONE)
             offset += size;
         else if (i < 4)
-            offset += m_iAlignment;
+            offset += m_alignment;
     }
 
     return (void*) (registers[RSP].getValue<uintptr_t>() + offset);
 }
 
 void* x64MsFastcall::getReturnPtr(const Registers& registers) {
-    return *registers.at(m_ReturnType.reg, true);
+    return *registers.at(m_returnType.reg, true);
 }
 
 #endif // ENV64BIT

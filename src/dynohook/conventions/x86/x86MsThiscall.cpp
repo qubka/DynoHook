@@ -7,8 +7,8 @@ using namespace dyno;
 x86MsThiscall::x86MsThiscall(std::vector<DataTypeSized> arguments, DataTypeSized returnType, size_t alignment) :
     x86MsStdcall{std::move(arguments), returnType, alignment} {
 
-    if (!m_Arguments.empty()) {
-        m_Arguments[0].reg = ECX;
+    if (!m_arguments.empty()) {
+        m_arguments[0].reg = ECX;
     }
 
     init();

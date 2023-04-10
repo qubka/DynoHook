@@ -10,8 +10,8 @@ x64SystemVcall::x64SystemVcall(std::vector<DataTypeSized> arguments, DataTypeSiz
 
     RegisterType registers[] = { RDI, RSI, RDX, RCX, R8, R9 };
 
-    for (size_t i = 0, j = 0, k = 0; i <  m_Arguments.size(); ++i) {
-        DataTypeSized& arg = m_Arguments[i];
+    for (size_t i = 0, j = 0, k = 0; i < m_arguments.size(); ++i) {
+        DataTypeSized& arg = m_arguments[i];
 
         if (arg.reg == NONE) {
             // Floating Point Arguments 1-8 ([XYZ]MM0 - [XYZ]MM7)
@@ -25,25 +25,25 @@ x64SystemVcall::x64SystemVcall(std::vector<DataTypeSized> arguments, DataTypeSiz
         }
     }
 
-    bool nonScalar = m_ReturnType.isFlt() || m_ReturnType.isHva();
+    bool nonScalar = m_returnType.isFlt() || m_returnType.isHva();
 
     // Integer return values up to 64 bits in size are stored in RAX while values up to 128 bit are stored in RAX and RDX.
     // Floating-point return values are similarly stored in [XYZ]MM0 and [XYZ]MM1. TODO: We used [XYZ]MM0 by default, how we can detect another ?
 
-    if (!nonScalar && m_ReturnType.size > 8)
-        m_pReturnBuffer = malloc(m_ReturnType.size);
+    if (!nonScalar && m_returnType.size > 8)
+        m_returnBuffer = malloc(m_returnType.size);
     else
-        m_pReturnBuffer = nullptr;
+        m_returnBuffer = nullptr;
 
-    if (m_ReturnType.reg == NONE)
-        m_ReturnType.reg = nonScalar ? SSEIndexToRegisterType(0, m_ReturnType.size) : RAX;
+    if (m_returnType.reg == NONE)
+        m_returnType.reg = nonScalar ? SSEIndexToRegisterType(0, m_returnType.size) : RAX;
 
     init();
 }
 
 x64SystemVcall::~x64SystemVcall() {
-    if (m_pReturnBuffer)
-        free(m_pReturnBuffer);
+    if (m_returnBuffer)
+        free(m_returnBuffer);
 }
 
 std::vector<RegisterType> x64SystemVcall::getRegisters() {
@@ -52,7 +52,7 @@ std::vector<RegisterType> x64SystemVcall::getRegisters() {
     registers.push_back(RSP);
 
     // Save all the custom calling convention registers as well.
-    for (const auto& [type, reg, size] : m_Arguments) {
+    for (const auto& [type, reg, size] : m_arguments) {
         if (reg == NONE)
             continue;
 
@@ -60,11 +60,11 @@ std::vector<RegisterType> x64SystemVcall::getRegisters() {
     }
 
     // Save return register as last
-    if (m_pReturnBuffer) {
+    if (m_returnBuffer) {
         registers.push_back(RAX);
         registers.push_back(RDX);
     } else {
-        registers.push_back(m_ReturnType.reg);
+        registers.push_back(m_returnType.reg);
     }
 
     return registers;
@@ -75,17 +75,17 @@ void** x64SystemVcall::getStackArgumentPtr(const Registers& registers) {
 }
 
 void* x64SystemVcall::getArgumentPtr(size_t index, const Registers& registers) {
-    if (index >= m_Arguments.size())
+    if (index >= m_arguments.size())
         return nullptr;
 
     // Check if this argument was passed in a register.
-    RegisterType regType = m_Arguments[index].reg;
+    RegisterType regType = m_arguments[index].reg;
     if (regType != NONE)
         return *registers[regType];
 
     size_t offset = 8;
     for (size_t i = 0; i < index; ++i) {
-        const auto& [type, reg, size] = m_Arguments[i];
+        const auto& [type, reg, size] = m_arguments[i];
         if (reg == NONE)
             offset += size;
     }
@@ -97,21 +97,21 @@ void x64SystemVcall::onArgumentPtrChanged(size_t index, const Registers& registe
 }
 
 void* x64SystemVcall::getReturnPtr(const Registers& registers) {
-    if (m_pReturnBuffer) {
+    if (m_returnBuffer) {
         // First half in rax, second half in rdx
-        memcpy(m_pReturnBuffer, *registers.at(RAX, true), 8);
-        memcpy((void *) ((uintptr_t) m_pReturnBuffer + 8), *registers.at(RDX, true), 8);
-        return m_pReturnBuffer;
+        memcpy(m_returnBuffer, *registers.at(RAX, true), 8);
+        memcpy((void *) ((uintptr_t) m_returnBuffer + 8), *registers.at(RDX, true), 8);
+        return m_returnBuffer;
     }
 
-    return *registers.at(m_ReturnType.reg, true);
+    return *registers.at(m_returnType.reg, true);
 }
 
 void x64SystemVcall::onReturnPtrChanged(const Registers& registers, void* returnPtr) {
-    if (m_pReturnBuffer) {
+    if (m_returnBuffer) {
         // First half in rax, second half in rdx
-        memcpy(*registers.at(RAX, true), m_pReturnBuffer, 8);
-        memcpy(*registers.at(RDX, true), (void *) ((uintptr_t) m_pReturnBuffer + 8), 8);
+        memcpy(*registers.at(RAX, true), m_returnBuffer, 8);
+        memcpy(*registers.at(RDX, true), (void *) ((uintptr_t) m_returnBuffer + 8), 8);
     }
 }
 

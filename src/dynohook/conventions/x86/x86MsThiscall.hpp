@@ -33,7 +33,7 @@ namespace dyno {
         ~x86MsThiscall() override;
 
     private:
-        void* m_pReturnBuffer;
+        void* m_returnBuffer;
     };
 }
 

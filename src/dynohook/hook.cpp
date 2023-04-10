@@ -1,53 +1,57 @@
 #include "hook.hpp"
 #include "utilities.hpp"
+#include "memory.hpp"
 
 using namespace dyno;
 using namespace asmjit;
 using namespace asmjit::x86;
 
 Hook::Hook(asmjit::JitRuntime& jit, void* func2hook, ICallingConvention* convention) :
-        m_Jit{jit},
-        m_pFunc{func2hook},
-        m_pCallingConvention{convention},
-        m_Registers{convention->getRegisters()},
-        m_ScratchRegisters{createScratchRegisters()}
+    m_jit{jit},
+    m_func{func2hook},
+    m_callingConvention{convention},
+    m_registers{convention->getRegisters()},
+    m_scratchRegisters{createScratchRegisters()}
 {
     // Allocate memory for the trampoline
-    m_pTrampoline = AllocatePageNearAddress(func2hook);
-    uint32_t trampolineSize = BuildTrampoline(func2hook, m_pTrampoline, m_OriginalInstructions);
+    m_trampoline = AllocatePageNearAddress(func2hook);
+    auto [trampolineSize, useRelativeJump] = BuildTrampoline(func2hook, m_trampoline, m_originalInstructions);
 
     // Create the bridge function
     createBridge();
 
     // Write a jump to the bridge
-    void* bridgeFuncMemory = (int8_t*) m_pTrampoline + trampolineSize;
-    WriteAbsoluteJump64(bridgeFuncMemory, m_pBridge); //write bridge func instructions
+    void* bridgeFuncMemory = (int8_t*) m_trampoline + trampolineSize;
+    WriteAbsoluteJump(bridgeFuncMemory, m_bridge); //write bridge func instructions
 
     // Write a relative jump to the bridge
-    WriteRelativeJump32(bridgeFuncMemory, func2hook);
+    if (useRelativeJump)
+        WriteRelativeJump(func2hook, bridgeFuncMemory);
+    else
+        WriteAbsoluteJump(func2hook, bridgeFuncMemory);
 }
 
 Hook::~Hook() {
-    delete m_pCallingConvention;
+    delete m_callingConvention;
 
     // Free the trampoline array
-    FreePage(m_pTrampoline);
+    FreePage(m_trampoline);
 
     // Free the asm bridge and new return address
-    m_Jit.release(m_pBridge);
-    m_Jit.release(m_pNewRetAddr);
+    m_jit.release(m_bridge);
+    m_jit.release(m_newRetAddr);
 
     // Probably hook wasn't generated successfully
-    if (!m_OriginalInstructions.empty())
+    if (!m_originalInstructions.empty())
         // Copy back the previously copied bytes
-        memcpy(m_pFunc, m_OriginalInstructions.data(), m_OriginalInstructions.size());
+        memcpy(m_func, m_originalInstructions.data(), m_originalInstructions.size());
 }
 
 void Hook::addCallback(HookType hookType, HookHandler* handler) {
     if (!handler)
         return;
 
-    std::vector<HookHandler*>& callbacks = m_Handlers[hookType];
+    std::vector<HookHandler*>& callbacks = m_handlers[hookType];
 
     for (const HookHandler* callback : callbacks) {
         if (callback == handler)
@@ -61,8 +65,8 @@ void Hook::removeCallback(HookType hookType, HookHandler* handler) {
     if (!handler)
         return;
 
-    auto it = m_Handlers.find(hookType);
-    if (it == m_Handlers.end())
+    auto it = m_handlers.find(hookType);
+    if (it == m_handlers.end())
         return;
 
     std::vector<HookHandler*>& callbacks = it->second;
@@ -76,8 +80,8 @@ void Hook::removeCallback(HookType hookType, HookHandler* handler) {
 }
 
 bool Hook::isCallbackRegistered(HookType hookType, HookHandler* handler) const {
-    auto it = m_Handlers.find(hookType);
-    if (it == m_Handlers.end())
+    auto it = m_handlers.find(hookType);
+    if (it == m_handlers.end())
         return false;
 
     const std::vector<HookHandler*>& callbacks = it->second;
@@ -91,12 +95,12 @@ bool Hook::isCallbackRegistered(HookType hookType, HookHandler* handler) const {
 }
 
 bool Hook::areCallbacksRegistered() const {
-    auto it = m_Handlers.find(HookType::Pre);
-    if (it != m_Handlers.end() && !it->second.empty())
+    auto it = m_handlers.find(HookType::Pre);
+    if (it != m_handlers.end() && !it->second.empty())
         return true;
 
-    it = m_Handlers.find(HookType::Post);
-    if (it != m_Handlers.end() && !it->second.empty())
+    it = m_handlers.find(HookType::Post);
+    if (it != m_handlers.end() && !it->second.empty())
         return true;
 
     return false;
@@ -104,22 +108,22 @@ bool Hook::areCallbacksRegistered() const {
 
 ReturnAction Hook::hookHandler(HookType hookType) {
     if (hookType == HookType::Post) {
-        ReturnAction lastPreReturnAction = m_LastPreReturnAction.back();
-        m_LastPreReturnAction.pop_back();
+        ReturnAction lastPreReturnAction = m_lastPreReturnAction.back();
+        m_lastPreReturnAction.pop_back();
         if (lastPreReturnAction >= ReturnAction::Override)
-            m_pCallingConvention->restoreReturnValue(m_Registers);
+            m_callingConvention->restoreReturnValue(m_registers);
         if (lastPreReturnAction < ReturnAction::Supercede)
-            m_pCallingConvention->restoreCallArguments(m_Registers);
+            m_callingConvention->restoreCallArguments(m_registers);
     }
 
     ReturnAction returnAction = ReturnAction::Ignored;
-    auto it = m_Handlers.find(hookType);
-    if (it == m_Handlers.end()) {
+    auto it = m_handlers.find(hookType);
+    if (it == m_handlers.end()) {
         // Still save the arguments for the post hook even if there
         // is no pre-handler registered.
         if (hookType == HookType::Pre) {
-            m_LastPreReturnAction.push_back(returnAction);
-            m_pCallingConvention->saveCallArguments(m_Registers);
+            m_lastPreReturnAction.push_back(returnAction);
+            m_callingConvention->saveCallArguments(m_registers);
         }
         return returnAction;
     }
@@ -133,19 +137,19 @@ ReturnAction Hook::hookHandler(HookType hookType) {
     }
 
     if (hookType == HookType::Pre) {
-        m_LastPreReturnAction.push_back(returnAction);
+        m_lastPreReturnAction.push_back(returnAction);
         if (returnAction >= ReturnAction::Override)
-            m_pCallingConvention->saveReturnValue(m_Registers);
+            m_callingConvention->saveReturnValue(m_registers);
         if (returnAction < ReturnAction::Supercede)
-            m_pCallingConvention->saveCallArguments(m_Registers);
+            m_callingConvention->saveCallArguments(m_registers);
     }
 
     return returnAction;
 }
 
 void* Hook::getReturnAddress(void* stackPtr) {
-    auto it = m_RetAddr.find(stackPtr);
-    if (it == m_RetAddr.end()) {
+    auto it = m_retAddr.find(stackPtr);
+    if (it == m_retAddr.end()) {
         puts("Failed to find return address of original function. Check the arguments and return type of your detour setup.");
         return nullptr;
     }
@@ -156,17 +160,17 @@ void* Hook::getReturnAddress(void* stackPtr) {
 
     // Clear the stack address from the cache now that we ran the last post hook.
     if (v.empty())
-        m_RetAddr.erase(it);
+        m_retAddr.erase(it);
 
     return pRetAddr;
 }
 
 void Hook::setReturnAddress(void* retAddr, void* stackPtr) {
-    m_RetAddr[stackPtr].push_back(retAddr);
+    m_retAddr[stackPtr].push_back(retAddr);
 }
 
 // Used to print generated assembly
-#if 1
+#if 0
 FileLogger logger(stdout);
 #define LOGGER(a) a.setLogger(&logger);
 #else
@@ -178,7 +182,7 @@ void Hook::createBridge() const {
     CodeHolder code;
 
     // Code holder must be initialized before it can be used.
-    code.init(m_Jit.environment(), m_Jit.cpuFeatures());
+    code.init(m_jit.environment(), m_jit.cpuFeatures());
 
     // Emitters can emit code to CodeHolder
     Assembler a{&code}; LOGGER(a);
@@ -199,10 +203,10 @@ void Hook::createBridge() const {
 
     // Jump to the trampoline
 #ifdef ENV64BIT
-    a.mov(rax, m_pTrampoline); // TODO:
+    a.mov(rax, m_trampoline); // TODO:
     a.jmp(rax);
 #else // ENV32BIT
-    a.jmp(m_pTrampoline);
+    a.jmp(m_trampoline);
 #endif
 
     // This code will be executed if a pre-hook returns true
@@ -210,14 +214,14 @@ void Hook::createBridge() const {
 
     // Finally, return to the caller
     // This will still call post hooks, but will skip the original function.
-    size_t popSize = m_pCallingConvention->getPopSize();
+    size_t popSize = m_callingConvention->getPopSize();
     if (popSize > 0)
         a.ret(popSize);
     else
         a.ret();
 
     // Generate code
-    Error err = m_Jit.add(&m_pBridge, &code);
+    Error err = m_jit.add(&m_bridge, &code);
     if (err) {
         printf("AsmJit failed: %s\n", DebugUtils::errorAsString(err));
     }
@@ -272,11 +276,11 @@ void Hook::writeModifyReturnAddress(Assembler& a) const {
 #ifdef ENV64BIT
     // Using rax because not possible to MOV r/m64, imm64
     a.push(rax);
-    a.mov(rax, m_pNewRetAddr);
+    a.mov(rax, m_newRetAddr);
     a.mov(qword_ptr(rsp, 8), rax);
     a.pop(rax);
 #else // ENV32BIT
-    a.mov(dword_ptr(esp), m_pNewRetAddr);
+    a.mov(dword_ptr(esp), m_newRetAddr);
 #endif
 }
 
@@ -285,13 +289,13 @@ void Hook::createPostCallback() const {
     CodeHolder code;
 
     // Code holder must be initialized before it can be used.
-    code.init(m_Jit.environment(), m_Jit.cpuFeatures());
+    code.init(m_jit.environment(), m_jit.cpuFeatures());
 
     // Emitters can emit code to CodeHolder
     Assembler a{&code}; LOGGER(a);
 
     // Gets pop size + return address
-    size_t popSize = m_pCallingConvention->getPopSize() + sizeof(void*);
+    size_t popSize = m_callingConvention->getPopSize() + sizeof(void*);
 
     // Subtract the previously added bytes (stack size + return address), so
     // that we can access the arguments again
@@ -351,7 +355,7 @@ void Hook::createPostCallback() const {
     a.ret(popSize);
 
     // Generate code
-    Error err = m_Jit.add(&m_pNewRetAddr, &code);
+    Error err = m_jit.add(&m_newRetAddr, &code);
     if (err) {
         printf("AsmJit failed: %s\n", DebugUtils::errorAsString(err));
     }
@@ -479,14 +483,14 @@ std::vector<RegisterType> Hook::createScratchRegisters() const {
 void Hook::writeSaveScratchRegisters(Assembler& a) const {
     // Save rax first, because we use it to save others
 
-    for (const auto& reg : m_ScratchRegisters) {
+    for (const auto& reg : m_scratchRegisters) {
         if (reg == RAX) {
             writeRegToMem(a, reg);
             break;
         }
     }
 
-    for (const auto& reg : m_ScratchRegisters) {
+    for (const auto& reg : m_scratchRegisters) {
         if (reg != RAX)
             writeRegToMem(a, reg);
     }
@@ -495,12 +499,12 @@ void Hook::writeSaveScratchRegisters(Assembler& a) const {
 void Hook::writeRestoreScratchRegisters(Assembler& a) const {
     // Restore rax last, because we use it to restore others
 
-    for (const auto& reg : m_ScratchRegisters) {
+    for (const auto& reg : m_scratchRegisters) {
         if (reg != RAX)
             writeMemToReg(a, reg);
     }
 
-    for (const auto& reg : m_ScratchRegisters) {
+    for (const auto& reg : m_scratchRegisters) {
         if (reg == RAX) {
             writeMemToReg(a, reg);
             break;
@@ -511,14 +515,14 @@ void Hook::writeRestoreScratchRegisters(Assembler& a) const {
 void Hook::writeSaveRegisters(Assembler& a, HookType hookType) const {
     // Save rax first, because we use it to save others
 
-    for (const auto& reg : m_Registers) {
+    for (const auto& reg : m_registers) {
         if (reg == RAX) {
             writeRegToMem(a, reg);
             break;
         }
     }
 
-    for (const auto& reg : m_Registers) {
+    for (const auto& reg : m_registers) {
         if (reg != RAX)
             writeRegToMem(a, reg);
     }
@@ -527,12 +531,12 @@ void Hook::writeSaveRegisters(Assembler& a, HookType hookType) const {
 void Hook::writeRestoreRegisters(Assembler& a, HookType hookType) const {
     // Restore rax last, because we use it to restore others
 
-    for (const auto& reg : m_Registers) {
+    for (const auto& reg : m_registers) {
         if (reg != RAX)
             writeMemToReg(a, reg);
     }
 
-    for (const auto& reg : m_Registers) {
+    for (const auto& reg : m_registers) {
         if (reg == RAX) {
             writeMemToReg(a, reg);
             break;
@@ -1016,25 +1020,25 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
 }
 #else // ENV32BIT
 void Hook::writeSaveScratchRegisters(Assembler& a) const {
-    for (const auto& reg : m_ScratchRegisters) {
+    for (const auto& reg : m_scratchRegisters) {
         writeRegToMem(a, reg);
     }
 }
 
 void Hook::writeRestoreScratchRegisters(Assembler& a) const {
-    for (const auto& reg : m_ScratchRegisters) {
+    for (const auto& reg : m_scratchRegisters) {
         writeMemToReg(a, reg);
     }
 }
 
 void Hook::writeSaveRegisters(Assembler& a, HookType hookType) const {
-    for (const auto& reg : m_Registers) {
+    for (const auto& reg : m_registers) {
         writeRegToMem(a, reg, hookType);
     }
 }
 
 void Hook::writeRestoreRegisters(Assembler& a, HookType hookType) const {
-    for (const auto& reg : m_Registers) {
+    for (const auto& reg : m_registers) {
         writeMemToReg(a, reg, hookType);
     }
 }
@@ -1120,7 +1124,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
             // Don't mess with the FPU stack in a pre-hook. The float return is returned in st0,
             // so only load it in a post hook to avoid writing back NaN.
             if (hookType == HookType::Post) {
-                switch (m_pCallingConvention->getReturnType().size) {
+                switch (m_callingConvention->getReturnType().size) {
                     case SIZE_DWORD: a.fstp(dword_ptr(addr)); break;
                     case SIZE_QWORD: a.fstp(qword_ptr(addr)); break;
                     case SIZE_TWORD: a.fstp(tword_ptr(addr)); break;
@@ -1224,7 +1228,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
                 // Push a value to the FPU stack.
                 // TODO: Only write back when changed? Save full 80bits for that case.
                 //       Avoid truncation of the data if it's unchanged.
-                switch (m_pCallingConvention->getReturnType().size) {
+                switch (m_callingConvention->getReturnType().size) {
                     case SIZE_DWORD: a.fld(dword_ptr(addr)); break;
                     case SIZE_QWORD: a.fld(qword_ptr(addr)); break;
                     case SIZE_TWORD: a.fld(tword_ptr(addr)); break;

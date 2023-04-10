@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 #set(CMAKE_CXX_FLAGS "-m64")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /INCREMENTAL:NO" )
 
 # Asmjit
 set(ASMJIT_TEST OFF)
@@ -118,6 +119,7 @@ if (DYNOHOOK_BUILD_TESTS)
 
     set(TEST_NAME dynohook_test)
     add_executable(${TEST_NAME} "tests/main.cpp" ${DYNOHOOK_TEST_HDR_FILES})
+    set_property(TARGET ${TEST_NAME} APPEND_STRING PROPERTY LINK_FLAGS " /INCREMENTAL:NO")
     include_directories(src/)
     target_link_libraries(${TEST_NAME} PUBLIC ${DYNOHOOK})
 endif()

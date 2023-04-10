@@ -276,71 +276,71 @@ namespace dyno {
 
     class Register {
     public:
-        Register(RegisterType type, size_t size, size_t alignment = 0) : m_iSize(size), m_iAlignment(alignment), m_nType{type} {
+        Register(RegisterType type, size_t size, size_t alignment = 0) : m_size(size), m_alignment(alignment), m_type{type} {
             if (size == 0)
-                m_pAddress = nullptr;
+                m_address = nullptr;
             else if (alignment > 0)
 #ifdef _WIN32
-                m_pAddress = _aligned_malloc(size, alignment);
+                m_address = _aligned_malloc(size, alignment);
 #else
-                m_pAddress = aligned_alloc(alignment, size);
+                m_address = aligned_alloc(alignment, size);
 #endif
             else
-                m_pAddress = malloc(size);
+                m_address = malloc(size);
         }
 
         ~Register() {
-            if (m_pAddress) {
+            if (m_address) {
 #ifdef _WIN32
-                if (m_iAlignment > 0)
-                    _aligned_free(m_pAddress);
+                if (m_alignment > 0)
+                    _aligned_free(m_address);
                 else
-                    free(m_pAddress);
+                    free(m_address);
 #else
-                free(m_pAddress);
+                free(m_address);
 #endif
             }
         }
 
         Register(const Register& other) {
-            m_iSize = other.m_iSize;
-            m_iAlignment = other.m_iAlignment;
-            m_nType = other.m_nType;
-            if (m_iAlignment > 0)
+            m_size = other.m_size;
+            m_alignment = other.m_alignment;
+            m_type = other.m_type;
+            if (m_alignment > 0)
 #ifdef _WIN32
-                m_pAddress = _aligned_malloc(m_iSize, m_iAlignment);
+                m_address = _aligned_malloc(m_size, m_alignment);
 #else
-                m_pAddress = aligned_alloc(m_iAlignment, m_iSize);
+                m_address = aligned_alloc(m_iAlignment, m_iSize);
 #endif
             else
-                m_pAddress = malloc(m_iSize);
-            memcpy(m_pAddress, other.m_pAddress, m_iSize);
+                m_address = malloc(m_size);
+            memcpy(m_address, other.m_address, m_size);
         }
 
         Register(Register&& other) noexcept {
-            m_pAddress = other.m_pAddress;
-            m_iSize = other.m_iSize;
-            m_iAlignment = other.m_iAlignment;
-            m_nType = other.m_nType;
-            other.m_pAddress = nullptr;
+            m_address = other.m_address;
+            m_size = other.m_size;
+            m_alignment = other.m_alignment;
+            m_type = other.m_type;
+            other.m_address = nullptr;
         }
 
         void* operator*() const {
-            return m_pAddress;
+            return m_address;
         }
 
         operator RegisterType() const {
-            return m_nType;
+            return m_type;
         }
 
         template<class T>
         T getAddress() const {
-            return (T) m_pAddress;
+            return (T) m_address;
         }
 
         template<class T>
         T getValue() const {
-            return *(T*) m_pAddress;
+            return *(T*) m_address;
         }
 
         template<class T>
@@ -350,7 +350,7 @@ namespace dyno {
 
         template<class T>
         void setValue(T value) {
-            *(T*) m_pAddress = value;
+            *(T*) m_address = value;
         }
 
         template<class T>
@@ -359,10 +359,10 @@ namespace dyno {
         }
 
     private:
-        void* m_pAddress;
-        uint16_t m_iSize;
-        RegisterType m_nType;
-        uint8_t m_iAlignment;
+        void* m_address;
+        uint16_t m_size;
+        RegisterType m_type;
+        uint8_t m_alignment;
     };
 
     class Registers {
@@ -373,12 +373,12 @@ namespace dyno {
 
         const Register& at(RegisterType regType, bool reverse = false) const;
 
-        auto begin() { return m_Registers.begin(); }
-        auto begin() const { return m_Registers.cbegin(); }
-        auto end() { return m_Registers.end(); }
-        auto end() const { return m_Registers.cend(); }
+        auto begin() { return m_registers.begin(); }
+        auto begin() const { return m_registers.cbegin(); }
+        auto end() { return m_registers.end(); }
+        auto end() const { return m_registers.cend(); }
 
     private:
-        std::vector<Register> m_Registers;
+        std::vector<Register> m_registers;
     };
 }

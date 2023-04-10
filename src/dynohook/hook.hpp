@@ -65,26 +65,26 @@ namespace dyno {
 
         template<class T>
         T getArgument(size_t index) const {
-            return *(T*) m_pCallingConvention->getArgumentPtr(index, m_Registers);
+            return *(T*) m_callingConvention->getArgumentPtr(index, m_registers);
         }
 
         template<class T>
         void setArgument(size_t index, T value) {
-            void* argumentPtr = m_pCallingConvention->getArgumentPtr(index, m_Registers);
+            void* argumentPtr = m_callingConvention->getArgumentPtr(index, m_registers);
             *(T*) argumentPtr = value;
-            m_pCallingConvention->onArgumentPtrChanged(index, m_Registers, argumentPtr);
+            m_callingConvention->onArgumentPtrChanged(index, m_registers, argumentPtr);
         }
 
         template<class T>
         T getReturnValue() const {
-            return *(T*) m_pCallingConvention->getReturnPtr(m_Registers);
+            return *(T*) m_callingConvention->getReturnPtr(m_registers);
         }
 
         template<class T>
         void setReturnValue(T value) {
-            void* retunrPtr = m_pCallingConvention->getReturnPtr(m_Registers);
+            void* retunrPtr = m_callingConvention->getReturnPtr(m_registers);
             *(T*) retunrPtr = value;
-            m_pCallingConvention->onReturnPtrChanged(m_Registers, retunrPtr);
+            m_callingConvention->onReturnPtrChanged(m_registers, retunrPtr);
         }
 
     private:
@@ -108,37 +108,37 @@ namespace dyno {
         ASMJIT_NOINLINE void ASMJIT_CDECL setReturnAddress(void* retAddr, void* stackPtr);
 
     public:
-        std::map<HookType, std::vector<HookHandler*>> m_Handlers;
+        std::map<HookType, std::vector<HookHandler*>> m_handlers;
 
         // Address of the original function
-        void* m_pFunc;
+        void* m_func;
 
         // Instructions of the original function
-        std::vector<uint8_t> m_OriginalInstructions;
+        std::vector<uint8_t> m_originalInstructions;
 
         // Interface if the calling convention
-        ICallingConvention* m_pCallingConvention;
+        ICallingConvention* m_callingConvention;
 
         // Address of the bridge
-        void* m_pBridge;
+        void* m_bridge;
 
         // Address of the trampoline
-        void* m_pTrampoline;
+        void* m_trampoline;
 
         // New return address
-        void* m_pNewRetAddr;
+        void* m_newRetAddr;
 
         // Save the last return action of the pre HookHandler for use in the post handler.
-        std::vector<ReturnAction> m_LastPreReturnAction;
+        std::vector<ReturnAction> m_lastPreReturnAction;
 
         // Register storage
-        Registers m_Registers;
-        Registers m_ScratchRegisters;
+        Registers m_registers;
+        Registers m_scratchRegisters;
 
         //
-        std::map<void*, std::vector<void*>> m_RetAddr;
+        std::map<void*, std::vector<void*>> m_retAddr;
 
         // Runtime designed for JIT
-        asmjit::JitRuntime& m_Jit;
+        asmjit::JitRuntime& m_jit;
     };
 }

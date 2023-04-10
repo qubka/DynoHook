@@ -13,7 +13,7 @@ x86MsStdcall::~x86MsStdcall() {
 }
 
 size_t x86MsStdcall::getPopSize() {
-    return m_iStackSize;
+    return m_stackSize;
 }
 
 #endif // ENV32BIT

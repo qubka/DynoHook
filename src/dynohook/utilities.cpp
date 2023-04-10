@@ -1,107 +1,11 @@
 #include "utilities.hpp"
+#include "memory.hpp"
 
 #include "capstone/capstone.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <sys/mman.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <climits>
-#define PAGE_EXECUTE_READWRITE (PROT_READ | PROT_WRITE | PROT_EXEC)
-#endif
-
 // From: http://kylehalladay.com/blog/2020/11/13/Hooking-By-Example.html
 
-void* AllocateMemory(void* addr, size_t size) {
-#ifdef _WIN32
-    return VirtualAlloc(addr, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
-#else
-    return mmap(addr, size, PAGE_EXECUTE_READWRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-#endif
-}
-
-void FreeMemory(void* addr, size_t size) {
-#ifdef _WIN32
-    VirtualFree(addr, size, MEM_RELEASE);
-#else
-    munmap(addr, size);
-#endif
-}
-
-bool ProtectMemory(void* addr, size_t size) {
-#ifdef _WIN32
-    DWORD oldProt;
-    return VirtualProtect(addr, size, PAGE_EXECUTE_READWRITE, &oldProt);
-#else
-    const size_t pageSize = sysconf(_SC_PAGE_SIZE);
-    uintptr_t pageAddr = (uintptr_t) addr;
-    pageAddr = pageAddr - (pageAddr % pageSize);
-    return mprotect((void*) pageAddr, size, PAGE_EXECUTE_READWRITE) != -1;
-#endif
-}
-
-void* AllocatePageNearAddress(void* targetAddr) {
-#if _WIN32
-    SYSTEM_INFO sysInfo;
-    GetSystemInfo(&sysInfo);
-    const size_t pageSize = sysInfo.dwPageSize;
-    uintptr_t minAddr = (uintptr_t) sysInfo.lpMinimumApplicationAddress;
-    uintptr_t maxAddr = (uintptr_t) sysInfo.lpMaximumApplicationAddress;
-#else
-    const size_t pageSize = sysconf(_SC_PAGE_SIZE);
-    uintptr_t minAddr = (uintptr_t) pageSize;
-    uintptr_t maxAddr = (uint64_t) (128ull * 1024 * 1024 * 1024 * 1024);
-    using namespace std;
-#endif
-
-    uintptr_t startAddr = (uintptr_t(targetAddr) & ~(pageSize - 1)); //round down to nearest page boundary
-
-    minAddr = min(startAddr - 0x7FFFFF00, minAddr);
-    maxAddr = max(startAddr + 0x7FFFFF00, maxAddr);
-
-    uintptr_t startPage = (startAddr - (startAddr % pageSize));
-    uintptr_t pageOffset = 1;
-
-    while (true) {
-        uintptr_t byteOffset = pageOffset * pageSize;
-        uintptr_t highAddr = startPage + byteOffset;
-        uintptr_t lowAddr = (startPage > byteOffset) ? startPage - byteOffset : 0;
-
-        bool needsExit = highAddr > maxAddr && lowAddr < minAddr;
-
-        if (highAddr < maxAddr) {
-            void* outAddr = AllocateMemory((void*) highAddr, pageSize);
-            if (outAddr != nullptr && outAddr != (void *)-1)
-                return outAddr;
-        }
-
-        if (lowAddr > minAddr) {
-            void* outAddr = AllocateMemory((void*) lowAddr, pageSize);
-            if (outAddr != nullptr && outAddr != (void *)-1)
-                return outAddr;
-        }
-
-        pageOffset++;
-
-        if (needsExit)
-            break;
-    }
-
-    return nullptr;
-}
-
-void FreePage(void* pageAdr) {
-#if _WIN32
-    SYSTEM_INFO sysInfo;
-    GetSystemInfo(&sysInfo);
-    const size_t pageSize = sysInfo.dwPageSize;
-#else
-    const size_t pageSize = sysconf(_SC_PAGE_SIZE);
-#endif
-    FreeMemory(pageAdr, pageSize);
-}
+namespace dyno {
 
 bool IsRelativeJump(const cs_insn& inst) {
     bool isAnyJumpInstruction = inst.id >= X86_INS_JAE && inst.id <= X86_INS_JS;
@@ -136,20 +40,20 @@ bool IsLoopInstr(const cs_insn& inst) {
     return inst.id >= X86_INS_LOOP && inst.id <= X86_INS_LOOPNE;
 }
 
-size_t WriteRelativeJump32(void* relJumpMemory, void* addrToJumpTo) {
+size_t WriteRelativeJump(void* targetAddr, void* addrToJumpTo) {
     /**
      * 0:  e9 00 00 00 00          jmp    0x5
      */
     uint8_t jmpInstruction[] = { 0xE9, 0x0, 0x0, 0x0, 0x0 };
 
-    uint32_t relAddr = (uintptr_t) relJumpMemory - ((uintptr_t) addrToJumpTo + sizeof(jmpInstruction));
+    uint32_t relAddr = (uintptr_t) addrToJumpTo - ((uintptr_t) targetAddr + sizeof(jmpInstruction));
     memcpy(&jmpInstruction[1], &relAddr, sizeof(relAddr));
-    memcpy(addrToJumpTo, jmpInstruction, sizeof(jmpInstruction));
+    memcpy(targetAddr, jmpInstruction, sizeof(jmpInstruction));
 
     return sizeof(jmpInstruction);
 }
 
-size_t WriteAbsoluteJump64(void* absJumpMemory, void* addrToJumpTo) {
+size_t WriteAbsoluteJump(void* targetAddr, void* addrToJumpTo) {
 #ifdef ENV64BIT
     /**
      * 0:  48 b8 00 00 00 00 00    movabs rax,0x0
@@ -160,7 +64,7 @@ size_t WriteAbsoluteJump64(void* absJumpMemory, void* addrToJumpTo) {
 
     uintptr_t addrToJumpTo64 = (uintptr_t) addrToJumpTo;
     memcpy(&absJumpInstructions[2], &addrToJumpTo64, sizeof(addrToJumpTo64));
-    memcpy(absJumpMemory, absJumpInstructions, sizeof(absJumpInstructions));
+    memcpy(targetAddr, absJumpInstructions, sizeof(absJumpInstructions));
 #else // ENV32BIT
     /**
      * 0:  68 00 00 00 00          push   0x0
@@ -170,7 +74,7 @@ size_t WriteAbsoluteJump64(void* absJumpMemory, void* addrToJumpTo) {
 
     uintptr_t addrToJumpTo32 = (uintptr_t) addrToJumpTo;
     memcpy(&absJumpInstructions[1], &addrToJumpTo32, sizeof(addrToJumpTo32));
-    memcpy(absJumpMemory, absJumpInstructions, sizeof(absJumpInstructions));
+    memcpy(targetAddr, absJumpInstructions, sizeof(absJumpInstructions));
 #endif // ENV64BIT
 
     return sizeof(absJumpInstructions);
@@ -186,7 +90,7 @@ uint32_t AddJmpToAbsTable(cs_insn& jmp, uint8_t* absTableMem) {
     char* targetAddrStr = jmp.op_str; //where the instruction intended to go
     uintptr_t targetAddr = CONVERT(targetAddrStr);
 
-    return WriteAbsoluteJump64(absTableMem, (void*) targetAddr);
+    return WriteAbsoluteJump(absTableMem, (void*) targetAddr);
 }
 
 uint32_t AddCallToAbsTable(cs_insn& call, uint8_t* absTableMem, uint8_t* jumpBackToHookedFunc) {
@@ -286,7 +190,7 @@ void RewriteCallInstruction(cs_insn& instr, const uint8_t* instrPtr, const uint8
     memcpy(instr.bytes, jmpBytes, sizeof(jmpBytes));
 }
 
-uint32_t BuildTrampoline(void* func2hook, void* dstMemForTrampoline, std::vector<uint8_t>& dstOriginalInstructions) {
+std::pair<uint32_t, bool> BuildTrampoline(void* func2hook, void* dstMemForTrampoline, std::vector<uint8_t>& dstOriginalInstructions) {
 #if ENV64BIT
     cs_mode mode = CS_MODE_64;
 #else
@@ -294,7 +198,7 @@ uint32_t BuildTrampoline(void* func2hook, void* dstMemForTrampoline, std::vector
 #endif
 
     // Allow to write and read
-    ProtectMemory(func2hook, 20);
+    MemoryProtect protector(func2hook, 20, PAGE_EXECUTE_READWRITE);
 
     // Disassemble stolen bytes
     csh handle;
@@ -304,6 +208,15 @@ uint32_t BuildTrampoline(void* func2hook, void* dstMemForTrampoline, std::vector
     cs_insn* instructions; //allocated by cs_disasm, needs to be manually freed later
     size_t count = cs_disasm(handle, (uint8_t*) func2hook, 20, (uintptr_t) func2hook, 20, &instructions);
 
+    //
+    uint32_t relAddr = (uintptr_t) dstMemForTrampoline - ((uintptr_t) func2hook + 5);
+
+#if ENV64BIT
+    const size_t jumpSize = 12; //12 is the size of a 64 bit mov/jmp instruction pair
+#else
+    const size_t jumpSize = 5; //5 is the size of a 32 bit jump instruction
+#endif
+
     // Get the instructions covered by the first 5 bytes of the original function
     size_t byteCount = 0;
     size_t stolenInstrCount = 0;
@@ -311,8 +224,17 @@ uint32_t BuildTrampoline(void* func2hook, void* dstMemForTrampoline, std::vector
         cs_insn& inst = instructions[i];
         byteCount += inst.size;
         stolenInstrCount++;
-        if (byteCount >= 5) break;
+        if (byteCount >= jumpSize)
+            break;
     }
+
+    if (byteCount < jumpSize) {
+        printf("Function too small");
+        return {0, false};
+    }
+
+    //bool useRelativeJump = byteCount < 12;
+    bool useRelativeJump = true;
 
     // Save original instructions
     dstOriginalInstructions.resize(byteCount);
@@ -334,9 +256,10 @@ uint32_t BuildTrampoline(void* func2hook, void* dstMemForTrampoline, std::vector
     for (size_t i = 0; i < stolenInstrCount; ++i) {
         cs_insn& inst = instructions[i];
 
-        if (IsLoopInstr(inst))
-            return 0; // TODO: bail out on loop instructions, I don't have a good way of handling them
-        else if (IsRIPRelativeInstr(inst)) {
+        if (IsLoopInstr(inst)) {
+            printf("No way to handle loop instructions");
+            return {0, false};
+        } else if (IsRIPRelativeInstr(inst)) {
             RelocateInstruction(inst, stolenByteMem);
         } else if (IsRelativeJump(inst)) {
             uint32_t aitSize = AddJmpToAbsTable(inst, absTableMem);
@@ -352,10 +275,12 @@ uint32_t BuildTrampoline(void* func2hook, void* dstMemForTrampoline, std::vector
         stolenByteMem += inst.size;
     }
 
-    WriteAbsoluteJump64(jumpBackMem, (uint8_t*) func2hook + 5);
+    WriteAbsoluteJump(jumpBackMem, (uint8_t*) func2hook + (useRelativeJump ? 5 : jumpInstSize));
 
     cs_close(&handle);
     cs_free(instructions, count);
 
-    return uint32_t(absTableMem - (uint8_t*) dstMemForTrampoline);
+    return { uint32_t(absTableMem - (uint8_t*) dstMemForTrampoline), useRelativeJump };
 }
+}
+

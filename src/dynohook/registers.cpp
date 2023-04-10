@@ -3,10 +3,10 @@
 using namespace dyno;
 
 Registers::Registers(const std::vector<RegisterType>& registers) {
-    m_Registers.reserve(registers.size());
+    m_registers.reserve(registers.size());
 
     for (RegisterType regType : registers) {
-        m_Registers.emplace_back(regType, RegisterTypeToSize(regType), RegisterTypeToAlignment(regType));
+        m_registers.emplace_back(regType, RegisterTypeToSize(regType), RegisterTypeToAlignment(regType));
     }
 }
 
@@ -18,13 +18,13 @@ const Register& Registers::at(RegisterType regType, bool reverse) const {
     static Register s_None{NONE, 0};
 
     if (reverse)
-        for (size_t i = m_Registers.size() - 1; i != -1; --i) {
-            const auto& reg = m_Registers[i];
+        for (size_t i = m_registers.size() - 1; i != -1; --i) {
+            const auto& reg = m_registers[i];
             if (reg == regType)
                 return reg;
         }
     else
-        for (const auto& reg : m_Registers) {
+        for (const auto& reg : m_registers) {
             if (reg == regType)
                 return reg;
         }
@@ -33,7 +33,9 @@ const Register& Registers::at(RegisterType regType, bool reverse) const {
     return s_None;
 }
 
-size_t dyno::RegisterTypeToSize(RegisterType regType) {
+namespace dyno {
+
+size_t RegisterTypeToSize(RegisterType regType) {
     switch (regType) {
         // ========================================================================
         // >> 8-bit General purpose registers
@@ -289,7 +291,7 @@ size_t dyno::RegisterTypeToSize(RegisterType regType) {
     return 0;
 }
 
-size_t dyno::RegisterTypeToAlignment(RegisterType regType) {
+size_t RegisterTypeToAlignment(RegisterType regType) {
     switch (regType) {
         /**
          * The primary exceptions are the stack pointer, which are 16-byte aligned to aid performance.
@@ -431,7 +433,7 @@ size_t dyno::RegisterTypeToAlignment(RegisterType regType) {
     return 0;
 }
 
-size_t dyno::RegisterTypeToSSEIndex(RegisterType regType) {
+size_t RegisterTypeToSSEIndex(RegisterType regType) {
     switch (regType) {
         // ========================================================================
         // >> 128-bit XMM registers
@@ -554,7 +556,7 @@ size_t dyno::RegisterTypeToSSEIndex(RegisterType regType) {
     return -1;
 }
 
-RegisterType dyno::SSEIndexToRegisterType(size_t index, size_t size) {
+RegisterType SSEIndexToRegisterType(size_t index, size_t size) {
     switch (size) {
         // ========================================================================
         // >> 128-bit XMM registers
@@ -687,4 +689,6 @@ RegisterType dyno::SSEIndexToRegisterType(size_t index, size_t size) {
 #endif // AVX512
     }
     return NONE;
+}
+
 }

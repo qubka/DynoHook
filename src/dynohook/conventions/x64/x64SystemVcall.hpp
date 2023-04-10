@@ -42,7 +42,7 @@ namespace dyno {
         void onReturnPtrChanged(const Registers& registers, void* returnPtr) override;
 
     private:
-        void* m_pReturnBuffer;
+        void* m_returnBuffer;
     };
 }
 

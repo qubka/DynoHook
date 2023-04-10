@@ -2,11 +2,11 @@
 
 using namespace dyno;
 
-HookManager::HookManager() : m_Jit{} {
+HookManager::HookManager() : m_jit{} {
 }
 
 HookManager::~HookManager() {
-    for (Hook* hook : m_Hooks)
+    for (Hook* hook : m_hooks)
         delete hook;
 }
 
@@ -20,8 +20,8 @@ Hook* HookManager::hook(void* func, ICallingConvention* convention) {
         return hook;
     }
 
-    hook = new Hook{m_Jit, func, convention};
-    m_Hooks.push_back(hook);
+    hook = new Hook{m_jit, func, convention};
+    m_hooks.push_back(hook);
     return hook;
 }
 
@@ -29,10 +29,10 @@ void HookManager::unhook(void* func) {
     if (!func)
         return;
 
-    for (size_t i = 0; i < m_Hooks.size(); ++i) {
-        Hook* hook = m_Hooks[i];
-        if (hook->m_pFunc == func) {
-            m_Hooks.erase(m_Hooks.begin() + i);
+    for (size_t i = 0; i < m_hooks.size(); ++i) {
+        Hook* hook = m_hooks[i];
+        if (hook->m_func == func) {
+            m_hooks.erase(m_hooks.begin() + i);
             delete hook;
             return;
         }
@@ -43,8 +43,8 @@ Hook* HookManager::find(void* func) const {
     if (!func)
         return nullptr;
 
-    for (Hook* hook : m_Hooks) {
-        if (hook->m_pFunc == func)
+    for (Hook* hook : m_hooks) {
+        if (hook->m_func == func)
             return hook;
     }
 
@@ -52,10 +52,10 @@ Hook* HookManager::find(void* func) const {
 }
 
 void HookManager::unhookAll() {
-    for (Hook* hook : m_Hooks)
+    for (Hook* hook : m_hooks)
         delete hook;
 
-    m_Hooks.clear();
+    m_hooks.clear();
 }
 
 HookManager& HookManager::Get() {
