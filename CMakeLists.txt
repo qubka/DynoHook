@@ -43,11 +43,6 @@ add_library(${DYNOHOOK} ${DYNOHOOK_SRC_FILES} ${DYNOHOOK_HDR_FILES})
 target_link_libraries(${DYNOHOOK} PUBLIC asmjit)
 target_link_libraries(${DYNOHOOK} PUBLIC capstone-static)
 target_precompile_headers(${DYNOHOOK} PUBLIC ${DYNOHOOK_PCH_FILE})
-if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-    target_compile_definitions(${DYNOHOOK} PUBLIC ENV64BIT)
-elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
-    target_compile_definitions(${DYNOHOOK} PUBLIC ENV32BIT)
-endif ()
 
 #######################
 

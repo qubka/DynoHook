@@ -2,33 +2,35 @@
 #include "utilities.hpp"
 #include "memory.hpp"
 
+#include <capstone/capstone.h>
+
 using namespace dyno;
 using namespace asmjit;
 using namespace asmjit::x86;
 
-Hook::Hook(asmjit::JitRuntime& jit, void* func2hook, ICallingConvention* convention) :
+Hook::Hook(asmjit::JitRuntime& jit, void* func, ICallingConvention* convention) :
     m_jit{jit},
-    m_func{func2hook},
+    m_func{func},
     m_callingConvention{convention},
     m_registers{convention->getRegisters()},
     m_scratchRegisters{createScratchRegisters()}
 {
-    // Allocate memory for the trampoline
-    m_trampoline = AllocatePageNearAddress(func2hook);
-    auto [trampolineSize, useRelativeJump] = BuildTrampoline(func2hook, m_trampoline, m_originalInstructions);
+    // Allow to write and read
+    MemoryProtect protector{m_func, 1024, RWX};
+
+    // Create the trampoline sandwich
+    createTrampoline();
 
     // Create the bridge function
     createBridge();
 
-    // Write a jump to the bridge
-    void* bridgeFuncMemory = (int8_t*) m_trampoline + trampolineSize;
-    WriteAbsoluteJump(bridgeFuncMemory, m_bridge); //write bridge func instructions
-
+#ifdef DYNO_PLATFORM_X64
+    // Write an absolute jump to the bridge
+    WriteAbsoluteJump(m_func, m_bridge);
+#else
     // Write a relative jump to the bridge
-    if (useRelativeJump)
-        WriteRelativeJump(func2hook, bridgeFuncMemory);
-    else
-        WriteAbsoluteJump(func2hook, bridgeFuncMemory);
+    WriteRelativeJump(m_func, m_bridge);
+#endif
 }
 
 Hook::~Hook() {
@@ -42,9 +44,13 @@ Hook::~Hook() {
     m_jit.release(m_newRetAddr);
 
     // Probably hook wasn't generated successfully
-    if (!m_originalInstructions.empty())
+    if (!m_originalCode.empty()) {
+        // Allow to write and read
+        MemoryProtect protector{m_func, m_originalCode.size(), RWX};
+
         // Copy back the previously copied bytes
-        memcpy(m_func, m_originalInstructions.data(), m_originalInstructions.size());
+        memcpy(m_func, m_originalCode.data(), m_originalCode.size());
+    }
 }
 
 void Hook::addCallback(HookType hookType, HookHandler* handler) {
@@ -169,6 +175,89 @@ void Hook::setReturnAddress(void* retAddr, void* stackPtr) {
     m_retAddr[stackPtr].push_back(retAddr);
 }
 
+bool Hook::createTrampoline() {
+#ifdef DYNO_PLATFORM_X64
+    const cs_mode mode = CS_MODE_64;
+    const size_t jumpInstSize = 23; // the size of a 64 bit mov/jmp instruction pair
+#else
+    const cs_mode mode = CS_MODE_32;
+    const size_t jumpInstSize = 5; // the size of a 32 bit push/ret instruction pair
+#endif // DYNO_PLATFORM_X64
+
+    // Disassemble stolen bytes
+    csh handle;
+    cs_open(CS_ARCH_X86, mode, &handle);
+    cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON); // we need details enabled for relocating RIP relative instrs
+
+    cs_insn* instructions;
+    size_t count = cs_disasm(handle, (uint8_t*) m_func, 0x100, (uintptr_t) m_func, 0, &instructions);
+
+    // Get the instructions covered by the first 5 bytes of the original function
+    size_t byteCount = 0;
+    size_t stolenInstrCount = 0;
+    for (size_t i = 0; i < count; ++i) {
+        cs_insn& inst = instructions[i];
+        byteCount += inst.size;
+        stolenInstrCount++;
+        if (byteCount >= jumpInstSize)
+            break;
+    }
+
+    if (byteCount < jumpInstSize) {
+        printf("Function too small");
+        return false;
+    }
+
+    // Allocate memory for the trampoline
+    m_trampoline = AllocatePageNearAddress(m_func);
+
+    // Save original instructions
+    m_originalCode.resize(byteCount);
+    memcpy(m_originalCode.data(), m_func, byteCount);
+
+    // Replace instructions in target func with NOPs
+    memset(m_func, 0x90, byteCount);
+
+    uint8_t* stolenByteMem = (uint8_t*) m_trampoline;
+    uint8_t* jumpBackMem = stolenByteMem + byteCount;
+    uint8_t* absTableMem = jumpBackMem + jumpInstSize;
+
+    for (size_t i = 0; i < stolenInstrCount; ++i) {
+        cs_insn& inst = instructions[i];
+
+        if (IsLoopInstr(inst)) {
+            printf("No way to handle loop instructions");
+            return false;
+        } else if (IsRIPRelativeInstr(inst)) {
+            RelocateInstruction(inst, stolenByteMem);
+        } else if (IsRelativeJump(inst)) {
+            uint32_t aitSize = AddJmpToAbsTable(inst, absTableMem);
+            RewriteJumpInstruction(inst, stolenByteMem, absTableMem);
+            absTableMem += aitSize;
+        } else if (IsRelativeCall(inst)) {
+            uint32_t aitSize = AddCallToAbsTable(inst, absTableMem, jumpBackMem);
+            RewriteCallInstruction(inst, stolenByteMem, absTableMem);
+            absTableMem += aitSize;
+        }
+
+        memcpy(stolenByteMem, inst.bytes, inst.size);
+        stolenByteMem += inst.size;
+    }
+
+#ifdef DYNO_PLATFORM_X64
+    WriteAbsoluteJump(jumpBackMem, (uint8_t*) m_func + jumpInstSize);
+#else
+    WriteRelativeJump(jumpBackMem, (uint8_t*) m_func + jumpInstSize);
+#endif
+
+    cs_free(instructions, count);
+    cs_close(&handle);
+
+    m_trampolineSize = uint32_t(absTableMem - (uint8_t*) m_trampoline);
+
+    return true;
+}
+
 // Used to print generated assembly
 #if 0
 FileLogger logger(stdout);
@@ -177,7 +266,7 @@ FileLogger logger(stdout);
 #define LOGGER(a)
 #endif
 
-void Hook::createBridge() const {
+bool Hook::createBridge() const {
     // Holds code and relocation information during code generation.
     CodeHolder code;
 
@@ -202,12 +291,15 @@ void Hook::createBridge() const {
     a.je(override);
 
     // Jump to the trampoline
-#ifdef ENV64BIT
-    a.mov(rax, m_trampoline); // TODO:
-    a.jmp(rax);
-#else // ENV32BIT
+#ifdef DYNO_PLATFORM_X64
+    a.lea(rsp, ptr(rsp, -8));
+    a.push(rax);
+    a.mov(rax, m_trampoline);
+    a.xchg(ptr(rsp), rax);
+    a.ret(8);
+#else
     a.jmp(m_trampoline);
-#endif
+#endif // DYNO_PLATFORM_X64
 
     // This code will be executed if a pre-hook returns true
     a.bind(override);
@@ -224,7 +316,10 @@ void Hook::createBridge() const {
     Error err = m_jit.add(&m_bridge, &code);
     if (err) {
         printf("AsmJit failed: %s\n", DebugUtils::errorAsString(err));
+        return false;
     }
+
+    return true;
 }
 
 void Hook::writeModifyReturnAddress(Assembler& a) const {
@@ -237,12 +332,12 @@ void Hook::writeModifyReturnAddress(Assembler& a) const {
     // This should be unique until we have returned to the original caller.
     void (ASMJIT_CDECL Hook::*setReturnAddress)(void*, void*) = &Hook::setReturnAddress;
 
-#ifdef ENV64BIT
+#ifdef DYNO_PLATFORM_X64
     // Store the return address and stack pointer in rax/rcx
     a.mov(rax, qword_ptr(rsp));
     a.mov(rcx, rsp);
 
-#if _WIN64
+#ifdef DYNO_PLATFORM_WINDOWS
     a.sub(rsp, 40);
     a.mov(r8, rcx);
     a.mov(rdx, rax);
@@ -257,7 +352,7 @@ void Hook::writeModifyReturnAddress(Assembler& a) const {
     a.mov(rax, (void *&) setReturnAddress);
     a.call(rax);
 #endif
-#else // ENV32BIT
+#else
     // Store the return address in eax
     a.mov(eax, dword_ptr(esp));
 
@@ -266,25 +361,25 @@ void Hook::writeModifyReturnAddress(Assembler& a) const {
     a.push(this);
     a.call((void*&) setReturnAddress);
     a.add(esp, 12);
-#endif // ENV32BIT
+#endif // DYNO_PLATFORM_X64
 
     // Restore scratch registers
     writeRestoreScratchRegisters(a);
 
     // Override the return address. This is a redirect to our post-hook code
     createPostCallback();
-#ifdef ENV64BIT
+#ifdef DYNO_PLATFORM_X64
     // Using rax because not possible to MOV r/m64, imm64
     a.push(rax);
     a.mov(rax, m_newRetAddr);
     a.mov(qword_ptr(rsp, 8), rax);
     a.pop(rax);
-#else // ENV32BIT
+#else
     a.mov(dword_ptr(esp), m_newRetAddr);
-#endif
+#endif // DYNO_PLATFORM_X64
 }
 
-void Hook::createPostCallback() const {
+bool Hook::createPostCallback() const {
     // Holds code and relocation information during code generation.
     CodeHolder code;
 
@@ -299,11 +394,11 @@ void Hook::createPostCallback() const {
 
     // Subtract the previously added bytes (stack size + return address), so
     // that we can access the arguments again
-#ifdef ENV64BIT
+#ifdef DYNO_PLATFORM_X64
     a.sub(rsp, popSize);
-#else // ENV32BIT
+#else
     a.sub(esp, popSize);
-#endif
+#endif // DYNO_PLATFORM_X64
 
     // Call the post-hook handler
     writeCallHandler(a, HookType::Post);
@@ -317,11 +412,11 @@ void Hook::createPostCallback() const {
     // Get the original return address
     void* (ASMJIT_CDECL Hook::*getReturnAddress)(void*) = &Hook::getReturnAddress;
 
-#ifdef ENV64BIT
+#ifdef DYNO_PLATFORM_X64
     // Save current stack pointer
     a.mov(rax, rsp);
 
-#if _WIN64
+#ifdef DYNO_PLATFORM_WINDOWS
     a.sub(rsp, 40);
     a.mov(rdx, rax);
     a.mov(rcx, this);
@@ -336,7 +431,7 @@ void Hook::createPostCallback() const {
 #endif
     // Save the original return address
     a.push(rax);
-#else // ENV32BIT
+#else
     a.push(esp);
     a.push(this);
     a.call((void*&) getReturnAddress);
@@ -344,7 +439,7 @@ void Hook::createPostCallback() const {
 
     // Save the original return address
     a.push(eax);
-#endif
+#endif // DYNO_PLATFORM_X64
 
     // Restore scratch registers
     writeRestoreScratchRegisters(a);
@@ -358,7 +453,10 @@ void Hook::createPostCallback() const {
     Error err = m_jit.add(&m_newRetAddr, &code);
     if (err) {
         printf("AsmJit failed: %s\n", DebugUtils::errorAsString(err));
+        return false;
     }
+
+    return true;
 }
 
 void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
@@ -368,8 +466,8 @@ void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
     writeSaveRegisters(a, hookType);
 
     // Call the global hook handler
-#ifdef ENV64BIT
-#if _WIN64
+#ifdef DYNO_PLATFORM_X64
+#ifdef DYNO_PLATFORM_WINDOWS
     a.sub(rsp, 40);
     a.mov(dl, hookType);
     a.mov(rcx, this);
@@ -382,14 +480,14 @@ void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
     a.mov(rax, (void *&) hookHandler);
     a.call(rax);
 #endif
-#else // ENV32BIT
+#else
 	// Subtract 4 bytes to preserve 16-Byte stack alignment for Linux
 	a.sub(esp, 4);
 	a.push(hookType);
 	a.push(this);
 	a.call((void *&) hookHandler);
 	a.add(esp, 12);
-#endif
+#endif // DYNO_PLATFORM_X64
 }
 
 std::vector<RegisterType> Hook::createScratchRegisters() const {
@@ -397,8 +495,8 @@ std::vector<RegisterType> Hook::createScratchRegisters() const {
 
     std::vector<RegisterType> registers;
     
-#ifdef ENV64BIT
-#if _WIN64
+#ifdef DYNO_PLATFORM_X64
+#ifdef DYNO_PLATFORM_WINDOWS
     registers.push_back(RAX);
     registers.push_back(RCX);
     registers.push_back(RDX);
@@ -418,8 +516,15 @@ std::vector<RegisterType> Hook::createScratchRegisters() const {
     registers.push_back(R11);
 #endif
     registers.push_back(XMM0);
+    registers.push_back(XMM1);
+    registers.push_back(XMM2);
+    registers.push_back(XMM3);
+    registers.push_back(XMM4);
+    registers.push_back(XMM5);
+    registers.push_back(XMM6);
+    registers.push_back(XMM7);
 // TODO: Do we need to save all sse registers ?
-/*#ifdef AVX512
+/*#ifdef DYNO_PLATFORM_AVX512
     registers.push_back(ZMM0);
     registers.push_back(ZMM1);
     registers.push_back(ZMM2);
@@ -453,7 +558,7 @@ std::vector<RegisterType> Hook::createScratchRegisters() const {
     registers.push_back(ZMM30);
     registers.push_back(ZMM31);
 #else
-    /*registers.push_back(YMM0);
+    registers.push_back(YMM0);
     registers.push_back(YMM1);
     registers.push_back(YMM2);
     registers.push_back(YMM3);
@@ -469,17 +574,17 @@ std::vector<RegisterType> Hook::createScratchRegisters() const {
     registers.push_back(YMM13);
     registers.push_back(YMM14);
     registers.push_back(YMM15);
-#endif // AVX512*/
-#else // ENV32BIT
+#endif // DYNO_PLATFORM_AVX512*/
+#else
     registers.push_back(EAX);
     registers.push_back(ECX);
     registers.push_back(EDX);
-#endif
+#endif // DYNO_PLATFORM_X64
     
     return registers;
 }
 
-#ifdef ENV64BIT
+#ifdef DYNO_PLATFORM_X64
 void Hook::writeSaveScratchRegisters(Assembler& a) const {
     // Save rax first, because we use it to save others
 
@@ -672,7 +777,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         case XMM13: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm13); break;
         case XMM14: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm14); break;
         case XMM15: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm15); break;
-#ifdef AVX512
+#ifdef DYNO_PLATFORM_AVX512
         case XMM16: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm16); break;
         case XMM17: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm17); break;
         case XMM18: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm18); break;
@@ -689,7 +794,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         case XMM29: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm29); break;
         case XMM30: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm30); break;
         case XMM31: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm31); break;
-#endif // AVX512
+#endif // DYNO_PLATFORM_AVX512
 
         // ========================================================================
         // >> 256-bit YMM registers
@@ -710,7 +815,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         case YMM13: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm13); break;
         case YMM14: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm14); break;
         case YMM15: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm15); break;
-#ifdef AVX512
+#ifdef DYNO_PLATFORM_AVX512
         case YMM16: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm16); break;
         case YMM17: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm17); break;
         case YMM18: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm18); break;
@@ -727,12 +832,12 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         case YMM29: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm29); break;
         case YMM30: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm30); break;
         case YMM31: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm31); break;
-#endif // AVX512
+#endif // DYNO_PLATFORM_AVX512
 
         // ========================================================================
         // >> 512-bit ZMM registers
         // ========================================================================
-#ifdef AVX512
+#ifdef DYNO_PLATFORM_AVX512
         case ZMM0: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm0); break;
         case ZMM1: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm1); break;
         case ZMM2: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm2); break;
@@ -765,7 +870,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         case ZMM29: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm29); break;
         case ZMM30: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm30); break;
         case ZMM31: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm31); break;
-#endif // AVX512
+#endif // DYNO_PLATFORM_AVX512
 
         // ========================================================================
         // >> 16-bit Segment registers
@@ -910,7 +1015,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         case XMM13: a.mov(rax, addr); a.movaps(xmm13, xmmword_ptr(rax)); break;
         case XMM14: a.mov(rax, addr); a.movaps(xmm14, xmmword_ptr(rax)); break;
         case XMM15: a.mov(rax, addr); a.movaps(xmm15, xmmword_ptr(rax)); break;
-#ifdef AVX512
+#ifdef DYNO_PLATFORM_AVX512
         case XMM16: a.mov(rax, addr); a.movaps(xmm16, xmmword_ptr(rax)); break;
         case XMM17: a.mov(rax, addr); a.movaps(xmm17, xmmword_ptr(rax)); break;
         case XMM18: a.mov(rax, addr); a.movaps(xmm18, xmmword_ptr(rax)); break;
@@ -927,7 +1032,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         case XMM29: a.mov(rax, addr); a.movaps(xmm29, xmmword_ptr(rax)); break;
         case XMM30: a.mov(rax, addr); a.movaps(xmm30, xmmword_ptr(rax)); break;
         case XMM31: a.mov(rax, addr); a.movaps(xmm31, xmmword_ptr(rax)); break;
-#endif // AVX512
+#endif // DYNO_PLATFORM_AVX512
 
         // ========================================================================
         // >> 256-bit YMM registers
@@ -948,7 +1053,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         case YMM13: a.mov(rax, addr); a.vmovaps(ymm13, ymmword_ptr(rax)); break;
         case YMM14: a.mov(rax, addr); a.vmovaps(ymm14, ymmword_ptr(rax)); break;
         case YMM15: a.mov(rax, addr); a.vmovaps(ymm15, ymmword_ptr(rax)); break;
-#ifdef AVX512
+#ifdef DYNO_PLATFORM_AVX512
         case YMM16: a.mov(rax, addr); a.vmovaps(ymm16, ymmword_ptr(rax)); break;
         case YMM17: a.mov(rax, addr); a.vmovaps(ymm17, ymmword_ptr(rax)); break;
         case YMM18: a.mov(rax, addr); a.vmovaps(ymm18, ymmword_ptr(rax)); break;
@@ -965,12 +1070,12 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         case YMM29: a.mov(rax, addr); a.vmovaps(ymm29, ymmword_ptr(rax)); break;
         case YMM30: a.mov(rax, addr); a.vmovaps(ymm30, ymmword_ptr(rax)); break;
         case YMM31: a.mov(rax, addr); a.vmovaps(ymm31, ymmword_ptr(rax)); break;
-#endif // AVX512
+#endif // DYNO_PLATFORM_AVX512
 
         // ========================================================================
         // >> 512-bit ZMM registers
         // ========================================================================
-#ifdef AVX512
+#ifdef DYNO_PLATFORM_AVX512
         case ZMM0: a.mov(rax, addr); a.vmovaps(zmm0, zmmword_ptr(rax)); break;
         case ZMM1: a.mov(rax, addr); a.vmovaps(zmm1, zmmword_ptr(rax)); break;
         case ZMM2: a.mov(rax, addr); a.vmovaps(zmm2, zmmword_ptr(rax)); break;
@@ -1003,7 +1108,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         case ZMM29: a.mov(rax, addr); a.vmovaps(zmm29, zmmword_ptr(rax)); break;
         case ZMM30: a.mov(rax, addr); a.vmovaps(zmm30, zmmword_ptr(rax)); break;
         case ZMM31: a.mov(rax, addr); a.vmovaps(zmm31, zmmword_ptr(rax)); break;
-#endif // AVX512
+#endif // DYNO_PLATFORM_AVX512
 
         // ========================================================================
         // >> 16-bit Segment registers
@@ -1018,7 +1123,9 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         default: puts("Unsupported register.");
     }
 }
-#else // ENV32BIT
+
+#else
+
 void Hook::writeSaveScratchRegisters(Assembler& a) const {
     for (const auto& reg : m_scratchRegisters) {
         writeRegToMem(a, reg);
@@ -1124,7 +1231,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
             // Don't mess with the FPU stack in a pre-hook. The float return is returned in st0,
             // so only load it in a post hook to avoid writing back NaN.
             if (hookType == HookType::Post) {
-                switch (m_callingConvention->getReturnType().size) {
+                switch (m_callingConvention->getReturn().size) {
                     case SIZE_DWORD: a.fstp(dword_ptr(addr)); break;
                     case SIZE_QWORD: a.fstp(qword_ptr(addr)); break;
                     case SIZE_TWORD: a.fstp(tword_ptr(addr)); break;
@@ -1228,7 +1335,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
                 // Push a value to the FPU stack.
                 // TODO: Only write back when changed? Save full 80bits for that case.
                 //       Avoid truncation of the data if it's unchanged.
-                switch (m_callingConvention->getReturnType().size) {
+                switch (m_callingConvention->getReturn().size) {
                     case SIZE_DWORD: a.fld(dword_ptr(addr)); break;
                     case SIZE_QWORD: a.fld(qword_ptr(addr)); break;
                     case SIZE_TWORD: a.fld(tword_ptr(addr)); break;
@@ -1246,4 +1353,4 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         default: puts("Unsupported register.");
     }
 }
-#endif // ENV32BIT
+#endif // DYNO_PLATFORM_X64

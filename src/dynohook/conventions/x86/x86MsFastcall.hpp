@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef ENV32BIT
+#ifndef DYNO_PLATFORM_X64
 
 #include "dynohook/convention.hpp"
 #include "x86MsStdcall.hpp"
@@ -28,9 +28,9 @@
 namespace dyno {
     class x86MsFastcall : public x86MsStdcall {
     public:
-        x86MsFastcall(std::vector<DataTypeSized> arguments, DataTypeSized returnType, size_t alignment = 4);
-        ~x86MsFastcall() override;
+        x86MsFastcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = 4);
+        ~x86MsFastcall() override = default;
     };
 }
 
-#endif // ENV32BIT
+#endif // DYNO_PLATFORM_X64

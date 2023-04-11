@@ -3,38 +3,38 @@
 #include "registers.hpp"
 
 namespace dyno {
-    enum DataType : uint8_t {
-        DATA_TYPE_VOID,
-        DATA_TYPE_BOOL,
-        DATA_TYPE_CHAR,
-        DATA_TYPE_UCHAR,
-        DATA_TYPE_SHORT,
-        DATA_TYPE_USHORT,
-        DATA_TYPE_INT,
-        DATA_TYPE_UINT,
-        DATA_TYPE_LONG,
-        DATA_TYPE_ULONG,
-        DATA_TYPE_LONG_LONG,
-        DATA_TYPE_ULONG_LONG,
-        DATA_TYPE_FLOAT,
-        DATA_TYPE_DOUBLE,
-        DATA_TYPE_POINTER,
-        DATA_TYPE_STRING,
-        DATA_TYPE_M128,
-        DATA_TYPE_M256,
-        DATA_TYPE_M512,
-        DATA_TYPE_OBJECT
+    enum class DataType : uint8_t {
+        Void,
+        Bool,
+        Char,
+        UChar,
+        Short,
+        UShort,
+        Int,
+        UInt,
+        Long,
+        ULong,
+        LongLong,
+        ULongLong,
+        Float,
+        Double,
+        Pointer,
+        String,
+        M128,
+        M256,
+        M512,
+        Object
     };
 
-    struct DataTypeSized {
+    struct DataObject {
         DataType type;
         RegisterType reg;
         uint16_t size;
 
-        DataTypeSized(DataType type, RegisterType reg = NONE, uint16_t size = 0) : type{type}, reg{reg}, size{size} {}
+        DataObject(DataType type, RegisterType reg = NONE, uint16_t size = 0) : type{type}, reg{reg}, size{size} {}
 
-        bool isFlt() const { return type == DATA_TYPE_FLOAT || type == DATA_TYPE_DOUBLE; }
-        bool isHva() const { return type == DATA_TYPE_M128 || type == DATA_TYPE_M256 || type == DATA_TYPE_M512; }
+        bool isFlt() const { return type == DataType::Float || type == DataType::Double; }
+        bool isHva() const { return type == DataType::M128 || type == DataType::M256 || type == DataType::M512; }
     };
 
     /**
@@ -57,60 +57,50 @@ namespace dyno {
      * @param alignment The alignment that should be used.
      * @return
      */
-    inline size_t GetDataTypeSize(DataTypeSized type, size_t alignment) {
-        switch (type.type) {
-            case DATA_TYPE_VOID:
+    inline size_t GetDataTypeSize(DataType type, size_t alignment) {
+        switch (type) {
+            case DataType::Void:
                 return 0;
-            case DATA_TYPE_BOOL:
+            case DataType::Bool:
                 return Align(sizeof(bool), alignment);
-            case DATA_TYPE_CHAR:
+            case DataType::Char:
                 return Align(sizeof(char), alignment);
-            case DATA_TYPE_UCHAR:
+            case DataType::UChar:
                 return Align(sizeof(unsigned char), alignment);
-            case DATA_TYPE_SHORT:
+            case DataType::Short:
                 return Align(sizeof(short), alignment);
-            case DATA_TYPE_USHORT:
+            case DataType::UShort:
                 return Align(sizeof(unsigned short), alignment);
-            case DATA_TYPE_INT:
+            case DataType::Int:
                 return Align(sizeof(int), alignment);
-            case DATA_TYPE_UINT:
+            case DataType::UInt:
                 return Align(sizeof(unsigned int), alignment);
-            case DATA_TYPE_LONG:
+            case DataType::Long:
                 return Align(sizeof(long), alignment);
-            case DATA_TYPE_ULONG:
+            case DataType::ULong:
                 return Align(sizeof(unsigned long), alignment);
-            case DATA_TYPE_LONG_LONG:
+            case DataType::LongLong:
                 return Align(sizeof(long long), alignment);
-            case DATA_TYPE_ULONG_LONG:
+            case DataType::ULongLong:
                 return Align(sizeof(unsigned long long), alignment);
-            case DATA_TYPE_FLOAT:
+            case DataType::Float:
                 return Align(sizeof(float), alignment);
-            case DATA_TYPE_DOUBLE:
+            case DataType::Double:
                 return Align(sizeof(double), alignment);
-            case DATA_TYPE_POINTER:
+            case DataType::Pointer:
                 return Align(sizeof(void*), alignment);
-            case DATA_TYPE_STRING:
+            case DataType::String:
                 return Align(sizeof(char*), alignment);
-            case DATA_TYPE_M128:
+            case DataType::M128:
                 return Align(sizeof(float) * 4, alignment);
-            case DATA_TYPE_M256:
+            case DataType::M256:
                 return Align(sizeof(float) * 8, alignment);
-            case DATA_TYPE_M512:
+            case DataType::M512:
                 return Align(sizeof(float) * 16, alignment);
-            case DATA_TYPE_OBJECT:
-                return type.size;
             default:
                 puts("Unknown data type.");
         }
         return 0;
-    }
-
-    /**
-     * @return Rounds x to the next dividable by m.
-     */
-    template<typename T>
-    inline T round(T x, T m) {
-        return x + m - x % m;
     }
 
     /**
@@ -125,9 +115,9 @@ namespace dyno {
          * @param returnType The return type of the function.
          * @param alignment
          */
-        ICallingConvention(std::vector<DataTypeSized> arguments, DataTypeSized returnType, size_t alignment) :
+        ICallingConvention(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
             m_arguments{std::move(arguments)},
-            m_returnType{returnType},
+            m_return{returnType},
             m_alignment{alignment} {
         }
         virtual ~ICallingConvention() = default;
@@ -182,8 +172,8 @@ namespace dyno {
          * @param registers A snapshot of all saved registers.
          */
         virtual void saveReturnValue(const Registers& registers) {
-            std::unique_ptr<uint8_t[]> savedReturnValue = std::make_unique<uint8_t[]>(m_returnType.size);
-            memcpy(savedReturnValue.get(), getReturnPtr(registers), m_returnType.size);
+            std::unique_ptr<uint8_t[]> savedReturnValue = std::make_unique<uint8_t[]>(m_return.size);
+            memcpy(savedReturnValue.get(), getReturnPtr(registers), m_return.size);
             m_savedReturnBuffers.push_back(std::move(savedReturnValue));
         }
 
@@ -193,7 +183,7 @@ namespace dyno {
          */
         virtual void restoreReturnValue(const Registers& registers) {
             uint8_t* savedReturnValue = m_savedReturnBuffers.back().get();
-            memcpy(getReturnPtr(registers), savedReturnValue, m_returnType.size);
+            memcpy(getReturnPtr(registers), savedReturnValue, m_return.size);
             onReturnPtrChanged(registers, savedReturnValue);
             m_savedReturnBuffers.pop_back();
         }
@@ -256,12 +246,12 @@ namespace dyno {
             return m_registerSize;
         }
 
-        const std::vector<DataTypeSized>& getArguments() const {
+        const std::vector<DataObject>& getArguments() const {
             return m_arguments;
         }
 
-        DataTypeSized getReturnType() const {
-            return m_returnType;
+        DataObject getReturn() const {
+            return m_return;
         }
 
         size_t getAlignment() const {
@@ -283,13 +273,13 @@ namespace dyno {
                     m_registerSize += size;
             }
 
-            if (!m_returnType.size)
-                m_returnType.size = GetDataTypeSize(m_returnType, m_alignment);
+            if (!m_return.size)
+                m_return.size = GetDataTypeSize(m_return.type, m_alignment);
         }
 
     protected:
-        std::vector<DataTypeSized> m_arguments;
-        DataTypeSized m_returnType;
+        std::vector<DataObject> m_arguments;
+        DataObject m_return;
         size_t m_alignment;
         size_t m_stackSize;
         size_t m_registerSize;

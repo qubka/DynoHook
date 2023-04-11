@@ -73,7 +73,7 @@ void main() {
 	HookManager& hookMngr = HookManager::Get();
 
 	// Hook the function
-	Hook* pHook = hookMngr.hook((void *) &MyFunc, new x64MsFastcall({DATA_TYPE_INT, DATA_TYPE_INT}, DATA_TYPE_INT));
+	Hook* pHook = hookMngr.hook((void *) &MyFunc, new x64MsFastcall({DataType::Int, DataType::Int}, DataType::Int));
 
 	// Add the callbacks
 	pHook->addCallback(HookType::Pre, (HookHandler *) (void *) &PreMyFunc);
@@ -161,7 +161,7 @@ void main() {
 	int (__fastcall MyClass::*myFunc)(int, int) = &MyClass::myFunc;
 
 	// Hook the function
-	Hook* pHook = hookMngr.hook((void *&) myFunc, new x64MsFastcall({DATA_TYPE_POINTER, DATA_TYPE_INT, DATA_TYPE_INT}, DATA_TYPE_INT));
+	Hook* pHook = hookMngr.hook((void *&) myFunc, new x64MsFastcall({DataType::Pointer, DataType::Int, DataType::Int}, DataType::Int));
 
 	// Add the callbacks
 	pHook->addCallback(HookType::Pre, (HookHandler *) (void *) &PreMyFunc);

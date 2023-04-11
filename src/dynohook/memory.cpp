@@ -1,8 +1,19 @@
 #include "memory.hpp"
 
+#ifdef DYNO_PLATFORM_WINDOWS
+#include <windows.h>
+#elif DYNO_PLATFORM_LINUX
+#include <sys/mman.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <climits>
+#else
+#error "Platform not supported!"
+#endif
+
 using namespace dyno;
 
-MemoryProtect::MemoryProtect(void* addr, size_t size, unsigned long flags) : m_address{addr}, m_size{size}, m_flags{flags}, m_oldProtection{0} {
+MemoryProtect::MemoryProtect(void* addr, size_t size, ProtFlag flags) : m_address{addr}, m_size{size}, m_flags{flags}, m_oldProtection{0} {
     protect(m_address, m_size, m_flags);
 }
 
@@ -10,48 +21,75 @@ MemoryProtect::~MemoryProtect() {
     protect(m_address, m_size, m_oldProtection);
 }
 
-bool MemoryProtect::protect(void* addr, size_t size, unsigned long flags) {
-#ifdef _WIN32
-    return VirtualProtect(m_address, m_size, m_flags, &m_oldProtection);
-#else
-    m_oldProtection = PROT_READ | PROT_EXEC; // TODO: Find default value
-    const size_t pageSize = sysconf(_SC_PAGE_SIZE);
-    uintptr_t pageAddr = (uintptr_t) addr;
-    pageAddr = pageAddr - (pageAddr % pageSize);
-    return mprotect((void*) pageAddr, size, (int) flags) != -1;
-#endif
-}
-
 namespace dyno {
+
+    ProtFlag operator|(ProtFlag lhs, ProtFlag rhs) {
+        using underlying = typename std::underlying_type<ProtFlag>::type;
+        return static_cast<ProtFlag> (
+            static_cast<underlying>(lhs) | static_cast<underlying>(rhs)
+        );
+    }
+
+    bool operator&(ProtFlag lhs, ProtFlag rhs) {
+        using underlying = typename std::underlying_type<ProtFlag>::type;
+        return static_cast<underlying>(lhs) & static_cast<underlying>(rhs);
+    }
+
+    std::ostream& operator<<(std::ostream& os, ProtFlag flags) {
+        if (flags == ProtFlag::UNSET) {
+            os << "UNSET";
+            return os;
+        }
+
+        if (flags & ProtFlag::X)
+            os << "x";
+        else
+            os << "-";
+
+        if (flags & ProtFlag::R)
+            os << "r";
+        else
+            os << "-";
+
+        if (flags & ProtFlag::W)
+            os << "w";
+        else
+            os << "-";
+
+        if (flags & ProtFlag::N)
+            os << "n";
+        else
+            os << "-";
+
+        if (flags & ProtFlag::P)
+            os << " private";
+        else if (flags & ProtFlag::S)
+            os << " shared";
+        return os;
+    }
+
+#ifdef DYNO_PLATFORM_WINDOWS
+    bool MemoryProtect::protect(void* addr, size_t size, ProtFlag flags) {
+        DWORD oldProtect;
+        bool success = VirtualProtect(addr, size, TranslateProtection(flags), &oldProtect);
+        m_oldProtection = TranslateProtection((int) oldProtect);
+        return success;
+    }
+
     void* AllocateMemory(void* addr, size_t size) {
-#ifdef _WIN32
         return VirtualAlloc(addr, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
-#else
-        return mmap(addr, size, PAGE_EXECUTE_READWRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-#endif
     }
 
     void FreeMemory(void* addr, size_t size) {
-#ifdef _WIN32
         VirtualFree(addr, size, MEM_RELEASE);
-#else
-        munmap(addr, size);
-#endif
     }
 
     void* AllocatePageNearAddress(void* targetAddr) {
-#if _WIN32
         SYSTEM_INFO sysInfo;
         GetSystemInfo(&sysInfo);
         const size_t pageSize = sysInfo.dwPageSize;
         uintptr_t minAddr = (uintptr_t) sysInfo.lpMinimumApplicationAddress;
         uintptr_t maxAddr = (uintptr_t) sysInfo.lpMaximumApplicationAddress;
-#else
-        const size_t pageSize = sysconf(_SC_PAGE_SIZE);
-        uintptr_t minAddr = (uintptr_t) pageSize;
-        uintptr_t maxAddr = (uint64_t) (128ull * 1024 * 1024 * 1024 * 1024);
-        using namespace std;
-#endif
 
         uintptr_t startAddr = (uintptr_t(targetAddr) & ~(pageSize - 1)); //round down to nearest page boundary
 
@@ -90,13 +128,237 @@ namespace dyno {
     }
 
     void FreePage(void* pageAddr) {
-#if _WIN32
         SYSTEM_INFO sysInfo;
         GetSystemInfo(&sysInfo);
         const size_t pageSize = sysInfo.dwPageSize;
-#else
-        const size_t pageSize = sysconf(_SC_PAGE_SIZE);
-#endif
         FreeMemory(pageAddr, pageSize);
     }
+
+    int TranslateProtection(ProtFlag flags) {
+        int nativeFlag = 0;
+        if (flags == ProtFlag::X)
+            nativeFlag = PAGE_EXECUTE;
+
+        if (flags == ProtFlag::R)
+            nativeFlag = PAGE_READONLY;
+
+        if (flags == ProtFlag::W || (flags == (ProtFlag::R | ProtFlag::W)))
+            nativeFlag = PAGE_READWRITE;
+
+        if ((flags & ProtFlag::X) && (flags & ProtFlag::R))
+            nativeFlag = PAGE_EXECUTE_READ;
+
+        if ((flags & ProtFlag::X) && (flags & ProtFlag::W))
+            nativeFlag = PAGE_EXECUTE_READWRITE;
+
+        if (flags & ProtFlag::N)
+            nativeFlag = PAGE_NOACCESS;
+        return nativeFlag;
+    }
+
+    ProtFlag TranslateProtection(int prot) {
+        ProtFlag flags = ProtFlag::UNSET;
+        switch (prot) {
+        case PAGE_EXECUTE:
+            flags = flags | ProtFlag::X;
+            break;
+        case PAGE_READONLY:
+            flags = flags | ProtFlag::R;
+            break;
+        case PAGE_READWRITE:
+            flags = flags | ProtFlag::W;
+            flags = flags | ProtFlag::R;
+            break;
+        case PAGE_EXECUTE_READWRITE:
+            flags = flags | ProtFlag::X;
+            flags = flags | ProtFlag::R;
+            flags = flags | ProtFlag::W;
+            break;
+        case PAGE_EXECUTE_READ:
+            flags = flags | ProtFlag::X;
+            flags = flags | ProtFlag::R;
+            break;
+        case PAGE_NOACCESS:
+            flags = flags | ProtFlag::N;
+            break;
+        }
+        return flags;
+    }
+
+#elif DYNO_PLATFORM_LINUX
+    struct region_t {
+        uint64_t start;
+        uint64_t end;
+        dyno::ProtFlag prot;
+    };
+
+    static region_t get_region_from_addr(uint64_t addr) {
+        region_t res{};
+
+        std::ifstream f("/proc/self/maps");
+        std::string s;
+        while (std::getline(f, s)) {
+            if (!s.empty() && s.find("vdso") == std::string::npos && s.find("vsyscall") == std::string::npos) {
+                char* strend = &s[0];
+                uint64_t start = strtoul(strend  , &strend, 16);
+                uint64_t end   = strtoul(strend+1, &strend, 16);
+                if (start != 0 && end != 0 && start <= addr && addr < end) {
+                    res.start = start;
+                    res.end = end;
+
+                    ++strend;
+                    if (strend[0] == 'r')
+                        res.prot = res.prot | PLH::ProtFlag::R;
+
+                    if (strend[1] == 'w')
+                        res.prot = res.prot | PLH::ProtFlag::W;
+
+                    if (strend[2] == 'x')
+                        res.prot = res.prot | PLH::ProtFlag::X;
+
+                    if(res.prot == PLH::ProtFlag::UNSET)
+                        res.prot = PLH::ProtFlag::N;
+
+                    break;
+                }
+            }
+        }
+        return res;
+    }
+
+    bool MemoryProtect::protect(void* addr, size_t size, ProtFlag flags) {
+        const size_t pageSize = sysconf(_SC_PAGE_SIZE);
+        uintptr_t pageAddr = (uintptr_t) addr;
+        pageAddr = pageAddr - (pageAddr % pageSize);
+        m_oldProtection = get_region_from_addr(pageAddr).prot;
+        return mprotect((void*) pageAddr, size, TranslateProtection(m_flags)) != -1;
+    }
+
+    void* AllocateMemory(void* addr, size_t size) {
+        return mmap(addr, size, PAGE_EXECUTE_READWRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    }
+
+    void FreeMemory(void* addr, size_t size) {
+        munmap(addr, size);
+    }
+
+    void* AllocatePageNearAddress(void* targetAddr) {
+        const size_t pageSize = sysconf(_SC_PAGE_SIZE);
+        uintptr_t minAddr = (uintptr_t) pageSize;
+        uintptr_t maxAddr = uintptr_t(-1) - pageSize;
+
+        uintptr_t startAddr = (uintptr_t(targetAddr) & ~(pageSize - 1)); //round down to nearest page boundary
+
+        minAddr = std::min(startAddr - 0x7FFFFF00, minAddr);
+        maxAddr = std::max(startAddr + 0x7FFFFF00, maxAddr);
+
+        uintptr_t startPage = (startAddr - (startAddr % pageSize));
+        uintptr_t pageOffset = 1;
+
+        while (true) {
+            uintptr_t byteOffset = pageOffset * pageSize;
+            uintptr_t highAddr = startPage + byteOffset;
+            uintptr_t lowAddr = (startPage > byteOffset) ? startPage - byteOffset : 0;
+
+            bool needsExit = highAddr > maxAddr && lowAddr < minAddr;
+
+            if (highAddr < maxAddr) {
+                void* outAddr = AllocateMemory((void*) highAddr, pageSize);
+                if (outAddr != nullptr && outAddr != (void*) -1)
+                    return outAddr;
+            }
+
+            if (lowAddr > minAddr) {
+                void* outAddr = AllocateMemory((void*) lowAddr, pageSize);
+                if (outAddr != nullptr && outAddr != (void*) -1)
+                    return outAddr;
+            }
+
+            pageOffset++;
+
+            if (needsExit)
+                break;
+        }
+
+        return nullptr;
+    }
+
+    void FreePage(void* pageAddr) {
+        const size_t pageSize = sysconf(_SC_PAGE_SIZE);
+        FreeMemory(pageAddr, pageSize);
+    }
+
+    int TranslateProtection(ProtFlag flags) {
+        int nativeFlag = PROT_NONE;
+        if (flags & ProtFlag::X)
+            nativeFlag |= PROT_EXEC;
+
+        if (flags & ProtFlag::R)
+            nativeFlag |= PROT_READ;
+
+        if (flags & ProtFlag::W)
+            nativeFlag |= PROT_WRITE;
+
+        if (flags & ProtFlag::N)
+            nativeFlag = PROT_NONE;
+
+        return nativeFlag;
+    }
+
+    ProtFlag TranslateProtection(int prot) {
+        ProtFlag flags = ProtFlag::UNSET;
+
+        if(prot & PROT_EXEC)
+            flags = flags | ProtFlag::X;
+
+        if (prot & PROT_READ)
+            flags = flags | ProtFlag::R;
+
+        if (prot & PROT_WRITE)
+            flags = flags | ProtFlag::W;
+
+        if (prot == PROT_NONE)
+            flags = flags | ProtFlag::N;
+
+        return flags;
+    }
+
+#elif DYNO_PLATFORM_APPLE
+
+    int TranslateProtection(ProtFlag flags) {
+        int nativeFlag = VM_PROT_NONE;
+        if (flags & ProtFlag::X)
+            nativeFlag |= PROT_EXEC;
+
+        if (flags & ProtFlag::R)
+            nativeFlag |= PROT_READ;
+
+        if (flags & ProtFlag::W)
+            nativeFlag |= PROT_WRITE;
+
+        if (flags & ProtFlag::N)
+            nativeFlag = PROT_NONE;
+
+        return nativeFlag;
+    }
+
+    ProtFlag TranslateProtection(int prot) {
+        ProtFlag flags = ProtFlag::UNSET;
+
+        if (prot & VM_PROT_EXECUTE)
+            flags = flags | ProtFlag::X;
+
+        if (prot & VM_PROT_READ)
+            flags = flags | ProtFlag::R;
+
+        if (prot & VM_PROT_WRITE)
+            flags = flags | ProtFlag::W;
+
+        if (prot == VM_PROT_NONE)
+            flags = flags | ProtFlag::N;
+
+        return flags;
+    }
+#endif
+
 }

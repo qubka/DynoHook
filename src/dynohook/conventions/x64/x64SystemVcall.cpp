@@ -1,17 +1,17 @@
 #include "x64SystemVcall.hpp"
 
-#ifdef ENV64BIT
+#ifdef DYNO_PLATFORM_X64
 
 using namespace dyno;
 
-x64SystemVcall::x64SystemVcall(std::vector<DataTypeSized> arguments, DataTypeSized returnType, size_t alignment) :
+x64SystemVcall::x64SystemVcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
         ICallingConvention{std::move(arguments), returnType, alignment} {
     // Don't force the register on the user.
 
     RegisterType registers[] = { RDI, RSI, RDX, RCX, R8, R9 };
 
     for (size_t i = 0, j = 0, k = 0; i < m_arguments.size(); ++i) {
-        DataTypeSized& arg = m_arguments[i];
+        DataObject& arg = m_arguments[i];
 
         if (arg.reg == NONE) {
             // Floating Point Arguments 1-8 ([XYZ]MM0 - [XYZ]MM7)
@@ -25,18 +25,18 @@ x64SystemVcall::x64SystemVcall(std::vector<DataTypeSized> arguments, DataTypeSiz
         }
     }
 
-    bool nonScalar = m_returnType.isFlt() || m_returnType.isHva();
+    bool nonScalar = m_return.isFlt() || m_return.isHva();
 
     // Integer return values up to 64 bits in size are stored in RAX while values up to 128 bit are stored in RAX and RDX.
     // Floating-point return values are similarly stored in [XYZ]MM0 and [XYZ]MM1. TODO: We used [XYZ]MM0 by default, how we can detect another ?
 
-    if (!nonScalar && m_returnType.size > 8)
-        m_returnBuffer = malloc(m_returnType.size);
+    if (!nonScalar && m_return.size > 8)
+        m_returnBuffer = malloc(m_return.size);
     else
         m_returnBuffer = nullptr;
 
-    if (m_returnType.reg == NONE)
-        m_returnType.reg = nonScalar ? SSEIndexToRegisterType(0, m_returnType.size) : RAX;
+    if (m_return.reg == NONE)
+        m_return.reg = nonScalar ? SSEIndexToRegisterType(0, m_return.size) : RAX;
 
     init();
 }
@@ -64,7 +64,7 @@ std::vector<RegisterType> x64SystemVcall::getRegisters() {
         registers.push_back(RAX);
         registers.push_back(RDX);
     } else {
-        registers.push_back(m_returnType.reg);
+        registers.push_back(m_return.reg);
     }
 
     return registers;
@@ -104,7 +104,7 @@ void* x64SystemVcall::getReturnPtr(const Registers& registers) {
         return m_returnBuffer;
     }
 
-    return *registers.at(m_returnType.reg, true);
+    return *registers.at(m_return.reg, true);
 }
 
 void x64SystemVcall::onReturnPtrChanged(const Registers& registers, void* returnPtr) {
@@ -115,4 +115,4 @@ void x64SystemVcall::onReturnPtrChanged(const Registers& registers, void* return
     }
 }
 
-#endif // ENV64BIT
+#endif // DYNO_PLATFORM_X64

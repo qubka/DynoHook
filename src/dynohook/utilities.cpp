@@ -1,286 +1,188 @@
 #include "utilities.hpp"
 #include "memory.hpp"
 
-#include "capstone/capstone.h"
+#include <capstone/capstone.h>
 
 // From: http://kylehalladay.com/blog/2020/11/13/Hooking-By-Example.html
 
 namespace dyno {
 
-bool IsRelativeJump(const cs_insn& inst) {
-    bool isAnyJumpInstruction = inst.id >= X86_INS_JAE && inst.id <= X86_INS_JS;
-    bool isJmp = inst.id == X86_INS_JMP;
-    bool startsWithEBorE9 = inst.bytes[0] == 0xEB || inst.bytes[0] == 0xE9;
-    return isJmp ? startsWithEBorE9 : isAnyJumpInstruction;
-}
+    bool IsRelativeJump(const cs_insn& inst) {
+        bool isAnyJumpInstruction = inst.id >= X86_INS_JAE && inst.id <= X86_INS_JS;
+        bool isJmp = inst.id == X86_INS_JMP;
+        bool startsWithEBorE9 = inst.bytes[0] == 0xEB || inst.bytes[0] == 0xE9;
+        return isJmp ? startsWithEBorE9 : isAnyJumpInstruction;
+    }
 
-bool IsRelativeCall(const cs_insn& inst) {
-    bool isCall = inst.id == X86_INS_CALL;
-    bool startsWithE8 = inst.bytes[0] == 0xE8;
-    return isCall && startsWithE8;
-}
+    bool IsRelativeCall(const cs_insn& inst) {
+        bool isCall = inst.id == X86_INS_CALL;
+        bool startsWithE8 = inst.bytes[0] == 0xE8;
+        return isCall && startsWithE8;
+    }
 
-bool IsRIPRelativeInstr(const cs_insn& inst) {
-    const cs_x86& x86 = inst.detail->x86;
+    bool IsRIPRelativeInstr(const cs_insn& inst) {
+        const cs_x86& x86 = inst.detail->x86;
 
-    for (size_t i = 0; i < x86.op_count; ++i) {
-        const cs_x86_op& op = x86.operands[i];
+        for (size_t i = 0; i < x86.op_count; ++i) {
+            const cs_x86_op& op = x86.operands[i];
 
-        //mem type is rip relative, like lea rcx,[rip+0xbeef]
-        if (op.type == X86_OP_MEM) {
-            //if we're relative to rip
-            return op.mem.base == X86_REG_RIP;
+            //mem type is rip relative, like lea rcx,[rip+0xbeef]
+            if (op.type == X86_OP_MEM) {
+                //if we're relative to rip
+                return op.mem.base == X86_REG_RIP;
+            }
+        }
+
+        return false;
+    }
+
+    bool IsLoopInstr(const cs_insn& inst) {
+        return inst.id >= X86_INS_LOOP && inst.id <= X86_INS_LOOPNE;
+    }
+
+    size_t WriteRelativeJump(void* targetAddr, void* addrToJumpTo) {
+        /**
+         * 0:  e9 00 00 00 00          jmp    0x5
+         */
+        uint8_t jmpInstruction[] = { 0xE9, 0x0, 0x0, 0x0, 0x0 };
+
+        uint32_t relAddr = (uintptr_t) addrToJumpTo - ((uintptr_t) targetAddr + sizeof(jmpInstruction));
+        memcpy(&jmpInstruction[1], &relAddr, sizeof(relAddr));
+        memcpy(targetAddr, jmpInstruction, sizeof(jmpInstruction));
+
+        return sizeof(jmpInstruction);
+    }
+
+    size_t WriteAbsoluteJump(void* targetAddr, void* addrToJumpTo) {
+    #ifdef DYNO_PLATFORM_X64
+        /**
+         * 0:  48 b8 00 00 00 00 00    movabs rax,0x0
+         * 7:  00 00 00
+         * a:  ff e0                   jmp    rax
+         */
+        //uint8_t absJumpInstructions[] = { 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0 };
+
+        /**
+         * 0:  48 8d 64 24 f8          lea    rsp,[rsp-0x8]
+         * 5:  50                      push   rax
+         * 6:  48 b8 78 56 34 12 78    movabs rax,0x1234567812345678
+         * d:  56 34 12
+         * 10: 48 87 04 24             xchg   QWORD PTR [rsp],rax
+         * 14: c2 08 00                ret    0x8
+         */
+        uint8_t absJumpInstructions[] = { 0x48, 0x8D, 0x64, 0x24, 0xF8, 0x50, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x87, 0x04, 0x24, 0xC2, 0x08, 0x00 };
+
+        uintptr_t addrToJumpTo64 = (uintptr_t) addrToJumpTo;
+        memcpy(&absJumpInstructions[8], &addrToJumpTo64, sizeof(addrToJumpTo64));
+        memcpy(targetAddr, absJumpInstructions, sizeof(absJumpInstructions));
+    #else
+        /**
+         * 0:  68 00 00 00 00          push   0x0
+         * 5:  c3                      ret
+         */
+        uint8_t absJumpInstructions[] = { 0x68, 0x00, 0x00, 0x00, 0x00, 0xC3 };
+
+        uintptr_t addrToJumpTo32 = (uintptr_t) addrToJumpTo;
+        memcpy(&absJumpInstructions[1], &addrToJumpTo32, sizeof(addrToJumpTo32));
+        memcpy(targetAddr, absJumpInstructions, sizeof(absJumpInstructions));
+    #endif // DYNO_PLATFORM_X64
+
+        return sizeof(absJumpInstructions);
+    }
+
+    #ifdef DYNO_PLATFORM_X64
+    #define CONVERT(S) strtoull(S, nullptr, 0)
+    #else
+    #define CONVERT(S) strtoul(S, nullptr, 0)
+    #endif
+
+    uint32_t AddJmpToAbsTable(cs_insn& jmp, uint8_t* absTableMem) {
+        char* targetAddrStr = jmp.op_str; //where the instruction intended to go
+        uintptr_t targetAddr = CONVERT(targetAddrStr);
+
+        return WriteAbsoluteJump(absTableMem, (void*) targetAddr);
+    }
+
+    uint32_t AddCallToAbsTable(cs_insn& call, uint8_t* absTableMem, uint8_t* jumpBackToHookedFunc) {
+        char* targetAddrStr = call.op_str; //where the instruction intended to go
+        uintptr_t targetAddr = CONVERT(targetAddrStr);
+
+        uint8_t* dstMem = absTableMem;
+    #ifdef DYNO_PLATFORM_X64
+        /**
+         * 0:  48 b8 00 00 00 00 00    movabs rax,0x0
+         * 7:  00 00 00
+         * a:  ff d0                   call   rax
+         */
+        uint8_t callAsmBytes[] = { 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xD0 };
+
+        memcpy(&callAsmBytes[2], &targetAddr, sizeof(targetAddr));
+    #else
+        /**
+         * 0:  b8 00 00 00 00          mov    eax,0x0
+         * 5:  ff d0                   call   eax
+         */
+        uint8_t callAsmBytes[] = { 0xB8, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xD0 };
+
+        memcpy(&callAsmBytes[1], &targetAddr, sizeof(targetAddr));
+    #endif // DYNO_PLATFORM_X64
+
+        memcpy(dstMem, &callAsmBytes, sizeof(callAsmBytes));
+        dstMem += sizeof(callAsmBytes);
+
+        //after the call, we need to add a second 2 byte jump, which will jump back to the
+        //final jump of the stolen bytes
+        uint8_t jmpBytes[2] = { 0xEB, uint8_t(jumpBackToHookedFunc - (absTableMem + sizeof(jmpBytes))) };
+        memcpy(dstMem, jmpBytes, sizeof(jmpBytes));
+
+        return sizeof(callAsmBytes) + sizeof(jmpBytes);
+    }
+
+    template<class T>
+    void CalculateDisplacement(void* from, void* to, uintptr_t address) {
+        T disp;
+        memcpy(&disp, from, sizeof(T));
+        disp -= T(uintptr_t(to) - address);
+        memcpy(from, &disp, sizeof(T));
+    }
+
+    //rewrite instruction bytes so that any RIP-relative displacement operands
+    //make sense with wherever we're relocating to
+    void RelocateInstruction(cs_insn& inst, void* dstLocation) {
+        const cs_x86& x86 = inst.detail->x86;
+        uint8_t offset = x86.encoding.disp_offset;
+
+        switch (x86.encoding.disp_size) {
+            case 1: CalculateDisplacement<int8_t> (&inst.bytes[offset], dstLocation, inst.address); break;
+            case 2: CalculateDisplacement<int16_t>(&inst.bytes[offset], dstLocation, inst.address); break;
+            case 4: CalculateDisplacement<int32_t>(&inst.bytes[offset], dstLocation, inst.address); break;
         }
     }
 
-    return false;
-}
+    void RewriteJumpInstruction(cs_insn& inst, const uint8_t* instPtr, const uint8_t* absTableEntry) {
+        uint8_t distToJumpTable = uint8_t(absTableEntry - (instPtr + inst.size));
 
-bool IsLoopInstr(const cs_insn& inst) {
-    return inst.id >= X86_INS_LOOP && inst.id <= X86_INS_LOOPNE;
-}
+        //jmp instructions can have a 1 or 2 byte opcode, and need a 1-4 byte operand
+        //rewrite the operand for the jump to go to the jump table
+        uint8_t instByteSize = inst.bytes[0] == 0x0F ? 2 : 1;
+        uint8_t operandSize = inst.size - instByteSize;
 
-size_t WriteRelativeJump(void* targetAddr, void* addrToJumpTo) {
-    /**
-     * 0:  e9 00 00 00 00          jmp    0x5
-     */
-    uint8_t jmpInstruction[] = { 0xE9, 0x0, 0x0, 0x0, 0x0 };
-
-    uint32_t relAddr = (uintptr_t) addrToJumpTo - ((uintptr_t) targetAddr + sizeof(jmpInstruction));
-    memcpy(&jmpInstruction[1], &relAddr, sizeof(relAddr));
-    memcpy(targetAddr, jmpInstruction, sizeof(jmpInstruction));
-
-    return sizeof(jmpInstruction);
-}
-
-size_t WriteAbsoluteJump(void* targetAddr, void* addrToJumpTo) {
-#ifdef ENV64BIT
-    /**
-     * 0:  48 b8 00 00 00 00 00    movabs rax,0x0
-     * 7:  00 00 00
-     * a:  ff e0                   jmp    rax
-     */
-    uint8_t absJumpInstructions[] = { 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0 };
-
-    uintptr_t addrToJumpTo64 = (uintptr_t) addrToJumpTo;
-    memcpy(&absJumpInstructions[2], &addrToJumpTo64, sizeof(addrToJumpTo64));
-    memcpy(targetAddr, absJumpInstructions, sizeof(absJumpInstructions));
-#else // ENV32BIT
-    /**
-     * 0:  68 00 00 00 00          push   0x0
-     * 5:  c3                      ret
-     */
-    uint8_t absJumpInstructions[] = { 0x68, 0x00, 0x00, 0x00, 0x00, 0xC3 };
-
-    uintptr_t addrToJumpTo32 = (uintptr_t) addrToJumpTo;
-    memcpy(&absJumpInstructions[1], &addrToJumpTo32, sizeof(addrToJumpTo32));
-    memcpy(targetAddr, absJumpInstructions, sizeof(absJumpInstructions));
-#endif // ENV64BIT
-
-    return sizeof(absJumpInstructions);
-}
-
-#ifdef ENV64BIT
-#define CONVERT(S) strtoull(S, nullptr, 0)
-#else
-#define CONVERT(S) strtoul(S, nullptr, 0)
-#endif
-
-uint32_t AddJmpToAbsTable(cs_insn& jmp, uint8_t* absTableMem) {
-    char* targetAddrStr = jmp.op_str; //where the instruction intended to go
-    uintptr_t targetAddr = CONVERT(targetAddrStr);
-
-    return WriteAbsoluteJump(absTableMem, (void*) targetAddr);
-}
-
-uint32_t AddCallToAbsTable(cs_insn& call, uint8_t* absTableMem, uint8_t* jumpBackToHookedFunc) {
-    char* targetAddrStr = call.op_str; //where the instruction intended to go
-    uintptr_t targetAddr = CONVERT(targetAddrStr);
-
-    uint8_t* dstMem = absTableMem;
-#ifdef ENV64BIT
-    /**
-     * 0:  48 b8 00 00 00 00 00    movabs rax,0x0
-     * 7:  00 00 00
-     * a:  ff d0                   call   rax
-     */
-    uint8_t callAsmBytes[] = { 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xD0 };
-
-    memcpy(&callAsmBytes[2], &targetAddr, sizeof(targetAddr));
-#else // ENV32BIT
-    /**
-     * 0:  b8 00 00 00 00          mov    eax,0x0
-     * 5:  ff d0                   call   eax
-     */
-    uint8_t callAsmBytes[] = { 0xB8, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xD0 };
-
-    memcpy(&callAsmBytes[1], &targetAddr, sizeof(targetAddr));
-#endif // ENV64BIT
-
-    memcpy(dstMem, &callAsmBytes, sizeof(callAsmBytes));
-    dstMem += sizeof(callAsmBytes);
-
-    //after the call, we need to add a second 2 byte jump, which will jump back to the
-    //final jump of the stolen bytes
-    uint8_t jmpBytes[2] = { 0xEB, uint8_t(jumpBackToHookedFunc - (absTableMem + sizeof(jmpBytes))) };
-    memcpy(dstMem, jmpBytes, sizeof(jmpBytes));
-
-    return sizeof(callAsmBytes) + sizeof(jmpBytes); //14
-}
-
-template<class T>
-T GetDisplacement(const cs_insn& inst, uint8_t offset) {
-    T disp;
-    memcpy(&disp, &inst.bytes[offset], sizeof(T));
-    return disp;
-}
-
-//rewrite instruction bytes so that any RIP-relative displacement operands
-//make sense with wherever we're relocating to
-void RelocateInstruction(cs_insn& inst, void* dstLocation) {
-    const cs_x86& x86 = inst.detail->x86;
-    uint8_t offset = x86.encoding.disp_offset;
-
-    switch (x86.encoding.disp_size) {
-        case 1: {
-            int8_t disp = GetDisplacement<int8_t>(inst, offset);
-            disp -= int8_t(uintptr_t(dstLocation) - inst.address);
-            memcpy(&inst.bytes[offset], &disp, 1);
-            break;
-        }
-
-        case 2: {
-            int16_t disp = GetDisplacement<int16_t>(inst, offset);
-            disp -= int16_t(uintptr_t(dstLocation) - inst.address);
-            memcpy(&inst.bytes[offset], &disp, 2);
-            break;
-        }
-
-        case 4: {
-            int32_t disp = GetDisplacement<int32_t>(inst, offset);
-            disp -= int32_t(uintptr_t(dstLocation) - inst.address);
-            memcpy(&inst.bytes[offset], &disp, 4);
-            break;
+        switch (operandSize) {
+            case 1: { inst.bytes[instByteSize] = distToJumpTable; break; }
+            case 2: { uint16_t dist16 = distToJumpTable; memcpy(&inst.bytes[instByteSize], &dist16, 2); break; }
+            case 4: { uint32_t dist32 = distToJumpTable; memcpy(&inst.bytes[instByteSize], &dist32, 4); break; }
         }
     }
-}
 
-void RewriteJumpInstruction(cs_insn& instr, const uint8_t* instrPtr, const uint8_t* absTableEntry) {
-    uint8_t distToJumpTable = uint8_t(absTableEntry - (instrPtr + instr.size));
+    void RewriteCallInstruction(cs_insn& inst, const uint8_t* instPtr, const uint8_t* absTableEntry) {
+        uint8_t distToJumpTable = uint8_t(absTableEntry - (instPtr + inst.size));
 
-    //jmp instructions can have a 1 or 2 byte opcode, and need a 1-4 byte operand
-    //rewrite the operand for the jump to go to the jump table
-    uint8_t instrByteSize = instr.bytes[0] == 0x0F ? 2 : 1;
-    uint8_t operandSize = instr.size - instrByteSize;
-
-    switch (operandSize) {
-        case 1: { instr.bytes[instrByteSize] = distToJumpTable; break; }
-        case 2: { uint16_t dist16 = distToJumpTable; memcpy(&instr.bytes[instrByteSize], &dist16, 2); break; }
-        case 4: { uint32_t dist32 = distToJumpTable; memcpy(&instr.bytes[instrByteSize], &dist32, 4); break; }
-    }
-}
-
-void RewriteCallInstruction(cs_insn& instr, const uint8_t* instrPtr, const uint8_t* absTableEntry) {
-    uint8_t distToJumpTable = uint8_t(absTableEntry - (instrPtr + instr.size));
-
-    //calls need to be rewritten as relative jumps to the abs table
-    //but we want to preserve the length of the instruction, so pad with NOPs
-    uint8_t jmpBytes[2] = { 0xEB, distToJumpTable };
-    memset(instr.bytes, 0x90, instr.size);
-    memcpy(instr.bytes, jmpBytes, sizeof(jmpBytes));
-}
-
-std::pair<uint32_t, bool> BuildTrampoline(void* func2hook, void* dstMemForTrampoline, std::vector<uint8_t>& dstOriginalInstructions) {
-#if ENV64BIT
-    cs_mode mode = CS_MODE_64;
-#else
-    cs_mode mode = CS_MODE_32;
-#endif
-
-    // Allow to write and read
-    MemoryProtect protector(func2hook, 20, PAGE_EXECUTE_READWRITE);
-
-    // Disassemble stolen bytes
-    csh handle;
-    cs_open(CS_ARCH_X86, mode, &handle);
-    cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON); // we need details enabled for relocating RIP relative instrs
-
-    cs_insn* instructions; //allocated by cs_disasm, needs to be manually freed later
-    size_t count = cs_disasm(handle, (uint8_t*) func2hook, 20, (uintptr_t) func2hook, 20, &instructions);
-
-    //
-    uint32_t relAddr = (uintptr_t) dstMemForTrampoline - ((uintptr_t) func2hook + 5);
-
-#if ENV64BIT
-    const size_t jumpSize = 12; //12 is the size of a 64 bit mov/jmp instruction pair
-#else
-    const size_t jumpSize = 5; //5 is the size of a 32 bit jump instruction
-#endif
-
-    // Get the instructions covered by the first 5 bytes of the original function
-    size_t byteCount = 0;
-    size_t stolenInstrCount = 0;
-    for (size_t i = 0; i < count; ++i) {
-        cs_insn& inst = instructions[i];
-        byteCount += inst.size;
-        stolenInstrCount++;
-        if (byteCount >= jumpSize)
-            break;
+        //calls need to be rewritten as relative jumps to the abs table
+        //but we want to preserve the length of the instruction, so pad with NOPs
+        uint8_t jmpBytes[2] = { 0xEB, distToJumpTable };
+        memset(inst.bytes, 0x90, inst.size);
+        memcpy(inst.bytes, jmpBytes, sizeof(jmpBytes));
     }
 
-    if (byteCount < jumpSize) {
-        printf("Function too small");
-        return {0, false};
-    }
-
-    //bool useRelativeJump = byteCount < 12;
-    bool useRelativeJump = true;
-
-    // Save original instructions
-    dstOriginalInstructions.resize(byteCount);
-    memcpy(dstOriginalInstructions.data(), func2hook, byteCount);
-
-    // Replace instructions in target func with NOPs
-    memset(func2hook, 0x90, byteCount);
-
-#if ENV64BIT
-    const size_t jumpInstSize = 12; //12 is the size of a 64 bit mov/jmp instruction pair
-#else
-    const size_t jumpInstSize = 6; //6 is the size of a 32 bit push/ret instruction pair
-#endif
-
-    uint8_t* stolenByteMem = (uint8_t*) dstMemForTrampoline;
-    uint8_t* jumpBackMem = stolenByteMem + byteCount;
-    uint8_t* absTableMem = jumpBackMem + jumpInstSize;
-
-    for (size_t i = 0; i < stolenInstrCount; ++i) {
-        cs_insn& inst = instructions[i];
-
-        if (IsLoopInstr(inst)) {
-            printf("No way to handle loop instructions");
-            return {0, false};
-        } else if (IsRIPRelativeInstr(inst)) {
-            RelocateInstruction(inst, stolenByteMem);
-        } else if (IsRelativeJump(inst)) {
-            uint32_t aitSize = AddJmpToAbsTable(inst, absTableMem);
-            RewriteJumpInstruction(inst, stolenByteMem, absTableMem);
-            absTableMem += aitSize;
-        } else if (IsRelativeCall(inst)) {
-            uint32_t aitSize = AddCallToAbsTable(inst, absTableMem, jumpBackMem);
-            RewriteCallInstruction(inst, stolenByteMem, absTableMem);
-            absTableMem += aitSize;
-        }
-
-        memcpy(stolenByteMem, inst.bytes, inst.size);
-        stolenByteMem += inst.size;
-    }
-
-    WriteAbsoluteJump(jumpBackMem, (uint8_t*) func2hook + (useRelativeJump ? 5 : jumpInstSize));
-
-    cs_close(&handle);
-    cs_free(instructions, count);
-
-    return { uint32_t(absTableMem - (uint8_t*) dstMemForTrampoline), useRelativeJump };
-}
 }
 

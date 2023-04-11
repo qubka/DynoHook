@@ -13,7 +13,7 @@ namespace dyno {
         DL,
         BL,
 
-#ifdef ENV64BIT
+#ifdef DYNO_PLATFORM_X64
         SPL,
         BPL,
         SIL,
@@ -26,7 +26,7 @@ namespace dyno {
         R13B,
         R14B,
         R15B,
-#endif // ENV64BIT
+#endif // DYNO_PLATFORM_X64
 
         AH,
         CH,
@@ -45,7 +45,7 @@ namespace dyno {
         SI,
         DI,
 
-#ifdef ENV64BIT
+#ifdef DYNO_PLATFORM_X64
         R8W,
         R9W,
         R10W,
@@ -54,7 +54,7 @@ namespace dyno {
         R13W,
         R14W,
         R15W,
-#endif // ENV64BIT
+#endif // DYNO_PLATFORM_X64
 
         // ========================================================================
         // >> 32-bit General purpose registers
@@ -68,7 +68,7 @@ namespace dyno {
         ESI,
         EDI,
 
-#ifdef ENV64BIT
+#ifdef DYNO_PLATFORM_X64
         R8D,
         R9D,
         R10D,
@@ -77,12 +77,12 @@ namespace dyno {
         R13D,
         R14D,
         R15D,
-#endif // ENV64BIT
+#endif // DYNO_PLATFORM_X64
 
         // ========================================================================
         // >> 64-bit General purpose registers
         // ========================================================================
-#ifdef ENV64BIT
+#ifdef DYNO_PLATFORM_X64
         RAX,
         RCX,
         RDX,
@@ -100,7 +100,7 @@ namespace dyno {
         R13,
         R14,
         R15,
-#endif // ENV64BIT
+#endif // DYNO_PLATFORM_X64
 
         // ========================================================================
         // >> 64-bit MM (MMX) registers
@@ -125,7 +125,7 @@ namespace dyno {
         XMM5,
         XMM6,
         XMM7,
-#ifdef ENV64BIT
+#ifdef DYNO_PLATFORM_X64
         XMM8,
         XMM9,
         XMM10,
@@ -134,7 +134,7 @@ namespace dyno {
         XMM13,
         XMM14,
         XMM15,
-#ifdef AVX512
+#ifdef DYNO_PLATFORM_AVX512
         XMM16,
         XMM17,
         XMM18,
@@ -151,13 +151,13 @@ namespace dyno {
         XMM29,
         XMM30,
         XMM31,
-#endif // AVX512
-#endif // ENV64BIT
+#endif // DYNO_PLATFORM_AVX512
+#endif // DYNO_PLATFORM_X64
 
         // ========================================================================
         // >> 256-bit YMM registers
         // ========================================================================
-#ifdef ENV64BIT
+#ifdef DYNO_PLATFORM_X64
         YMM0,
         YMM1,
         YMM2,
@@ -174,7 +174,7 @@ namespace dyno {
         YMM13,
         YMM14,
         YMM15,
-#ifdef AVX512
+#ifdef DYNO_PLATFORM_AVX512
         YMM16,
         YMM17,
         YMM18,
@@ -191,13 +191,13 @@ namespace dyno {
         YMM29,
         YMM30,
         YMM31,
-#endif // AVX512
-#endif // ENV64BIT
+#endif // DYNO_PLATFORM_AVX512
+#endif // DYNO_PLATFORM_X64
 
         // ========================================================================
         // >> 512-bit ZMM registers
         // ========================================================================
-#ifdef AVX512
+#ifdef DYNO_PLATFORM_AVX512
         ZMM0,
         ZMM1,
         ZMM2,
@@ -230,7 +230,7 @@ namespace dyno {
         ZMM29,
         ZMM30,
         ZMM31,
-#endif // AVX512
+#endif // DYNO_PLATFORM_AVX512
 
         // ========================================================================
         // >> 16-bit Segment registers
@@ -245,7 +245,7 @@ namespace dyno {
         // ========================================================================
         // >> 80-bit FPU registers
         // ========================================================================
-#ifdef ENV32BIT
+#ifndef DYNO_PLATFORM_X64
         ST0,
         ST1,
         ST2,
@@ -254,76 +254,17 @@ namespace dyno {
         ST5,
         ST6,
         ST7,
-#endif // ENV32BIT
-    };
-
-    size_t RegisterTypeToSize(RegisterType regType);
-    size_t RegisterTypeToAlignment(RegisterType regType);
-
-    size_t RegisterTypeToSSEIndex(RegisterType regType);
-    RegisterType SSEIndexToRegisterType(size_t index, size_t size = 0);
-
-    enum RegisterSize : uint8_t {
-        SIZE_BYTE = 1,
-        SIZE_WORD = 2,
-        SIZE_DWORD = 4,
-        SIZE_QWORD = 8,
-        SIZE_TWORD = 10,
-        SIZE_XMMWORD = 16,
-        SIZE_YMMWORD = 32,
-        SIZE_ZMMWORD = 64,
+#endif // DYNO_PLATFORM_X64
     };
 
     class Register {
     public:
-        Register(RegisterType type, size_t size, size_t alignment = 0) : m_size(size), m_alignment(alignment), m_type{type} {
-            if (size == 0)
-                m_address = nullptr;
-            else if (alignment > 0)
-#ifdef _WIN32
-                m_address = _aligned_malloc(size, alignment);
-#else
-                m_address = aligned_alloc(alignment, size);
-#endif
-            else
-                m_address = malloc(size);
-        }
-
-        ~Register() {
-            if (m_address) {
-#ifdef _WIN32
-                if (m_alignment > 0)
-                    _aligned_free(m_address);
-                else
-                    free(m_address);
-#else
-                free(m_address);
-#endif
-            }
-        }
-
-        Register(const Register& other) {
-            m_size = other.m_size;
-            m_alignment = other.m_alignment;
-            m_type = other.m_type;
-            if (m_alignment > 0)
-#ifdef _WIN32
-                m_address = _aligned_malloc(m_size, m_alignment);
-#else
-                m_address = aligned_alloc(m_iAlignment, m_iSize);
-#endif
-            else
-                m_address = malloc(m_size);
-            memcpy(m_address, other.m_address, m_size);
-        }
-
-        Register(Register&& other) noexcept {
-            m_address = other.m_address;
-            m_size = other.m_size;
-            m_alignment = other.m_alignment;
-            m_type = other.m_type;
-            other.m_address = nullptr;
-        }
+        Register(RegisterType type, size_t size, size_t alignment = 0);
+        ~Register();
+        Register(const Register& other);
+        Register(Register&& other) noexcept;
+        Register& operator=(const Register&) = delete;
+        Register& operator=(Register&&) = delete;
 
         void* operator*() const {
             return m_address;
@@ -368,17 +309,35 @@ namespace dyno {
     class Registers {
     public:
         Registers(const std::vector<RegisterType>& registers);
+        ~Registers() = default;
+        NONCOPYABLE(Registers);
 
         const Register& operator[](RegisterType regType) const;
-
         const Register& at(RegisterType regType, bool reverse = false) const;
 
-        auto begin() { return m_registers.begin(); }
-        auto begin() const { return m_registers.cbegin(); }
-        auto end() { return m_registers.end(); }
-        auto end() const { return m_registers.cend(); }
+        ITERATABLE(Register, m_registers);
 
     private:
         std::vector<Register> m_registers;
     };
+
+    const char* RegisterTypeToName(RegisterType regType);
+    size_t RegisterTypeToSize(RegisterType regType);
+    size_t RegisterTypeToAlignment(RegisterType regType);
+
+    size_t RegisterTypeToSSEIndex(RegisterType regType);
+    RegisterType SSEIndexToRegisterType(size_t index, size_t size = 0);
+
+    enum RegisterSize : uint8_t {
+        SIZE_BYTE = 1,
+        SIZE_WORD = 2,
+        SIZE_DWORD = 4,
+        SIZE_QWORD = 8,
+        SIZE_TWORD = 10,
+        SIZE_XMMWORD = 16,
+        SIZE_YMMWORD = 32,
+        SIZE_ZMMWORD = 64,
+    };
 }
+
+std::ostream& operator<<(std::ostream& os, dyno::RegisterType v);

@@ -1,23 +1,23 @@
 #include "x86MsCdecl.hpp"
 
-#ifdef ENV32BIT
+#ifndef DYNO_PLATFORM_X64
 
 using namespace dyno;
 
-x86MsCdecl::x86MsCdecl(std::vector<DataTypeSized> arguments, DataTypeSized returnType, size_t alignment) :
+x86MsCdecl::x86MsCdecl(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
         ICallingConvention{std::move(arguments), returnType, alignment} {
-    bool nonScalar = m_returnType.isFlt();
+    bool nonScalar = m_return.isFlt();
 
     // Integer return values up to 32 bits in size are stored in EAX while values up to 64 bit are stored in EAX and EDX.
     // Floating-point return values are similarly stored in ST0.
 
-    if (!nonScalar && m_returnType.size > 4)
-        m_returnBuffer = malloc(m_returnType.size);
+    if (!nonScalar && m_return.size > 4)
+        m_returnBuffer = malloc(m_return.size);
     else
         m_returnBuffer = nullptr;
 
-    if (m_returnType.reg == NONE)
-        m_returnType.reg = nonScalar ? ST0 : EAX;
+    if (m_return.reg == NONE)
+        m_return.reg = nonScalar ? ST0 : EAX;
 
     init();
 }
@@ -45,7 +45,7 @@ std::vector<RegisterType> x86MsCdecl::getRegisters() {
         registers.push_back(EAX);
         registers.push_back(EDX);
     } else {
-        registers.push_back(m_returnType.reg);
+        registers.push_back(m_return.reg);
     }
 
     return registers;
@@ -85,7 +85,7 @@ void* x86MsCdecl::getReturnPtr(const Registers& registers) {
         return m_returnBuffer;
     }
 
-    return *registers.at(m_returnType.reg, true);
+    return *registers.at(m_return.reg, true);
 }
 
 void x86MsCdecl::onReturnPtrChanged(const Registers& registers, void* returnPtr) {
@@ -96,4 +96,4 @@ void x86MsCdecl::onReturnPtrChanged(const Registers& registers, void* returnPtr)
     }
 }
 
-#endif // ENV32BIT
+#endif // DYNO_PLATFORM_X64

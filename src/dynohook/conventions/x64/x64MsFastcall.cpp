@@ -1,10 +1,10 @@
 #include "x64MsFastcall.hpp"
 
-#ifdef ENV64BIT
+#ifdef DYNO_PLATFORM_X64
 
 using namespace dyno;
 
-x64MsFastcall::x64MsFastcall(std::vector<DataTypeSized> arguments, DataTypeSized returnType, size_t alignment) :
+x64MsFastcall::x64MsFastcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
         ICallingConvention{std::move(arguments), returnType, alignment} {
     // Don't force the register on the user.
     RegisterType registers[] = { RCX, RDX, R8, R9 };
@@ -13,20 +13,17 @@ x64MsFastcall::x64MsFastcall(std::vector<DataTypeSized> arguments, DataTypeSized
     size_t argSize = std::min(4, (int) m_arguments.size());
 
     for (size_t i = 0; i < argSize; ++i) {
-        DataTypeSized& arg = m_arguments[i];
+        DataObject& arg = m_arguments[i];
 
         // RCX, RDX, R8, R9 for integer, struct or pointer arguments (in that order), and XMM0, XMM1, XMM2, XMM3 for floating point arguments
         if (arg.reg == NONE)
-            arg.reg = arg.isFlt() || arg.type == DATA_TYPE_M128 ? sseRegisters[i] : registers[i];
+            arg.reg = arg.isFlt() || arg.type == DataType::M128 ? sseRegisters[i] : registers[i];
     }
 
-    if (m_returnType.reg == NONE)
-        m_returnType.reg = m_returnType.isFlt() || m_returnType.type == DATA_TYPE_M128 ? XMM0 : RAX;
+    if (m_return.reg == NONE)
+        m_return.reg = m_return.isFlt() || m_return.type == DataType::M128 ? XMM0 : RAX;
 
     init();
-}
-
-x64MsFastcall::~x64MsFastcall() {
 }
 
 std::vector<RegisterType> x64MsFastcall::getRegisters() {
@@ -43,7 +40,7 @@ std::vector<RegisterType> x64MsFastcall::getRegisters() {
     }
 
     // Save return register as last
-    registers.push_back(m_returnType.reg);
+    registers.push_back(m_return.reg);
 
     return registers;
 }
@@ -77,7 +74,7 @@ void* x64MsFastcall::getArgumentPtr(size_t index, const Registers& registers) {
 }
 
 void* x64MsFastcall::getReturnPtr(const Registers& registers) {
-    return *registers.at(m_returnType.reg, true);
+    return *registers.at(m_return.reg, true);
 }
 
-#endif // ENV64BIT
+#endif // DYNO_PLATFORM_X64

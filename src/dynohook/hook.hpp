@@ -3,7 +3,7 @@
 #include "registers.hpp"
 #include "convention.hpp"
 
-#include "asmjit/asmjit.h"
+#include <asmjit/asmjit.h>
 
 namespace dyno {
     enum class HookType : bool {
@@ -35,6 +35,8 @@ namespace dyno {
         ~Hook();
 
     public:
+        NONCOPYABLE(Hook);
+
         /**
          * @brief Adds a hook handler to the hook.
          * @param hookType The hook type.
@@ -88,8 +90,9 @@ namespace dyno {
         }
 
     private:
-        void createBridge() const;
-        void createPostCallback() const;
+        bool createTrampoline();
+        bool createBridge() const;
+        bool createPostCallback() const;
         std::vector<RegisterType> createScratchRegisters() const;
 
         typedef asmjit::x86::Assembler Assembler;
@@ -113,9 +116,6 @@ namespace dyno {
         // Address of the original function
         void* m_func;
 
-        // Instructions of the original function
-        std::vector<uint8_t> m_originalInstructions;
-
         // Interface if the calling convention
         ICallingConvention* m_callingConvention;
 
@@ -124,9 +124,13 @@ namespace dyno {
 
         // Address of the trampoline
         void* m_trampoline;
+        size_t m_trampolineSize;
 
         // New return address
         void* m_newRetAddr;
+
+        // Instructions of the original function
+        std::vector<uint8_t> m_originalCode;
 
         // Save the last return action of the pre HookHandler for use in the post handler.
         std::vector<ReturnAction> m_lastPreReturnAction;

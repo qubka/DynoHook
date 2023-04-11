@@ -81,7 +81,7 @@ namespace DYNOHOOK_TEST_NAMESPACE {
 		int (DYNOHOOK_TEST_CONV MyClass::*myFunc)(int, int) = &MyClass::myFunc;
 
         // Hook the function
-        Hook* pHook = hookMngr.hook((void *&) myFunc, new DYNOHOOK_TEST_OBJECT({DATA_TYPE_POINTER, DATA_TYPE_INT, DATA_TYPE_INT}, DATA_TYPE_INT));
+        Hook* pHook = hookMngr.hook((void *&) myFunc, new DYNOHOOK_TEST_OBJECT({DataType::Pointer, DataType::Int, DataType::Int}, DataType::Int));
 
         // Add the callbacks
         pHook->addCallback(HookType::Pre, (HookHandler *) (void *) &PreMyFunc);

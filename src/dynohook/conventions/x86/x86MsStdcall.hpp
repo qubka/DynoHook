@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef ENV32BIT
+#ifndef DYNO_PLATFORM_X64
 
 #include "dynohook/convention.hpp"
 #include "x86MsCdecl.hpp"
@@ -28,11 +28,11 @@
 namespace dyno {
     class x86MsStdcall : public x86MsCdecl {
     public:
-        x86MsStdcall(std::vector<DataTypeSized> arguments, DataTypeSized returnType, size_t alignment = 4);
-        ~x86MsStdcall() override;
+        x86MsStdcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = 4);
+        ~x86MsStdcall() override = default;
 
         size_t getPopSize() override;
     };
 }
 
-#endif // ENV32BIT
+#endif // DYNO_PLATFORM_X64

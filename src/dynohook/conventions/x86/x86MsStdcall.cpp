@@ -1,19 +1,16 @@
 #include "x86MsStdcall.hpp"
 
-#ifdef ENV32BIT
+#ifndef DYNO_PLATFORM_X64
 
 using namespace dyno;
 
-x86MsStdcall::x86MsStdcall(std::vector<DataTypeSized> arguments, DataTypeSized returnType, size_t alignment) :
+x86MsStdcall::x86MsStdcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
         x86MsCdecl{std::move(arguments), returnType, alignment} {
     init();
-}
-
-x86MsStdcall::~x86MsStdcall() {
 }
 
 size_t x86MsStdcall::getPopSize() {
     return m_stackSize;
 }
 
-#endif // ENV32BIT
+#endif // DYNO_PLATFORM_X64

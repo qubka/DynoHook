@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef ENV64BIT
+#ifdef DYNO_PLATFORM_X64
 
 #include "dynohook/convention.hpp"
 
@@ -29,7 +29,7 @@
 namespace dyno {
     class x64SystemVcall : public ICallingConvention {
     public:
-        x64SystemVcall(std::vector<DataTypeSized> arguments, DataTypeSized returnType, size_t alignment = SIZE_QWORD);
+        x64SystemVcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = SIZE_QWORD);
         ~x64SystemVcall() override;
 
         std::vector<RegisterType> getRegisters() override;
@@ -46,4 +46,4 @@ namespace dyno {
     };
 }
 
-#endif // ENV64BIT
+#endif // DYNO_PLATFORM_X64

@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef ENV64BIT
+#ifdef DYNO_PLATFORM_X64
 
 #include "dynohook/convention.hpp"
 
@@ -27,8 +27,8 @@
 namespace dyno {
     class x64MsFastcall : public ICallingConvention {
     public:
-        x64MsFastcall(std::vector<DataTypeSized> arguments, DataTypeSized returnType, size_t alignment = 8);
-        ~x64MsFastcall() override;
+        x64MsFastcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = 8);
+        ~x64MsFastcall() override = default;
 
         std::vector<RegisterType> getRegisters() override;
 
@@ -38,4 +38,4 @@ namespace dyno {
     };
 }
 
-#endif // ENV64BIT
+#endif // DYNO_PLATFORM_X64

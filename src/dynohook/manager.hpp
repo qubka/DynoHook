@@ -10,6 +10,8 @@ namespace dyno {
         ~HookManager();
 
     public:
+        NONCOPYABLE(HookManager);
+
         /**
          * @brief Hooks the given function and returns a new Hook instance.
          * If the function was already hooked, the existing Hook instance will be returned.

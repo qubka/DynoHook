@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef ENV32BIT
+#ifndef DYNO_PLATFORM_X64
 
 #include "dynohook/convention.hpp"
 
@@ -27,7 +27,7 @@
 namespace dyno {
     class x86MsCdecl : public ICallingConvention {
     public:
-        x86MsCdecl(std::vector<DataTypeSized> arguments, DataTypeSized returnType, size_t alignment = 4);
+        x86MsCdecl(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = 4);
         ~x86MsCdecl() override;
 
         std::vector<RegisterType> getRegisters() override;
@@ -44,4 +44,4 @@ namespace dyno {
     };
 }
 
-#endif // ENV32BIT
+#endif // DYNO_PLATFORM_X64
