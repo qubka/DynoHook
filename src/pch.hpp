@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 
 #include "dynohook/platform.hpp"
 #include "dynohook/core.hpp"

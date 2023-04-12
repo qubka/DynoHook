@@ -2,6 +2,8 @@
 
 using namespace dyno;
 
+Register Registers::s_None{NONE, 0};
+
 Register::Register(RegisterType type, size_t size, size_t alignment) : m_size(size), m_alignment(alignment), m_type{type} {
     if (size == 0)
         m_address = nullptr;
@@ -36,7 +38,7 @@ Register::Register(const Register& other) {
 #ifdef DYNO_PLATFORM_WINDOWS
         m_address = _aligned_malloc(m_size, m_alignment);
 #else
-        m_address = aligned_alloc(m_iAlignment, m_iSize);
+        m_address = aligned_alloc(m_alignment, m_size);
 #endif
     else
         m_address = malloc(m_size);
@@ -64,8 +66,6 @@ const Register& Registers::operator[](RegisterType regType) const {
 }
 
 const Register& Registers::at(RegisterType regType, bool reverse) const {
-    static Register s_None{NONE, 0};
-
     if (reverse)
         for (size_t i = m_registers.size() - 1; i != -1; --i) {
             const auto& reg = m_registers[i];

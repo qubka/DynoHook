@@ -5,7 +5,6 @@
 #elif DYNO_PLATFORM_LINUX
 #include <sys/mman.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <climits>
 #else
 #error "Platform not supported!"
@@ -69,6 +68,7 @@ namespace dyno {
     }
 
 #ifdef DYNO_PLATFORM_WINDOWS
+
     bool MemoryProtect::protect(void* addr, size_t size, ProtFlag flags) {
         DWORD oldProtect;
         bool success = VirtualProtect(addr, size, TranslateProtection(flags), &oldProtect);
@@ -186,6 +186,7 @@ namespace dyno {
     }
 
 #elif DYNO_PLATFORM_LINUX
+
     struct region_t {
         uint64_t start;
         uint64_t end;
@@ -208,16 +209,16 @@ namespace dyno {
 
                     ++strend;
                     if (strend[0] == 'r')
-                        res.prot = res.prot | PLH::ProtFlag::R;
+                        res.prot = res.prot | ProtFlag::R;
 
                     if (strend[1] == 'w')
-                        res.prot = res.prot | PLH::ProtFlag::W;
+                        res.prot = res.prot | ProtFlag::W;
 
                     if (strend[2] == 'x')
-                        res.prot = res.prot | PLH::ProtFlag::X;
+                        res.prot = res.prot | ProtFlag::X;
 
-                    if(res.prot == PLH::ProtFlag::UNSET)
-                        res.prot = PLH::ProtFlag::N;
+                    if(res.prot == ProtFlag::UNSET)
+                        res.prot = ProtFlag::N;
 
                     break;
                 }
@@ -235,7 +236,7 @@ namespace dyno {
     }
 
     void* AllocateMemory(void* addr, size_t size) {
-        return mmap(addr, size, PAGE_EXECUTE_READWRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        return mmap(addr, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     }
 
     void FreeMemory(void* addr, size_t size) {
@@ -359,6 +360,7 @@ namespace dyno {
 
         return flags;
     }
+
 #endif
 
 }
