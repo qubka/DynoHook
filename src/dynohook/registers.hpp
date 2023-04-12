@@ -327,6 +327,8 @@ namespace dyno {
 
     private:
         std::vector<Register> m_registers;
+
+        static Register s_None;
     };
 
     const char* RegisterTypeToName(RegisterType regType);

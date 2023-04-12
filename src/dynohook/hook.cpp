@@ -171,6 +171,14 @@ void Hook::setReturnAddress(void* retAddr, void* stackPtr) {
 }
 
 bool Hook::createTrampoline() {
+    // TODO: Rework trampoline, it should detect when it can use 5 bit jumps instead of far call or jumps to absolute address
+    // TODO: Find good way to allocate memory in 2GB range below or above given function address to allow near jumps
+    // TODO: We can check how another good detour libraries work on that problem on x64
+    // TODO: Performance of far calls or jumps much be worse compare to relative jumps
+
+    // I used Kyle's approach for now, http://kylehalladay.com/blog/2020/11/13/Hooking-By-Example.html
+    // It definitely require full reworking to support many different functions as possible and greater performance
+
 #ifdef DYNO_PLATFORM_X64
     const cs_mode mode = CS_MODE_64;
     const size_t jumpInstSize = 16; // the size of a 64 bit mov/ret instruction pair
