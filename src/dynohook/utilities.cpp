@@ -63,17 +63,16 @@ namespace dyno {
         //uint8_t absJumpInstructions[] = { 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xE0 };
 
         /**
-         * 0:  48 8d 64 24 f8          lea    rsp,[rsp-0x8]
-         * 5:  50                      push   rax
-         * 6:  48 b8 78 56 34 12 78    movabs rax,0x1234567812345678
-         * d:  56 34 12
-         * 10: 48 87 04 24             xchg   QWORD PTR [rsp],rax
-         * 14: c2 08 00                ret    0x8
+         * 0:  50                      push   rax
+         * 1:  48 b8 00 00 00 00 00    movabs rax,0x0
+         * 8:  00 00 00
+         * b:  48 87 04 24             xchg   QWORD PTR [rsp],rax
+         * f:  c3                      ret
          */
-        uint8_t absJumpInstructions[] = { 0x48, 0x8D, 0x64, 0x24, 0xF8, 0x50, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x87, 0x04, 0x24, 0xC2, 0x08, 0x00 };
+        uint8_t absJumpInstructions[] = { 0x50, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x87, 0x04, 0x24, 0xC3 };
 
         uintptr_t addrToJumpTo64 = (uintptr_t) addrToJumpTo;
-        memcpy(&absJumpInstructions[8], &addrToJumpTo64, sizeof(addrToJumpTo64));
+        memcpy(&absJumpInstructions[3], &addrToJumpTo64, sizeof(addrToJumpTo64));
         memcpy(targetAddr, absJumpInstructions, sizeof(absJumpInstructions));
     #else
         /**

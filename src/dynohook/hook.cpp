@@ -16,7 +16,7 @@ Hook::Hook(asmjit::JitRuntime& jit, void* func, ICallingConvention* convention) 
     m_scratchRegisters{createScratchRegisters()}
 {
     // Allow to write and read
-    MemoryProtect protector{m_func, 1024, RWX};
+    MemoryProtect protector{m_func, 32, RWX};
 
     // Create the trampoline sandwich
     createTrampoline();
@@ -24,13 +24,8 @@ Hook::Hook(asmjit::JitRuntime& jit, void* func, ICallingConvention* convention) 
     // Create the bridge function
     createBridge();
 
-#ifdef DYNO_PLATFORM_X64
     // Write an absolute jump to the bridge
     WriteAbsoluteJump(m_func, m_bridge);
-#else
-    // Write a relative jump to the bridge
-    WriteRelativeJump(m_func, m_bridge);
-#endif
 }
 
 Hook::~Hook() {
@@ -178,10 +173,10 @@ void Hook::setReturnAddress(void* retAddr, void* stackPtr) {
 bool Hook::createTrampoline() {
 #ifdef DYNO_PLATFORM_X64
     const cs_mode mode = CS_MODE_64;
-    const size_t jumpInstSize = 23; // the size of a 64 bit mov/jmp instruction pair
+    const size_t jumpInstSize = 16; // the size of a 64 bit mov/ret instruction pair
 #else
     const cs_mode mode = CS_MODE_32;
-    const size_t jumpInstSize = 5; // the size of a 32 bit push/ret instruction pair
+    const size_t jumpInstSize = 6; // the size of a 32 bit push/ret instruction pair
 #endif // DYNO_PLATFORM_X64
 
     // Disassemble stolen bytes
@@ -190,7 +185,7 @@ bool Hook::createTrampoline() {
     cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON); // we need details enabled for relocating RIP relative instrs
 
     cs_insn* instructions;
-    size_t count = cs_disasm(handle, (uint8_t*) m_func, 0x100, (uintptr_t) m_func, 0, &instructions);
+    size_t count = cs_disasm(handle, (uint8_t*) m_func, 32, (uintptr_t) m_func, 0, &instructions);
 
     // Get the instructions covered by the first 5 bytes of the original function
     size_t byteCount = 0;
@@ -244,11 +239,7 @@ bool Hook::createTrampoline() {
         stolenByteMem += inst.size;
     }
 
-#ifdef DYNO_PLATFORM_X64
     WriteAbsoluteJump(jumpBackMem, (uint8_t*) m_func + jumpInstSize);
-#else
-    WriteRelativeJump(jumpBackMem, (uint8_t*) m_func + jumpInstSize);
-#endif
 
     cs_free(instructions, count);
     cs_close(&handle);
@@ -292,11 +283,10 @@ bool Hook::createBridge() const {
 
     // Jump to the trampoline
 #ifdef DYNO_PLATFORM_X64
-    a.lea(rsp, ptr(rsp, -8));
     a.push(rax);
     a.mov(rax, m_trampoline);
     a.xchg(ptr(rsp), rax);
-    a.ret(8);
+    a.ret();
 #else
     a.jmp(m_trampoline);
 #endif // DYNO_PLATFORM_X64

@@ -1,0 +1,39 @@
+#pragma once
+
+#include <cassert>
+
+#cmakedefine DYNOHOOK_TEST_NAME "@DYNOHOOK_TEST_NAME@"
+#cmakedefine DYNOHOOK_TEST_CONV @DYNOHOOK_TEST_CONV@
+#cmakedefine DYNOHOOK_TEST_OBJECT @DYNOHOOK_TEST_OBJECT@
+#cmakedefine DYNOHOOK_TEST_HEADER "dynohook/conventions/@DYNOHOOK_TEST_HEADER@.hpp"
+#cmakedefine DYNOHOOK_TEST_NAMESPACE @DYNOHOOK_TEST_NAMESPACE@
+
+#include "dynohook/manager.hpp"
+#include DYNOHOOK_TEST_HEADER
+
+namespace DYNOHOOK_TEST_NAMESPACE {
+    int g_iMyFuncCallCount = 0;
+
+    using namespace dyno;
+
+    ASMJIT_NOINLINE void DYNOHOOK_TEST_CONV MyFunc() {
+        for (int i = 0; i < 10; i++) {
+            printf("%d\n", i);
+        }
+        printf("Haha\n");
+    }
+
+    void test() {
+        HookManager& hookMngr = HookManager::Get();
+
+        // Hook the function
+        hookMngr.hook((void *) &MyFunc, new DYNOHOOK_TEST_OBJECT({}, DataType::Void));
+
+        // Call the function
+        MyFunc();
+
+        hookMngr.unhookAll();
+
+        printf("Test: \"%s\" was passed\n", DYNOHOOK_TEST_NAME);
+    }
+}
