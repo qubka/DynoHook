@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cassert>
-
 #cmakedefine DYNOHOOK_TEST_NAME "@DYNOHOOK_TEST_NAME@"
 #cmakedefine DYNOHOOK_TEST_CONV @DYNOHOOK_TEST_CONV@
 #cmakedefine DYNOHOOK_TEST_OBJECT @DYNOHOOK_TEST_OBJECT@

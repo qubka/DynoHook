@@ -2,7 +2,7 @@
 
 using namespace dyno;
 
-HookManager::HookManager() : m_jit{} {
+HookManager::HookManager() : m_jit() {
 }
 
 HookManager::~HookManager() {
@@ -20,7 +20,7 @@ Hook* HookManager::hook(void* func, ICallingConvention* convention) {
         return hook;
     }
 
-    hook = new Hook{m_jit, func, convention};
+    hook = new Hook(m_jit, func, convention);
     m_hooks.push_back(hook);
     return hook;
 }

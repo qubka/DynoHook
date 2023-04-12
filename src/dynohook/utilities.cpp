@@ -47,8 +47,8 @@ namespace dyno {
         uint8_t jmpInstruction[] = { 0xE9, 0x0, 0x0, 0x0, 0x0 };
 
         uint32_t relAddr = (uintptr_t) addrToJumpTo - ((uintptr_t) targetAddr + sizeof(jmpInstruction));
-        memcpy(&jmpInstruction[1], &relAddr, sizeof(relAddr));
-        memcpy(targetAddr, jmpInstruction, sizeof(jmpInstruction));
+        std::memcpy(&jmpInstruction[1], &relAddr, sizeof(relAddr));
+        std::memcpy(targetAddr, jmpInstruction, sizeof(jmpInstruction));
 
         return sizeof(jmpInstruction);
     }
@@ -72,8 +72,8 @@ namespace dyno {
         uint8_t absJumpInstructions[] = { 0x50, 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x87, 0x04, 0x24, 0xC3 };
 
         uintptr_t addrToJumpTo64 = (uintptr_t) addrToJumpTo;
-        memcpy(&absJumpInstructions[3], &addrToJumpTo64, sizeof(addrToJumpTo64));
-        memcpy(targetAddr, absJumpInstructions, sizeof(absJumpInstructions));
+        std::memcpy(&absJumpInstructions[3], &addrToJumpTo64, sizeof(addrToJumpTo64));
+        std::memcpy(targetAddr, absJumpInstructions, sizeof(absJumpInstructions));
     #else
         /**
          * 0:  68 00 00 00 00          push   0x0
@@ -82,8 +82,8 @@ namespace dyno {
         uint8_t absJumpInstructions[] = { 0x68, 0x00, 0x00, 0x00, 0x00, 0xC3 };
 
         uintptr_t addrToJumpTo32 = (uintptr_t) addrToJumpTo;
-        memcpy(&absJumpInstructions[1], &addrToJumpTo32, sizeof(addrToJumpTo32));
-        memcpy(targetAddr, absJumpInstructions, sizeof(absJumpInstructions));
+        std::memcpy(&absJumpInstructions[1], &addrToJumpTo32, sizeof(addrToJumpTo32));
+        std::memcpy(targetAddr, absJumpInstructions, sizeof(absJumpInstructions));
     #endif // DYNO_PLATFORM_X64
 
         return sizeof(absJumpInstructions);
@@ -115,7 +115,7 @@ namespace dyno {
          */
         uint8_t callAsmBytes[] = { 0x48, 0xB8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xD0 };
 
-        memcpy(&callAsmBytes[2], &targetAddr, sizeof(targetAddr));
+        std::memcpy(&callAsmBytes[2], &targetAddr, sizeof(targetAddr));
     #else
         /**
          * 0:  b8 00 00 00 00          mov    eax,0x0
@@ -123,16 +123,16 @@ namespace dyno {
          */
         uint8_t callAsmBytes[] = { 0xB8, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xD0 };
 
-        memcpy(&callAsmBytes[1], &targetAddr, sizeof(targetAddr));
+        std::memcpy(&callAsmBytes[1], &targetAddr, sizeof(targetAddr));
     #endif // DYNO_PLATFORM_X64
 
-        memcpy(dstMem, &callAsmBytes, sizeof(callAsmBytes));
+        std::memcpy(dstMem, &callAsmBytes, sizeof(callAsmBytes));
         dstMem += sizeof(callAsmBytes);
 
         //after the call, we need to add a second 2 byte jump, which will jump back to the
         //final jump of the stolen bytes
         uint8_t jmpBytes[2] = { 0xEB, uint8_t(jumpBackToHookedFunc - (absTableMem + sizeof(jmpBytes))) };
-        memcpy(dstMem, jmpBytes, sizeof(jmpBytes));
+        std::memcpy(dstMem, jmpBytes, sizeof(jmpBytes));
 
         return sizeof(callAsmBytes) + sizeof(jmpBytes);
     }
@@ -140,9 +140,9 @@ namespace dyno {
     template<class T>
     void CalculateDisplacement(void* from, void* to, uintptr_t address) {
         T disp;
-        memcpy(&disp, from, sizeof(T));
+        std::memcpy(&disp, from, sizeof(T));
         disp -= T(uintptr_t(to) - address);
-        memcpy(from, &disp, sizeof(T));
+        std::memcpy(from, &disp, sizeof(T));
     }
 
     //rewrite instruction bytes so that any RIP-relative displacement operands
@@ -168,8 +168,8 @@ namespace dyno {
 
         switch (operandSize) {
             case 1: { inst.bytes[instByteSize] = distToJumpTable; break; }
-            case 2: { uint16_t dist16 = distToJumpTable; memcpy(&inst.bytes[instByteSize], &dist16, 2); break; }
-            case 4: { uint32_t dist32 = distToJumpTable; memcpy(&inst.bytes[instByteSize], &dist32, 4); break; }
+            case 2: { uint16_t dist16 = distToJumpTable; std::memcpy(&inst.bytes[instByteSize], &dist16, 2); break; }
+            case 4: { uint32_t dist32 = distToJumpTable; std::memcpy(&inst.bytes[instByteSize], &dist32, 4); break; }
         }
     }
 
@@ -180,7 +180,7 @@ namespace dyno {
         //but we want to preserve the length of the instruction, so pad with NOPs
         uint8_t jmpBytes[2] = { 0xEB, distToJumpTable };
         memset(inst.bytes, 0x90, inst.size);
-        memcpy(inst.bytes, jmpBytes, sizeof(jmpBytes));
+        std::memcpy(inst.bytes, jmpBytes, sizeof(jmpBytes));
     }
 
 }

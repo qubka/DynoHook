@@ -5,7 +5,7 @@
 using namespace dyno;
 
 x86MsFastcall::x86MsFastcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
-        x86MsStdcall{std::move(arguments), returnType, alignment} {
+        x86MsStdcall(std::move(arguments), returnType, alignment) {
 
     // Don't force the register on the user.
     RegisterType registers[] = { ECX, EDX };

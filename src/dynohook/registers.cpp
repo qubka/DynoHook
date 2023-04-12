@@ -2,7 +2,7 @@
 
 using namespace dyno;
 
-Register::Register(RegisterType type, size_t size, size_t alignment) : m_size(size), m_alignment(alignment), m_type{type} {
+Register::Register(RegisterType type, size_t size, size_t alignment) : m_size(size), m_alignment(alignment), m_type(type) {
     if (size == 0)
         m_address = nullptr;
     else if (alignment > 0)
@@ -40,7 +40,7 @@ Register::Register(const Register& other) {
 #endif
     else
         m_address = malloc(m_size);
-    memcpy(m_address, other.m_address, m_size);
+    std::memcpy(m_address, other.m_address, m_size);
 }
 
 Register::Register(Register&& other) noexcept {
@@ -64,7 +64,7 @@ const Register& Registers::operator[](RegisterType regType) const {
 }
 
 const Register& Registers::at(RegisterType regType, bool reverse) const {
-    static Register s_None{NONE, 0};
+    static Register s_None(NONE, 0);
 
     if (reverse)
         for (size_t i = m_registers.size() - 1; i != -1; --i) {

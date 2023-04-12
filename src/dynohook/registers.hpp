@@ -274,6 +274,10 @@ namespace dyno {
             return m_type;
         }
 
+        size_t size() const {
+            return m_size;
+        }
+
         template<class T>
         T getAddress() const {
             return (T) m_address;
@@ -314,6 +318,10 @@ namespace dyno {
 
         const Register& operator[](RegisterType regType) const;
         const Register& at(RegisterType regType, bool reverse = false) const;
+
+        size_t size() const {
+            return m_registers.size();
+        }
 
         ITERATABLE(Register, m_registers);
 

@@ -5,7 +5,7 @@
 using namespace dyno;
 
 x86MsCdecl::x86MsCdecl(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
-        ICallingConvention{std::move(arguments), returnType, alignment} {
+        ICallingConvention(std::move(arguments), returnType, alignment) {
     bool nonScalar = m_return.isFlt();
 
     // Integer return values up to 32 bits in size are stored in EAX while values up to 64 bit are stored in EAX and EDX.
@@ -80,8 +80,8 @@ void x86MsCdecl::onArgumentPtrChanged(size_t index, const Registers& registers, 
 void* x86MsCdecl::getReturnPtr(const Registers& registers) {
     if (m_returnBuffer) {
         // First half in eax, second half in edx
-        memcpy(m_returnBuffer, *registers.at(EAX, true), 4);
-        memcpy((void *) ((uintptr_t) m_returnBuffer + 4), *registers.at(EDX, true), 4);
+        std::memcpy(m_returnBuffer, *registers.at(EAX, true), 4);
+        std::memcpy((void *) ((uintptr_t) m_returnBuffer + 4), *registers.at(EDX, true), 4);
         return m_returnBuffer;
     }
 
@@ -91,8 +91,8 @@ void* x86MsCdecl::getReturnPtr(const Registers& registers) {
 void x86MsCdecl::onReturnPtrChanged(const Registers& registers, void* returnPtr) {
     if (m_returnBuffer) {
         // First half in eax, second half in edx
-        memcpy(*registers.at(EAX, true), m_returnBuffer, 4);
-        memcpy(*registers.at(EDX, true), (void *) ((uintptr_t) m_returnBuffer + 4), 4);
+        std::memcpy(*registers.at(EAX, true), m_returnBuffer, 4);
+        std::memcpy(*registers.at(EDX, true), (void *) ((uintptr_t) m_returnBuffer + 4), 4);
     }
 }
 

@@ -9,14 +9,14 @@ using namespace asmjit;
 using namespace asmjit::x86;
 
 Hook::Hook(asmjit::JitRuntime& jit, void* func, ICallingConvention* convention) :
-    m_jit{jit},
-    m_func{func},
-    m_callingConvention{convention},
-    m_registers{convention->getRegisters()},
-    m_scratchRegisters{createScratchRegisters()}
+    m_jit(jit),
+    m_func(func),
+    m_callingConvention(convention),
+    m_registers(convention->getRegisters()),
+    m_scratchRegisters(createScratchRegisters())
 {
     // Allow to write and read
-    MemoryProtect protector{m_func, 32, RWX};
+    MemoryProtect protector(m_func, 32, RWX);
 
     // Create the trampoline sandwich
     createTrampoline();
@@ -41,10 +41,10 @@ Hook::~Hook() {
     // Probably hook wasn't generated successfully
     if (!m_originalCode.empty()) {
         // Allow to write and read
-        MemoryProtect protector{m_func, m_originalCode.size(), RWX};
+        MemoryProtect protector(m_func, m_originalCode.size(), RWX);
 
         // Copy back the previously copied bytes
-        memcpy(m_func, m_originalCode.data(), m_originalCode.size());
+        std::memcpy(m_func, m_originalCode.data(), m_originalCode.size());
     }
 }
 
@@ -208,7 +208,7 @@ bool Hook::createTrampoline() {
 
     // Save original instructions
     m_originalCode.resize(byteCount);
-    memcpy(m_originalCode.data(), m_func, byteCount);
+    std::memcpy(m_originalCode.data(), m_func, byteCount);
 
     // Replace instructions in target func with NOPs
     memset(m_func, 0x90, byteCount);
@@ -235,7 +235,7 @@ bool Hook::createTrampoline() {
             absTableMem += aitSize;
         }
 
-        memcpy(stolenByteMem, inst.bytes, inst.size);
+        std::memcpy(stolenByteMem, inst.bytes, inst.size);
         stolenByteMem += inst.size;
     }
 
@@ -265,7 +265,7 @@ bool Hook::createBridge() const {
     code.init(m_jit.environment(), m_jit.cpuFeatures());
 
     // Emitters can emit code to CodeHolder
-    Assembler a{&code}; LOGGER(a);
+    Assembler a(&code); LOGGER(a);
     Label override = a.newLabel();
 
     // Write a redirect to the post-hook code
@@ -377,7 +377,7 @@ bool Hook::createPostCallback() const {
     code.init(m_jit.environment(), m_jit.cpuFeatures());
 
     // Emitters can emit code to CodeHolder
-    Assembler a{&code}; LOGGER(a);
+    Assembler a(&code); LOGGER(a);
 
     // Gets pop size + return address
     size_t popSize = m_callingConvention->getPopSize() + sizeof(void*);

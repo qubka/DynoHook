@@ -13,7 +13,7 @@
 
 using namespace dyno;
 
-MemoryProtect::MemoryProtect(void* addr, size_t size, ProtFlag flags) : m_address{addr}, m_size{size}, m_flags{flags}, m_oldProtection{0} {
+MemoryProtect::MemoryProtect(void* addr, size_t size, ProtFlag flags) : m_address(addr), m_size(size), m_flags(flags), m_oldProtection(UNSET) {
     protect(m_address, m_size, m_flags);
 }
 

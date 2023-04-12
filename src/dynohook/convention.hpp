@@ -31,7 +31,7 @@ namespace dyno {
         RegisterType reg;
         uint16_t size;
 
-        DataObject(DataType type, RegisterType reg = NONE, uint16_t size = 0) : type{type}, reg{reg}, size{size} {}
+        DataObject(DataType type, RegisterType reg = NONE, uint16_t size = 0) : type(type), reg(reg), size(size) {}
 
         bool isFlt() const { return type == DataType::Float || type == DataType::Double; }
         bool isHva() const { return type == DataType::M128 || type == DataType::M256 || type == DataType::M512; }
@@ -116,9 +116,9 @@ namespace dyno {
          * @param alignment
          */
         ICallingConvention(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
-            m_arguments{std::move(arguments)},
-            m_return{returnType},
-            m_alignment{alignment} {
+            m_arguments(std::move(arguments)),
+            m_return(returnType),
+            m_alignment(alignment) {
         }
         virtual ~ICallingConvention() = default;
 
@@ -173,7 +173,7 @@ namespace dyno {
          */
         virtual void saveReturnValue(const Registers& registers) {
             std::unique_ptr<uint8_t[]> savedReturnValue = std::make_unique<uint8_t[]>(m_return.size);
-            memcpy(savedReturnValue.get(), getReturnPtr(registers), m_return.size);
+            std::memcpy(savedReturnValue.get(), getReturnPtr(registers), m_return.size);
             m_savedReturnBuffers.push_back(std::move(savedReturnValue));
         }
 
@@ -183,7 +183,7 @@ namespace dyno {
          */
         virtual void restoreReturnValue(const Registers& registers) {
             uint8_t* savedReturnValue = m_savedReturnBuffers.back().get();
-            memcpy(getReturnPtr(registers), savedReturnValue, m_return.size);
+            std::memcpy(getReturnPtr(registers), savedReturnValue, m_return.size);
             onReturnPtrChanged(registers, savedReturnValue);
             m_savedReturnBuffers.pop_back();
         }
@@ -201,7 +201,7 @@ namespace dyno {
             size_t offset = 0;
             for (size_t i = 0; i < m_arguments.size(); ++i) {
                 size_t size = m_arguments[i].size;
-                memcpy((void*) ((uintptr_t) savedCallArguments.get() + offset), getArgumentPtr(i, registers), size);
+                std::memcpy((void*) ((uintptr_t) savedCallArguments.get() + offset), getArgumentPtr(i, registers), size);
                 offset += size;
             }
             m_savedCallArguments.push_back(std::move(savedCallArguments));
@@ -216,7 +216,7 @@ namespace dyno {
             size_t offset = 0;
             for (size_t i = 0; i < m_arguments.size(); ++i) {
                 size_t size = m_arguments[i].size;
-                memcpy(getArgumentPtr(i, registers), (void*) ((uintptr_t) savedCallArguments + offset), size);
+                std::memcpy(getArgumentPtr(i, registers), (void*) ((uintptr_t) savedCallArguments + offset), size);
                 offset += size;
             }
             m_savedCallArguments.pop_back();

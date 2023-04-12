@@ -5,7 +5,7 @@
 using namespace dyno;
 
 x64SystemVcall::x64SystemVcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
-        ICallingConvention{std::move(arguments), returnType, alignment} {
+        ICallingConvention(std::move(arguments), returnType, alignment) {
     // Don't force the register on the user.
 
     RegisterType registers[] = { RDI, RSI, RDX, RCX, R8, R9 };
@@ -99,8 +99,8 @@ void x64SystemVcall::onArgumentPtrChanged(size_t index, const Registers& registe
 void* x64SystemVcall::getReturnPtr(const Registers& registers) {
     if (m_returnBuffer) {
         // First half in rax, second half in rdx
-        memcpy(m_returnBuffer, *registers.at(RAX, true), 8);
-        memcpy((void *) ((uintptr_t) m_returnBuffer + 8), *registers.at(RDX, true), 8);
+        std::memcpy(m_returnBuffer, *registers.at(RAX, true), 8);
+        std::memcpy((void *) ((uintptr_t) m_returnBuffer + 8), *registers.at(RDX, true), 8);
         return m_returnBuffer;
     }
 
@@ -110,8 +110,8 @@ void* x64SystemVcall::getReturnPtr(const Registers& registers) {
 void x64SystemVcall::onReturnPtrChanged(const Registers& registers, void* returnPtr) {
     if (m_returnBuffer) {
         // First half in rax, second half in rdx
-        memcpy(*registers.at(RAX, true), m_returnBuffer, 8);
-        memcpy(*registers.at(RDX, true), (void *) ((uintptr_t) m_returnBuffer + 8), 8);
+        std::memcpy(*registers.at(RAX, true), m_returnBuffer, 8);
+        std::memcpy(*registers.at(RDX, true), (void *) ((uintptr_t) m_returnBuffer + 8), 8);
     }
 }
 
