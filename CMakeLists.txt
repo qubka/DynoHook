@@ -22,18 +22,15 @@ set(ASMJIT_STATIC ON)
 set(ASMJIT_SANITIZE OFF)
 add_subdirectory(src/external/asmjit)
 
-# Capstone
-set(CAPSTONE_BUILD_STATIC_RUNTIME OFF)
-set(CAPSTONE_BUILD_STATIC ON)
-set(CAPSTONE_BUILD_SHARED OFF)
-set(CAPSTONE_BUILD_DIET OFF)
-set(CAPSTONE_BUILD_TESTS OFF)
-set(CAPSTONE_BUILD_CSTOOL OFF)
-set(CAPSTONE_USE_DEFAULT_ALLOC ON)
-set(CAPSTONE_ARCHITECTURE_DEFAULT ON)
-set(CAPSTONE_INSTALL OFF)
-add_subdirectory(src/external/capstone)
-include_directories(src/external/capstone/include)
+# Zydis
+set(ZYDIS_BUILD_SHARED_LIB OFF)
+set(ZYDIS_BUILD_EXAMPLES OFF)
+set(ZYDIS_BUILD_TOOLS OFF)
+set(ZYDIS_BUILD_MAN OFF)
+set(ZYDIS_BUILD_DOXYGEN OFF)
+set(ZYDIS_FUZZ_AFL_FAST OFF)
+set(ZYDIS_LIBFUZZER OFF)
+add_subdirectory(src/external/zydis)
 
 # DYNOHOOK
 file(GLOB_RECURSE DYNOHOOK_SRC_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "src/dynohook/*.cpp")
@@ -43,7 +40,7 @@ set(DYNOHOOK_PCH_FILE "src/pch.hpp")
 add_library(${DYNOHOOK} ${DYNOHOOK_SRC_FILES} ${DYNOHOOK_HDR_FILES})
 
 target_link_libraries(${DYNOHOOK} PUBLIC asmjit)
-target_link_libraries(${DYNOHOOK} PUBLIC capstone-static)
+target_link_libraries(${DYNOHOOK} PUBLIC Zydis)
 target_precompile_headers(${DYNOHOOK} PUBLIC ${DYNOHOOK_PCH_FILE})
 
 #######################

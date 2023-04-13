@@ -4,3 +4,6 @@
 [submodule "src/external/capstone"]
 	path = src/external/capstone
 	url = https://github.com/capstone-engine/capstone.git
+[submodule "src/external/zydis"]
+	path = src/external/zydis
+	url = https://github.com/zyantific/zydis.git

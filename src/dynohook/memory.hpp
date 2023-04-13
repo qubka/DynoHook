@@ -2,11 +2,12 @@
 
 namespace dyno {
 
-    void* AllocateMemory(void* addr, size_t size);
-    void FreeMemory(void* addr, size_t size);
-
-    void* AllocatePageNearAddress(void* targetAddr);
-    void FreePage(void* pageAddr);
+    class Memory {
+    public:
+        static void* AllocateMemory(void* address, size_t size);
+        static void FreeMemory(void* address, size_t size);
+        static size_t GetPageSize();
+    };
 
     //unsafe enum by design to allow binary OR
     enum ProtFlag : uint8_t {

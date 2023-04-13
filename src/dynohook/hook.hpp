@@ -90,7 +90,7 @@ namespace dyno {
         }
 
     private:
-        bool createTrampoline();
+        bool createTrampoline(bool restrictedRelocation);
         bool createBridge() const;
         bool createPostCallback() const;
         std::vector<RegisterType> createScratchRegisters() const;
@@ -111,7 +111,8 @@ namespace dyno {
         ASMJIT_NOINLINE void ASMJIT_CDECL setReturnAddress(void* retAddr, void* stackPtr);
 
     public:
-        std::map<HookType, std::vector<HookHandler*>> m_handlers;
+        // Runtime designed for JIT
+        asmjit::JitRuntime& m_jit;
 
         // Address of the original function
         void* m_func;
@@ -124,25 +125,25 @@ namespace dyno {
 
         // Address of the trampoline
         void* m_trampoline;
-        size_t m_trampolineSize;
 
         // New return address
         void* m_newRetAddr;
 
         // Instructions of the original function
-        std::vector<uint8_t> m_originalCode;
+        int8_t* m_originalBytes;
 
-        // Save the last return action of the pre HookHandler for use in the post handler.
-        std::vector<ReturnAction> m_lastPreReturnAction;
+        size_t m_hookLength;
 
         // Register storage
         Registers m_registers;
         Registers m_scratchRegisters;
 
+        // Save the last return action of the pre HookHandler for use in the post handler.
+        std::vector<ReturnAction> m_lastPreReturnAction;
+
         //
         std::map<void*, std::vector<void*>> m_retAddr;
 
-        // Runtime designed for JIT
-        asmjit::JitRuntime& m_jit;
+        std::map<HookType, std::vector<HookHandler*>> m_handlers;
     };
 }

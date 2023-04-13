@@ -10,14 +10,14 @@
 #include DYNOHOOK_TEST_HEADER
 
 namespace DYNOHOOK_TEST_NAMESPACE {
-    int g_iMyFuncCallCount = 0;
-    int g_iPreMyFuncCallCount = 0;
-    int g_iPostMyFuncCallCount = 0;
+    int g_MyFuncCallCount = 0;
+    int g_PreMyFuncCallCount = 0;
+    int g_PostMyFuncCallCount = 0;
 
     using namespace dyno;
 
     ASMJIT_NOINLINE double DYNOHOOK_TEST_CONV MyFunc(float x, int y) {
-        g_iMyFuncCallCount++;
+        g_MyFuncCallCount++;
         assert(x == 3.0f);
         assert(y == 10);
 
@@ -28,7 +28,7 @@ namespace DYNOHOOK_TEST_NAMESPACE {
     }
 
     ReturnAction PreMyFunc(HookType hookType, Hook& hook) {
-        g_iPreMyFuncCallCount++;
+        g_PreMyFuncCallCount++;
         float x = hook.getArgument<float>(0);
         assert(x == 3.0f);
 
@@ -39,7 +39,7 @@ namespace DYNOHOOK_TEST_NAMESPACE {
     }
 
     ReturnAction PostMyFunc(HookType hookType, Hook& hook) {
-        g_iPostMyFuncCallCount++;
+        g_PostMyFuncCallCount++;
         float x = hook.getArgument<float>(0);
         assert(x == 3.0f);
 
@@ -55,24 +55,24 @@ namespace DYNOHOOK_TEST_NAMESPACE {
     }
 
     void test() {
-        HookManager& hookMngr = HookManager::Get();
+        HookManager& manager = HookManager::Get();
 
         // Hook the function
-        Hook* pHook = hookMngr.hook((void *) &MyFunc, new DYNOHOOK_TEST_OBJECT({DataType::Float, DataType::Int}, DataType::Double));
+        Hook* hook = manager.hook((void *) &MyFunc, new DYNOHOOK_TEST_OBJECT({DataType::Float, DataType::Int}, DataType::Double));
 
         // Add the callbacks
-        pHook->addCallback(HookType::Pre, (HookHandler *) (void *) &PreMyFunc);
-        pHook->addCallback(HookType::Post, (HookHandler *) (void *) &PostMyFunc);
+        hook->addCallback(HookType::Pre, (HookHandler *) (void *) &PreMyFunc);
+        hook->addCallback(HookType::Post, (HookHandler *) (void *) &PostMyFunc);
 
         // Call the function
         double ret = MyFunc(3.0f, 10);
 
-        assert(g_iMyFuncCallCount == 1);
-        assert(g_iPreMyFuncCallCount == 1);
-        assert(g_iPostMyFuncCallCount == 1);
+        assert(g_MyFuncCallCount == 1);
+        assert(g_PreMyFuncCallCount == 1);
+        assert(g_PostMyFuncCallCount == 1);
         assert(ret == 1337.0);
 
-        hookMngr.unhookAll();
+        manager.unhookAll();
 
         printf("Test: \"%s\" was passed\n", DYNOHOOK_TEST_NAME);
     }

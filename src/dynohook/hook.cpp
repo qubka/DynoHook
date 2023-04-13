@@ -1,8 +1,7 @@
 #include "hook.hpp"
-#include "utilities.hpp"
 #include "memory.hpp"
-
-#include <capstone/capstone.h>
+#include "trampoline.hpp"
+#include "decoder.hpp"
 
 using namespace dyno;
 using namespace asmjit;
@@ -12,40 +11,59 @@ Hook::Hook(asmjit::JitRuntime& jit, void* func, ICallingConvention* convention) 
     m_jit(jit),
     m_func(func),
     m_callingConvention(convention),
+    m_bridge(nullptr),
+    m_trampoline(nullptr),
+    m_newRetAddr(nullptr),
+    m_originalBytes(nullptr),
     m_registers(convention->getRegisters()),
-    m_scratchRegisters(createScratchRegisters())
-{
-    // Allow to write and read
+    m_scratchRegisters(createScratchRegisters()),
+    m_hookLength(0) {
+    // make page of detour address writeable
     MemoryProtect protector(m_func, 32, RWX);
 
-    // Create the trampoline sandwich
-    createTrampoline();
+    // allocate space for stub + space for overwritten bytes + jumpback
+    bool restrictedRelocation;
+    m_trampoline = Trampoline::HandleTrampolineAllocation(m_func, restrictedRelocation);
+    if (!m_trampoline) {
+        printf("[Error] - Detour - Failed to allocate trampoline\n");
+        return;
+    }
 
     // Create the bridge function
-    createBridge();
+    if (!createBridge()) {
+        printf("[Error] - Detour - Failed to create bridge\n");
+        return;
+    }
 
-    // Write an absolute jump to the bridge
-    WriteAbsoluteJump(m_func, m_bridge);
+    // Create the trampoline function
+    if (!createTrampoline(restrictedRelocation)) {
+        printf("[Error] - Detour - Failed to create trampoline\n");
+        return;
+    }
 }
 
 Hook::~Hook() {
     delete m_callingConvention;
-
-    // Free the trampoline array
-    FreePage(m_trampoline);
 
     // Free the asm bridge and new return address
     m_jit.release(m_bridge);
     m_jit.release(m_newRetAddr);
 
     // Probably hook wasn't generated successfully
-    if (!m_originalCode.empty()) {
-        // Allow to write and read
-        MemoryProtect protector(m_func, m_originalCode.size(), RWX);
+    if (m_hookLength == 0)
+        return;
 
-        // Copy back the previously copied bytes
-        std::memcpy(m_func, m_originalCode.data(), m_originalCode.size());
-    }
+    // Allow to write and read
+    MemoryProtect protector(m_func, m_hookLength, RWX);
+
+    // Copy back the previously copied bytes
+    std::memcpy(m_func, m_originalBytes, m_hookLength);
+
+    // Free trampoline memory page
+    Memory::FreeMemory(m_trampoline, 0);
+
+    // Clean up allocated memory
+    delete[] m_originalBytes;
 }
 
 void Hook::addCallback(HookType hookType, HookHandler* handler) {
@@ -170,89 +188,77 @@ void Hook::setReturnAddress(void* retAddr, void* stackPtr) {
     m_retAddr[stackPtr].push_back(retAddr);
 }
 
-bool Hook::createTrampoline() {
-    // TODO: Rework trampoline, it should detect when it can use 5 bit jumps instead of far call or jumps to absolute address
-    // TODO: Find good way to allocate memory in 2GB range below or above given function address to allow near jumps
-    // TODO: We can check how another good detour libraries work on that problem on x64
-    // TODO: Performance of far calls or jumps much be worse compare to relative jumps
+bool Hook::createTrampoline(bool restrictedRelocation) {
+    int8_t* sourceAddress = (int8_t*) m_func;
+    int8_t* targetAddress = (int8_t*) m_bridge;
 
-    // I used Kyle's approach for now, http://kylehalladay.com/blog/2020/11/13/Hooking-By-Example.html
-    // It definitely require full reworking to support many different functions as possible and greater performance
+    Decoder decoder;
+    intptr_t addressDelta = (intptr_t)targetAddress - (intptr_t)sourceAddress;
 
-#ifdef DYNO_PLATFORM_X64
-    const cs_mode mode = CS_MODE_64;
-    const size_t jumpInstSize = 16; // the size of a 64 bit mov/ret instruction pair
-#else
-    const cs_mode mode = CS_MODE_32;
-    const size_t jumpInstSize = 6; // the size of a 32 bit push/ret instruction pair
-#endif // DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
+    if (addressDelta > INT32_MAX || addressDelta < INT32_MIN)
+        m_hookLength = decoder.getLengthOfInstructions(sourceAddress, 14);
+    else
+#endif
+        m_hookLength = decoder.getLengthOfInstructions(sourceAddress, 5);
 
-    // Disassemble stolen bytes
-    csh handle;
-    cs_open(CS_ARCH_X86, mode, &handle);
-    cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON); // we need details enabled for relocating RIP relative instrs
+    // 5 bytes are required to place detour
+    assert(m_hookLength >= 5);
 
-    cs_insn* instructions;
-    size_t count = cs_disasm(handle, (uint8_t*) m_func, 32, (uintptr_t) m_func, 0, &instructions);
+    // save original bytes
+    m_originalBytes = new int8_t[m_hookLength];
+    memcpy(m_originalBytes, sourceAddress, m_hookLength);
 
-    // Get the instructions covered by the first 5 bytes of the original function
-    size_t byteCount = 0;
-    size_t stolenInstrCount = 0;
-    for (size_t i = 0; i < count; ++i) {
-        cs_insn& inst = instructions[i];
-        byteCount += inst.size;
-        stolenInstrCount++;
-        if (byteCount >= jumpInstSize)
-            break;
-    }
-
-    if (byteCount < jumpInstSize) {
-        printf("Function too small");
+    // relocate to be overwritten instructions to trampoline
+    auto relocatedBytes = decoder.relocate(sourceAddress, m_hookLength, m_trampoline, restrictedRelocation);
+    if (relocatedBytes.empty()) {
+        printf("[Error] - Detour - Relocation of bytes replaced by hook failed\n");
         return false;
     }
 
-    // Allocate memory for the trampoline
-    m_trampoline = AllocatePageNearAddress(m_func);
+    // copy overwritten bytes to trampoline
+    memcpy(m_trampoline, relocatedBytes.data(), relocatedBytes.size());
 
-    // Save original instructions
-    m_originalCode.resize(byteCount);
-    std::memcpy(m_originalCode.data(), m_func, byteCount);
+    int8_t* addressAfterRelocatedBytes = (int8_t*) m_trampoline + relocatedBytes.size();
 
-    // Replace instructions in target func with NOPs
-    memset(m_func, 0x90, byteCount);
+    // length of jmp rel32
+    size_t jmpToHookedFunctionLength = 5;
 
-    uint8_t* stolenByteMem = (uint8_t*) m_trampoline;
-    uint8_t* jumpBackMem = stolenByteMem + byteCount;
-    uint8_t* absTableMem = jumpBackMem + jumpInstSize;
+#if DYNO_ARCH_X86 == 64
+    // write JMP back from trampoline to original code
+    addressAfterRelocatedBytes[0] = 0xFF;														//opcodes = JMP [rip+0]
+    addressAfterRelocatedBytes[1] = 0x25;														//opcodes = JMP [rip+0]
+    *(int32_t*)(&addressAfterRelocatedBytes[2]) = 0;											//relative distance from RIP (+0)
+    *(int64_t*)(&addressAfterRelocatedBytes[2 + 4]) = (int64_t)(sourceAddress + m_hookLength);	//destination to jump to
 
-    for (size_t i = 0; i < stolenInstrCount; ++i) {
-        cs_insn& inst = instructions[i];
-
-        if (IsLoopInstr(inst)) {
-            printf("No way to handle loop instructions");
-            return false;
-        } else if (IsRIPRelativeInstr(inst)) {
-            RelocateInstruction(inst, stolenByteMem);
-        } else if (IsRelativeJump(inst)) {
-            uint32_t aitSize = AddJmpToAbsTable(inst, absTableMem);
-            RewriteJumpInstruction(inst, stolenByteMem, absTableMem);
-            absTableMem += aitSize;
-        } else if (IsRelativeCall(inst)) {
-            uint32_t aitSize = AddCallToAbsTable(inst, absTableMem, jumpBackMem);
-            RewriteCallInstruction(inst, stolenByteMem, absTableMem);
-            absTableMem += aitSize;
-        }
-
-        std::memcpy(stolenByteMem, inst.bytes, inst.size);
-        stolenByteMem += inst.size;
+    // check if a jmp rel32 can reach
+    if (addressDelta > INT32_MAX || addressDelta < INT32_MIN) {
+        // need absolute 14 byte jmp
+        jmpToHookedFunctionLength = 14;
+        // write JMP from original code to hook function
+        sourceAddress[0] = 0xFF;																//opcodes = JMP [rip+0]
+        sourceAddress[1] = 0x25;																//opcodes = JMP [rip+0]
+        *(int32_t*)(&sourceAddress[2]) = 0;														//relative distance from RIP (+0)
+        *(int64_t*)(&sourceAddress[2 + 4]) = (int64_t)(targetAddress);							//destination to jump to
+    } else {
+        // jmp rel32 is enough
+        sourceAddress[0] = 0xE9;																//JMP rel32
+        *(int32_t*)(&sourceAddress[1]) = (int32_t)((int64_t)targetAddress - (int64_t)sourceAddress - 5);
     }
+#elif DYNO_ARCH_X86 == 32
+    // write JMP back from trampoline to original code
+    addressAfterRelocatedBytes[0] = 0xE9;
+    *(int32_t*)(addressAfterRelocatedBytes + 1) = (int32_t)(sourceAddress + m_hookLength - addressAfterRelocatedBytes) - 5;
 
-    WriteAbsoluteJump(jumpBackMem, (uint8_t*) m_func + jumpInstSize);
+    // write JMP from original code to hook function
+    sourceAddress[0] = 0xE9;
+    *(int32_t*)(sourceAddress + 1) = (int32_t)(targetAddress - sourceAddress) - 5;
 
-    cs_free(instructions, count);
-    cs_close(&handle);
+#endif // DYNO_ARCH_X86
 
-    m_trampolineSize = uint32_t(absTableMem - (uint8_t*) m_trampoline);
+    // NOP left over bytes
+    for (size_t i = jmpToHookedFunctionLength; i < m_hookLength; i++)
+        sourceAddress[i] = 0x90;
 
     return true;
 }
@@ -290,14 +296,14 @@ bool Hook::createBridge() const {
     a.je(override);
 
     // Jump to the trampoline
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
     a.push(rax);
     a.mov(rax, m_trampoline);
     a.xchg(ptr(rsp), rax);
     a.ret();
-#else
+#elif DYNO_ARCH_X86 == 32
     a.jmp(m_trampoline);
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
     // This code will be executed if a pre-hook returns true
     a.bind(override);
@@ -330,7 +336,7 @@ void Hook::writeModifyReturnAddress(Assembler& a) const {
     // This should be unique until we have returned to the original caller.
     void (ASMJIT_CDECL Hook::*setReturnAddress)(void*, void*) = &Hook::setReturnAddress;
 
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
     // Store the return address and stack pointer in rax/rcx
     a.mov(rax, qword_ptr(rsp));
     a.mov(rcx, rsp);
@@ -343,14 +349,14 @@ void Hook::writeModifyReturnAddress(Assembler& a) const {
     a.mov(rax, (void *&) setReturnAddress);
     a.call(rax);
     a.add(rsp, 40);
-#else // __linux__
+#else // __systemV__
     a.mov(rdx, rcx);
     a.mov(rsi, rax);
     a.mov(rdi, this);
     a.mov(rax, (void *&) setReturnAddress);
     a.call(rax);
 #endif
-#else
+#elif DYNO_ARCH_X86 == 32
     // Store the return address in eax
     a.mov(eax, dword_ptr(esp));
 
@@ -359,22 +365,22 @@ void Hook::writeModifyReturnAddress(Assembler& a) const {
     a.push(this);
     a.call((void*&) setReturnAddress);
     a.add(esp, 12);
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
     // Restore scratch registers
     writeRestoreScratchRegisters(a);
 
     // Override the return address. This is a redirect to our post-hook code
     createPostCallback();
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
     // Using rax because not possible to MOV r/m64, imm64
     a.push(rax);
     a.mov(rax, m_newRetAddr);
     a.mov(qword_ptr(rsp, 8), rax);
     a.pop(rax);
-#else
+#elif DYNO_ARCH_X86 == 32
     a.mov(dword_ptr(esp), m_newRetAddr);
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 }
 
 bool Hook::createPostCallback() const {
@@ -392,11 +398,11 @@ bool Hook::createPostCallback() const {
 
     // Subtract the previously added bytes (stack size + return address), so
     // that we can access the arguments again
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
     a.sub(rsp, popSize);
-#else
+#elif DYNO_ARCH_X86 == 32
     a.sub(esp, popSize);
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
     // Call the post-hook handler
     writeCallHandler(a, HookType::Post);
@@ -410,7 +416,7 @@ bool Hook::createPostCallback() const {
     // Get the original return address
     void* (ASMJIT_CDECL Hook::*getReturnAddress)(void*) = &Hook::getReturnAddress;
 
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
     // Save current stack pointer
     a.mov(rax, rsp);
 
@@ -421,7 +427,7 @@ bool Hook::createPostCallback() const {
     a.mov(rax, (void *&) getReturnAddress);
     a.call(rax);
     a.add(rsp, 40);
-#else // __linux__
+#else // __systemV__
     a.mov(rsi, rax);
     a.mov(rdi, this);
     a.mov(rax, (void *&) getReturnAddress);
@@ -429,7 +435,7 @@ bool Hook::createPostCallback() const {
 #endif
     // Save the original return address
     a.push(rax);
-#else
+#elif DYNO_ARCH_X86 == 32
     a.push(esp);
     a.push(this);
     a.call((void*&) getReturnAddress);
@@ -437,7 +443,7 @@ bool Hook::createPostCallback() const {
 
     // Save the original return address
     a.push(eax);
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
     // Restore scratch registers
     writeRestoreScratchRegisters(a);
@@ -464,7 +470,7 @@ void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
     writeSaveRegisters(a, hookType);
 
     // Call the global hook handler
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
 #ifdef DYNO_PLATFORM_WINDOWS
     a.sub(rsp, 40);
     a.mov(dl, hookType);
@@ -472,20 +478,20 @@ void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
     a.mov(rax, (void *&) hookHandler);
     a.call(rax);
     a.add(rsp, 40);
-#else // __linux__
+#else // __systemV__
     a.mov(sil, hookType);
     a.mov(rdi, this);
     a.mov(rax, (void *&) hookHandler);
     a.call(rax);
 #endif
-#else
+#elif DYNO_ARCH_X86 == 32
 	// Subtract 4 bytes to preserve 16-Byte stack alignment for Linux
 	a.sub(esp, 4);
 	a.push(hookType);
 	a.push(this);
 	a.call((void *&) hookHandler);
 	a.add(esp, 12);
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 }
 
 std::vector<RegisterType> Hook::createScratchRegisters() const {
@@ -493,7 +499,7 @@ std::vector<RegisterType> Hook::createScratchRegisters() const {
 
     std::vector<RegisterType> registers;
     
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
 #ifdef DYNO_PLATFORM_WINDOWS
     registers.push_back(RAX);
     registers.push_back(RCX);
@@ -502,7 +508,7 @@ std::vector<RegisterType> Hook::createScratchRegisters() const {
     registers.push_back(R9);
     registers.push_back(R10);
     registers.push_back(R11);
-#else // __linux__
+#else // __systemV__
     registers.push_back(RAX);
     registers.push_back(RDI);
     registers.push_back(RSI);
@@ -514,13 +520,13 @@ std::vector<RegisterType> Hook::createScratchRegisters() const {
     registers.push_back(R11);
 #endif
     registers.push_back(XMM0);
-    registers.push_back(XMM1);
+    /*registers.push_back(XMM1);
     registers.push_back(XMM2);
     registers.push_back(XMM3);
     registers.push_back(XMM4);
     registers.push_back(XMM5);
     registers.push_back(XMM6);
-    registers.push_back(XMM7);
+    registers.push_back(XMM7);*/
 // TODO: Do we need to save all sse registers ?
 /*#ifdef DYNO_PLATFORM_AVX512
     registers.push_back(ZMM0);
@@ -573,16 +579,16 @@ std::vector<RegisterType> Hook::createScratchRegisters() const {
     registers.push_back(YMM14);
     registers.push_back(YMM15);
 #endif // DYNO_PLATFORM_AVX512*/
-#else
+#elif DYNO_ARCH_X86 == 32
     registers.push_back(EAX);
     registers.push_back(ECX);
     registers.push_back(EDX);
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
     
     return registers;
 }
 
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
 void Hook::writeSaveScratchRegisters(Assembler& a) const {
     // Save rax first, because we use it to save others
 
@@ -1122,7 +1128,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
     }
 }
 
-#else
+#elif DYNO_ARCH_X86 == 32
 
 void Hook::writeSaveScratchRegisters(Assembler& a) const {
     for (const auto& reg : m_scratchRegisters) {
@@ -1351,4 +1357,4 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         default: puts("Unsupported register.");
     }
 }
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86

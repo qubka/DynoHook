@@ -1,6 +1,6 @@
 #include "x86MsCdecl.hpp"
 
-#ifndef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 32
 
 using namespace dyno;
 
@@ -96,4 +96,4 @@ void x86MsCdecl::onReturnPtrChanged(const Registers& registers, void* returnPtr)
     }
 }
 
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86

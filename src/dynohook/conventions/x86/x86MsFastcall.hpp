@@ -1,6 +1,6 @@
 #pragma once
 
-#ifndef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 32
 
 #include "dynohook/convention.hpp"
 #include "x86MsStdcall.hpp"
@@ -33,4 +33,4 @@ namespace dyno {
     };
 }
 
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86

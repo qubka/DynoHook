@@ -4,8 +4,6 @@
 #include <windows.h>
 #elif DYNO_PLATFORM_LINUX
 #include <sys/mman.h>
-#include <unistd.h>
-#include <climits>
 #else
 #error "Platform not supported!"
 #endif
@@ -69,69 +67,25 @@ namespace dyno {
 
 #ifdef DYNO_PLATFORM_WINDOWS
 
-    bool MemoryProtect::protect(void* addr, size_t size, ProtFlag flags) {
+    bool MemoryProtect::protect(void* address, size_t size, ProtFlag flags) {
         DWORD oldProtect;
-        bool success = VirtualProtect(addr, size, TranslateProtection(flags), &oldProtect);
+        bool success = VirtualProtect(address, size, TranslateProtection(flags), &oldProtect);
         m_oldProtection = TranslateProtection((int) oldProtect);
         return success;
     }
 
-    void* AllocateMemory(void* addr, size_t size) {
-        return VirtualAlloc(addr, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    void* Memory::AllocateMemory(void* address, size_t size) {
+        return VirtualAlloc(address, size, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
     }
 
-    void FreeMemory(void* addr, size_t size) {
-        VirtualFree(addr, size, MEM_RELEASE);
+    void Memory::FreeMemory(void* address, size_t size) {
+        VirtualFree(address, size, MEM_RELEASE);
     }
 
-    void* AllocatePageNearAddress(void* targetAddr) {
+    size_t Memory::GetPageSize() {
         SYSTEM_INFO sysInfo;
         GetSystemInfo(&sysInfo);
-        const size_t pageSize = sysInfo.dwPageSize;
-        uintptr_t minAddr = (uintptr_t) sysInfo.lpMinimumApplicationAddress;
-        uintptr_t maxAddr = (uintptr_t) sysInfo.lpMaximumApplicationAddress;
-
-        uintptr_t startAddr = (uintptr_t(targetAddr) & ~(pageSize - 1)); //round down to nearest page boundary
-
-        minAddr = min(startAddr - 0x7FFFFF00, minAddr);
-        maxAddr = max(startAddr + 0x7FFFFF00, maxAddr);
-
-        uintptr_t startPage = (startAddr - (startAddr % pageSize));
-        uintptr_t pageOffset = 1;
-
-        while (true) {
-            uintptr_t byteOffset = pageOffset * pageSize;
-            uintptr_t highAddr = startPage + byteOffset;
-            uintptr_t lowAddr = (startPage > byteOffset) ? startPage - byteOffset : 0;
-
-            bool needsExit = highAddr > maxAddr && lowAddr < minAddr;
-
-            if (highAddr < maxAddr) {
-                void* outAddr = AllocateMemory((void*) highAddr, pageSize);
-                if (outAddr != nullptr && outAddr != (void*) -1)
-                    return outAddr;
-            }
-
-            if (lowAddr > minAddr) {
-                void* outAddr = AllocateMemory((void*) lowAddr, pageSize);
-                if (outAddr != nullptr && outAddr != (void*) -1)
-                    return outAddr;
-            }
-
-            pageOffset++;
-
-            if (needsExit)
-                break;
-        }
-
-        return nullptr;
-    }
-
-    void FreePage(void* pageAddr) {
-        SYSTEM_INFO sysInfo;
-        GetSystemInfo(&sysInfo);
-        const size_t pageSize = sysInfo.dwPageSize;
-        FreeMemory(pageAddr, pageSize);
+        return sysInfo.dwPageSize;
     }
 
     int TranslateProtection(ProtFlag flags) {
@@ -188,12 +142,12 @@ namespace dyno {
 #elif DYNO_PLATFORM_LINUX
 
     struct region_t {
-        uint64_t start;
-        uint64_t end;
+        uintptr_t start;
+        uintptr_t end;
         dyno::ProtFlag prot;
     };
 
-    static region_t get_region_from_addr(uint64_t addr) {
+    static region_t get_region_from_addr(uintptr_t address) {
         region_t res{};
 
         std::ifstream f("/proc/self/maps");
@@ -201,9 +155,9 @@ namespace dyno {
         while (std::getline(f, s)) {
             if (!s.empty() && s.find("vdso") == std::string::npos && s.find("vsyscall") == std::string::npos) {
                 char* strend = &s[0];
-                uint64_t start = strtoul(strend  , &strend, 16);
-                uint64_t end   = strtoul(strend+1, &strend, 16);
-                if (start != 0 && end != 0 && start <= addr && addr < end) {
+                uintptr_t start = strtoul(strend  , &strend, 16);
+                uintptr_t end   = strtoul(strend+1, &strend, 16);
+                if (start != 0 && end != 0 && start <= address && address < end) {
                     res.start = start;
                     res.end = end;
 
@@ -227,66 +181,24 @@ namespace dyno {
         return res;
     }
 
-    bool MemoryProtect::protect(void* addr, size_t size, ProtFlag flags) {
+    bool MemoryProtect::protect(void* address, size_t size, ProtFlag flags) {
         const size_t pageSize = sysconf(_SC_PAGE_SIZE);
-        uintptr_t pageAddr = (uintptr_t) addr;
+        uintptr_t pageAddr = (uintptr_t) address;
         pageAddr = pageAddr - (pageAddr % pageSize);
         m_oldProtection = get_region_from_addr(pageAddr).prot;
         return mprotect((void*) pageAddr, size, TranslateProtection(m_flags)) != -1;
     }
 
-    void* AllocateMemory(void* addr, size_t size) {
-        return mmap(addr, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    void* Memory::AllocateMemory(void* address, size_t size) {
+        return mmap(address, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     }
 
-    void FreeMemory(void* addr, size_t size) {
-        munmap(addr, size);
+    void Memory::FreeMemory(void* address, size_t size) {
+        munmap(address, size);
     }
 
-    void* AllocatePageNearAddress(void* targetAddr) {
-        const size_t pageSize = sysconf(_SC_PAGE_SIZE);
-        uintptr_t minAddr = (uintptr_t) pageSize;
-        uintptr_t maxAddr = uintptr_t(-1) - pageSize;
-
-        uintptr_t startAddr = (uintptr_t(targetAddr) & ~(pageSize - 1)); //round down to nearest page boundary
-
-        minAddr = std::min(startAddr - 0x7FFFFF00, minAddr);
-        maxAddr = std::max(startAddr + 0x7FFFFF00, maxAddr);
-
-        uintptr_t startPage = (startAddr - (startAddr % pageSize));
-        uintptr_t pageOffset = 1;
-
-        while (true) {
-            uintptr_t byteOffset = pageOffset * pageSize;
-            uintptr_t highAddr = startPage + byteOffset;
-            uintptr_t lowAddr = (startPage > byteOffset) ? startPage - byteOffset : 0;
-
-            bool needsExit = highAddr > maxAddr && lowAddr < minAddr;
-
-            if (highAddr < maxAddr) {
-                void* outAddr = AllocateMemory((void*) highAddr, pageSize);
-                if (outAddr != nullptr && outAddr != (void*) -1)
-                    return outAddr;
-            }
-
-            if (lowAddr > minAddr) {
-                void* outAddr = AllocateMemory((void*) lowAddr, pageSize);
-                if (outAddr != nullptr && outAddr != (void*) -1)
-                    return outAddr;
-            }
-
-            pageOffset++;
-
-            if (needsExit)
-                break;
-        }
-
-        return nullptr;
-    }
-
-    void FreePage(void* pageAddr) {
-        const size_t pageSize = sysconf(_SC_PAGE_SIZE);
-        FreeMemory(pageAddr, pageSize);
+    static size_t Memory::GetPageSize() {
+        return sysconf(_SC_PAGE_SIZE);
     }
 
     int TranslateProtection(ProtFlag flags) {

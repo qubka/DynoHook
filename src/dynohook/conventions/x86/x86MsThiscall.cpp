@@ -1,6 +1,6 @@
 #include "x86MsThiscall.hpp"
 
-#ifndef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 32
 
 using namespace dyno;
 
@@ -14,4 +14,4 @@ x86MsThiscall::x86MsThiscall(std::vector<DataObject> arguments, DataObject retur
     init();
 }
 
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86

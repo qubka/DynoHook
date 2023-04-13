@@ -42,7 +42,7 @@ Register::Register(const Register& other) {
 #endif
     else
         m_address = malloc(m_size);
-    memcpy(m_address, other.m_address, m_size);
+    std::memcpy(m_address, other.m_address, m_size);
 }
 
 Register::Register(Register&& other) noexcept {
@@ -96,7 +96,7 @@ const char* RegisterTypeToName(RegisterType regType) {
         case DL: return "DL";
         case BL: return "BL";
 
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         case SPL: return "SPL";
         case BPL: return "BPL";
         case SIL: return "SIL";
@@ -109,7 +109,7 @@ const char* RegisterTypeToName(RegisterType regType) {
         case R13B: return "R13B";
         case R14B: return "R14B";
         case R15B: return "R15B";
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         case AH: return "AH";
         case CH: return "CH";
@@ -128,7 +128,7 @@ const char* RegisterTypeToName(RegisterType regType) {
         case SI: return "SI";
         case DI: return "DI";
 
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         case R8W: return "R8W";
         case R9W: return "R9W";
         case R10W: return "R10W";
@@ -137,7 +137,7 @@ const char* RegisterTypeToName(RegisterType regType) {
         case R13W: return "R13W";
         case R14W: return "R14W";
         case R15W: return "R15W";
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 32-bit General purpose registers
@@ -151,7 +151,7 @@ const char* RegisterTypeToName(RegisterType regType) {
         case ESI: return "ESI";
         case EDI: return "EDI";
 
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         case R8D: return "R8D";
         case R9D: return "R9D";
         case R10D: return "R10D";
@@ -160,12 +160,12 @@ const char* RegisterTypeToName(RegisterType regType) {
         case R13D: return "R13D";
         case R14D: return "R14D";
         case R15D: return "R15D";
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 64-bit General purpose registers
         // ========================================================================
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         case RAX: return "RAX";
         case RCX: return "RCX";
         case RDX: return "RDX";
@@ -183,7 +183,7 @@ const char* RegisterTypeToName(RegisterType regType) {
         case R13: return "R13";
         case R14: return "R14";
         case R15: return "R15";
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 64-bit MM (MMX) registers
@@ -208,7 +208,7 @@ const char* RegisterTypeToName(RegisterType regType) {
         case XMM5: return "XMM5";
         case XMM6: return "XMM6";
         case XMM7: return "XMM7";
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         case XMM8: return "XMM8";
         case XMM9: return "XMM9";
         case XMM10: return "XMM10";
@@ -235,12 +235,12 @@ const char* RegisterTypeToName(RegisterType regType) {
         case XMM30: return "XMM30";
         case XMM31: return "XMM31";
 #endif // DYNO_PLATFORM_AVX512
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 256-bit YMM registers
         // ========================================================================
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         case YMM0: return "YMM0";
         case YMM1: return "YMM1";
         case YMM2: return "YMM2";
@@ -275,7 +275,7 @@ const char* RegisterTypeToName(RegisterType regType) {
         case YMM30: return "YMM30";
         case YMM31: return "YMM31";
 #endif // DYNO_PLATFORM_AVX512
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 512-bit ZMM registers
@@ -328,7 +328,7 @@ const char* RegisterTypeToName(RegisterType regType) {
         // ========================================================================
         // >> 80-bit FPU registers
         // ========================================================================
-#ifndef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 32
         case ST0: return "ST0";
         case ST1: return "ST1";
         case ST2: return "ST2";
@@ -337,7 +337,7 @@ const char* RegisterTypeToName(RegisterType regType) {
         case ST5: return "ST5";
         case ST6: return "ST6";
         case ST7: return "ST7";
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
     }
     return "NONE";
 }
@@ -352,7 +352,7 @@ size_t RegisterTypeToSize(RegisterType regType) {
         case DL: return SIZE_BYTE;
         case BL: return SIZE_BYTE;
 
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         case SPL: return SIZE_BYTE;
         case BPL: return SIZE_BYTE;
         case SIL: return SIZE_BYTE;
@@ -365,7 +365,7 @@ size_t RegisterTypeToSize(RegisterType regType) {
         case R13B: return SIZE_BYTE;
         case R14B: return SIZE_BYTE;
         case R15B: return SIZE_BYTE;
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         case AH: return SIZE_BYTE;
         case CH: return SIZE_BYTE;
@@ -384,7 +384,7 @@ size_t RegisterTypeToSize(RegisterType regType) {
         case SI: return SIZE_WORD;
         case DI: return SIZE_WORD;
 
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         case R8W: return SIZE_WORD;
         case R9W: return SIZE_WORD;
         case R10W: return SIZE_WORD;
@@ -393,7 +393,7 @@ size_t RegisterTypeToSize(RegisterType regType) {
         case R13W: return SIZE_WORD;
         case R14W: return SIZE_WORD;
         case R15W: return SIZE_WORD;
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 32-bit General purpose registers
@@ -407,7 +407,7 @@ size_t RegisterTypeToSize(RegisterType regType) {
         case ESI: return SIZE_DWORD;
         case EDI: return SIZE_DWORD;
 
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         case R8D: return SIZE_DWORD;
         case R9D: return SIZE_DWORD;
         case R10D: return SIZE_DWORD;
@@ -416,12 +416,12 @@ size_t RegisterTypeToSize(RegisterType regType) {
         case R13D: return SIZE_DWORD;
         case R14D: return SIZE_DWORD;
         case R15D: return SIZE_DWORD;
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 64-bit General purpose registers
         // ========================================================================
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         case RAX: return SIZE_QWORD;
         case RCX: return SIZE_QWORD;
         case RDX: return SIZE_QWORD;
@@ -439,7 +439,7 @@ size_t RegisterTypeToSize(RegisterType regType) {
         case R13: return SIZE_QWORD;
         case R14: return SIZE_QWORD;
         case R15: return SIZE_QWORD;
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 64-bit MM (MMX) registers
@@ -464,7 +464,7 @@ size_t RegisterTypeToSize(RegisterType regType) {
         case XMM5: return SIZE_XMMWORD;
         case XMM6: return SIZE_XMMWORD;
         case XMM7: return SIZE_XMMWORD;
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         case XMM8: return SIZE_XMMWORD;
         case XMM9: return SIZE_XMMWORD;
         case XMM10: return SIZE_XMMWORD;
@@ -491,12 +491,12 @@ size_t RegisterTypeToSize(RegisterType regType) {
         case XMM30: return SIZE_XMMWORD;
         case XMM31: return SIZE_XMMWORD;
 #endif // DYNO_PLATFORM_AVX512
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 256-bit YMM registers
         // ========================================================================
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         case YMM0: return SIZE_YMMWORD;
         case YMM1: return SIZE_YMMWORD;
         case YMM2: return SIZE_YMMWORD;
@@ -531,7 +531,7 @@ size_t RegisterTypeToSize(RegisterType regType) {
         case YMM30: return SIZE_YMMWORD;
         case YMM31: return SIZE_YMMWORD;
 #endif // DYNO_PLATFORM_AVX512
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 512-bit ZMM registers
@@ -584,7 +584,7 @@ size_t RegisterTypeToSize(RegisterType regType) {
         // ========================================================================
         // >> 80-bit FPU registers
         // ========================================================================
-#ifndef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 32
         case ST0: return SIZE_TWORD;
         case ST1: return SIZE_TWORD;
         case ST2: return SIZE_TWORD;
@@ -593,7 +593,7 @@ size_t RegisterTypeToSize(RegisterType regType) {
         case ST5: return SIZE_TWORD;
         case ST6: return SIZE_TWORD;
         case ST7: return SIZE_TWORD;
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
     }
     return 0;
 }
@@ -603,9 +603,9 @@ size_t RegisterTypeToAlignment(RegisterType regType) {
         /**
          * The primary exceptions are the stack pointer, which are 16-byte aligned to aid performance.
          */
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         case RSP: return SIZE_XMMWORD;
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 64-bit MM (MMX) registers
@@ -630,7 +630,7 @@ size_t RegisterTypeToAlignment(RegisterType regType) {
         case XMM5: return SIZE_XMMWORD;
         case XMM6: return SIZE_XMMWORD;
         case XMM7: return SIZE_XMMWORD;
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         case XMM8: return SIZE_XMMWORD;
         case XMM9: return SIZE_XMMWORD;
         case XMM10: return SIZE_XMMWORD;
@@ -657,12 +657,12 @@ size_t RegisterTypeToAlignment(RegisterType regType) {
         case XMM30: return SIZE_XMMWORD;
         case XMM31: return SIZE_XMMWORD;
 #endif // DYNO_PLATFORM_AVX512
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 256-bit YMM registers
         // ========================================================================
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         case YMM0: return SIZE_YMMWORD;
         case YMM1: return SIZE_YMMWORD;
         case YMM2: return SIZE_YMMWORD;
@@ -697,7 +697,7 @@ size_t RegisterTypeToAlignment(RegisterType regType) {
         case YMM30: return SIZE_YMMWORD;
         case YMM31: return SIZE_YMMWORD;
 #endif // DYNO_PLATFORM_AVX512
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 512-bit ZMM registers
@@ -753,7 +753,7 @@ size_t RegisterTypeToSSEIndex(RegisterType regType) {
         case XMM5: return 5;
         case XMM6: return 6;
         case XMM7: return 7;
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         case XMM8: return 8;
         case XMM9: return 9;
         case XMM10: return 10;
@@ -780,12 +780,12 @@ size_t RegisterTypeToSSEIndex(RegisterType regType) {
         case XMM30: return 30;
         case XMM31: return 31;
 #endif // DYNO_PLATFORM_AVX512
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 256-bit YMM registers
         // ========================================================================
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         case YMM0: return 0;
         case YMM1: return 1;
         case YMM2: return 2;
@@ -820,7 +820,7 @@ size_t RegisterTypeToSSEIndex(RegisterType regType) {
         case YMM30: return 30;
         case YMM31: return 31;
 #endif // DYNO_PLATFORM_AVX512
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 512-bit ZMM registers
@@ -878,7 +878,7 @@ RegisterType SSEIndexToRegisterType(size_t index, size_t size) {
                 case 5: return XMM5;
                 case 6: return XMM6;
                 case 7: return XMM7;
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
                 case 8: return XMM8;
                 case 9: return XMM9;
                 case 10: return XMM10;
@@ -905,14 +905,14 @@ RegisterType SSEIndexToRegisterType(size_t index, size_t size) {
                 case 30: return XMM30;
                 case 31: return XMM31;
 #endif // DYNO_PLATFORM_AVX512
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
             }
             break;
 
         // ========================================================================
         // >> 256-bit YMM registers
         // ========================================================================
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         case SIZE_YMMWORD:
             switch (index) {
                 case 0: return YMM0;
@@ -951,7 +951,7 @@ RegisterType SSEIndexToRegisterType(size_t index, size_t size) {
 #endif // DYNO_PLATFORM_AVX512
             }
             break;
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 512-bit ZMM registers

@@ -25,14 +25,14 @@ This module requires the following modules:
 ## Examples
 ### Static functions
 ```c++
-int g_iMyFuncCallCount = 0;
-int g_iPreMyFuncCallCount = 0;
-int g_iPostMyFuncCallCount = 0;
+int g_MyFuncCallCount = 0;
+int g_PreMyFuncCallCount = 0;
+int g_PostMyFuncCallCount = 0;
 
 using namespace dyno;
 
 int __fastcall MyFunc(int x, int y) {
-	g_iMyFuncCallCount++;
+	g_MyFuncCallCount++;
 	assert(x == 3);
 	assert(y == 10);
 
@@ -43,7 +43,7 @@ int __fastcall MyFunc(int x, int y) {
 }
 
 ReturnAction PreMyFunc(HookType hookType, Hook& hook) {
-	g_iPreMyFuncCallCount++;
+	g_PreMyFuncCallCount++;
 	int x = hook.getArgument<int>(0);
 	assert(x == 3);
 
@@ -54,7 +54,7 @@ ReturnAction PreMyFunc(HookType hookType, Hook& hook) {
 }
 
 ReturnAction PostMyFunc(HookType hookType, Hook& hook) {
-	g_iPostMyFuncCallCount++;
+	g_PostMyFuncCallCount++;
 	int x = hook.getArgument<int>(0);
 	assert(x == 3);
 
@@ -70,31 +70,31 @@ ReturnAction PostMyFunc(HookType hookType, Hook& hook) {
 }
 
 void main() {
-	HookManager& hookMngr = HookManager::Get();
+	HookManager& manager = HookManager::Get();
 
 	// Hook the function
-	Hook* pHook = hookMngr.hook((void *) &MyFunc, new x64MsFastcall({DataType::Int, DataType::Int}, DataType::Int));
+	Hook* hook = manager.hook((void *) &MyFunc, new x64MsFastcall({DataType::Int, DataType::Int}, DataType::Int));
 
 	// Add the callbacks
-	pHook->addCallback(HookType::Pre, (HookHandler *) (void *) &PreMyFunc);
-	pHook->addCallback(HookType::Post, (HookHandler *) (void *) &PostMyFunc);
+	hook->addCallback(HookType::Pre, (HookHandler *) (void *) &PreMyFunc);
+	hook->addCallback(HookType::Post, (HookHandler *) (void *) &PostMyFunc);
 
 	// Call the function
 	int ret = MyFunc(3, 10);
 
-	assert(g_iMyFuncCallCount == 1);
-	assert(g_iPreMyFuncCallCount == 1);
-	assert(g_iPostMyFuncCallCount == 1);
+	assert(g_MyFuncCallCount == 1);
+	assert(g_PreMyFuncCallCount == 1);
+	assert(g_PostMyFuncCallCount == 1);
 	assert(ret == 1337);
 
-	hookMngr.unhookAll();
+	manager.unhookAll();
 }
 ```
 ### Member functions
 ```c++
-int g_iMyFuncCallCount = 0;
-int g_iPreMyFuncCallCount = 0;
-int g_iPostMyFuncCallCount = 0;
+int g_MyFuncCallCount = 0;
+int g_PreMyFuncCallCount = 0;
+int g_PostMyFuncCallCount = 0;
 
 using namespace dyno;
 
@@ -106,7 +106,7 @@ public:
 	MyClass() : m_iData{0} {}
 
 	int __fastcall myFunc(int x, int y) {
-		g_iMyFuncCallCount++;
+		g_MyFuncCallCount++;
 		assert(this == g_pMyClass);
 		assert(x == 3);
 		assert(y == 10);
@@ -123,7 +123,7 @@ private:
 };
 
 ReturnAction PreMyFunc(HookType hookType, Hook& hook) {
-	g_iPreMyFuncCallCount++;
+	g_PreMyFuncCallCount++;
 	MyClass* pMyClass = hook.getArgument<MyClass *>(0);
 	assert(pMyClass == g_pMyClass);
 
@@ -137,7 +137,7 @@ ReturnAction PreMyFunc(HookType hookType, Hook& hook) {
 }
 
 ReturnAction PostMyFunc(HookType hookType, Hook& hook) {
-	g_iPostMyFuncCallCount++;
+	g_PostMyFuncCallCount++;
 	MyClass* pMyClass = hook.getArgument<MyClass *>(0);
 	assert(pMyClass == g_pMyClass);
 
@@ -156,16 +156,16 @@ ReturnAction PostMyFunc(HookType hookType, Hook& hook) {
 }
 
 void main() {
-	HookManager& hookMngr = HookManager::Get();
+	HookManager& manager = HookManager::Get();
 
 	int (__fastcall MyClass::*myFunc)(int, int) = &MyClass::myFunc;
 
 	// Hook the function
-	Hook* pHook = hookMngr.hook((void *&) myFunc, new x64MsFastcall({DataType::Pointer, DataType::Int, DataType::Int}, DataType::Int));
+	Hook* hook = manager.hook((void *&) myFunc, new x64MsFastcall({DataType::Pointer, DataType::Int, DataType::Int}, DataType::Int));
 
 	// Add the callbacks
-	pHook->addCallback(HookType::Pre, (HookHandler *) (void *) &PreMyFunc);
-	pHook->addCallback(HookType::Post, (HookHandler *) (void *) &PostMyFunc);
+	hook->addCallback(HookType::Pre, (HookHandler *) (void *) &PreMyFunc);
+	hook->addCallback(HookType::Post, (HookHandler *) (void *) &PostMyFunc);
 
 	MyClass a;
 	g_pMyClass = &a;
@@ -173,12 +173,12 @@ void main() {
 	// Call the function
 	int ret = a.myFunc(3, 10);
 
-	assert(g_iMyFuncCallCount == 1);
-	assert(g_iPreMyFuncCallCount == 1);
-	assert(g_iPostMyFuncCallCount == 1);
+	assert(g_MyFuncCallCount == 1);
+	assert(g_PreMyFuncCallCount == 1);
+	assert(g_PostMyFuncCallCount == 1);
 	assert(ret == 1337);
 
-	hookMngr.unhookAll();
+	manager.unhookAll();
 }
 ```
 

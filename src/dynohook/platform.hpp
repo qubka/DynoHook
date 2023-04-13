@@ -87,11 +87,6 @@
 #error "Unable to determine compiler"
 #endif
 
-// Define macros for family of instruction set
-#if UINTPTR_MAX == UINT64_MAX
-#define DYNO_PLATFORM_X64 1
-#endif
-
 // Define macros for supported CPU instruction sets
 #if defined(DYNO_PLATFORM_GCC_COMPATIBLE)
 #if defined(__MMX__)
@@ -159,4 +154,61 @@
 #define DYNO_PLATFORM_AVX 1
 #define DYNO_PLATFORM_AVX2 1
 #endif
+#endif
+
+// Define macros for architecture type
+#if DYNO_PLATFORM_X86
+#if UINTPTR_MAX == UINT64_MAX
+#define DYNO_ARCH_X86 64
+#elif UINTPTR_MAX == UINT32_MAX
+#define DYNO_ARCH_X86 32
+#else
+#error "Unable to determine architecture type"
+#endif
+#endif
+
+// Function attributes
+#if !defined(DYNO_BUILD_DEBUG) && defined(__GNUC__)
+#define DYNO_FORCE_INLINE inline __attribute__((__always_inline__))
+#elif !defined(DYNO_BUILD_DEBUG) && defined(_MSC_VER)
+#define DYNO_FORCE_INLINE __forceinline
+#else
+#define DYNO_FORCE_INLINE inline
+#endif
+
+#if defined(__GNUC__)
+#define DYNO_NOINLINE __attribute__((__noinline__))
+#define DYNO_NORETURN __attribute__((__noreturn__))
+#elif defined(_MSC_VER)
+#define DYNO_NOINLINE __declspec(noinline)
+#define DYNO_NORETURN __declspec(noreturn)
+#else
+#define DYNO_NOINLINE
+#define DYNO_NORETURN
+#endif
+
+// Calling conventions
+#if DYNO_ARCH_X86 == 32 && defined(__GNUC__)
+#define DYNO_CDECL __attribute__((__cdecl__))
+#define DYNO_STDCALL __attribute__((__stdcall__))
+#define DYNO_FASTCALL __attribute__((__fastcall__))
+#define DYNO_REGPARM(N) __attribute__((__regparm__(N)))
+#elif DYNO_ARCH_X86 == 32 && defined(_MSC_VER)
+#define DYNO_CDECL __cdecl
+#define DYNO_STDCALL __stdcall
+#define DYNO_FASTCALL __fastcall
+#define DYNO_REGPARM(N)
+#else
+#define DYNO_CDECL
+#define DYNO_STDCALL
+#define DYNO_FASTCALL
+#define DYNO_REGPARM(N)
+#endif
+
+#if DYNO_ARCH_X86 && defined(_WIN32) && defined(_MSC_VER)
+#define DYNO_VECTORCALL __vectorcall
+#elif DYNO_ARCH_X86 && defined(_WIN32)
+#define DYNO_VECTORCALL __attribute__((__vectorcall__))
+#else
+#define DYNO_VECTORCALL
 #endif

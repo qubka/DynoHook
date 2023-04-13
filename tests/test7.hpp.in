@@ -10,7 +10,7 @@
 #include DYNOHOOK_TEST_HEADER
 
 namespace DYNOHOOK_TEST_NAMESPACE {
-    int g_iMyFuncCallCount = 0;
+    int g_MyFuncCallCount = 0;
 
     using namespace dyno;
 
@@ -22,15 +22,15 @@ namespace DYNOHOOK_TEST_NAMESPACE {
     }
 
     void test() {
-        HookManager& hookMngr = HookManager::Get();
+        HookManager& manager = HookManager::Get();
 
         // Hook the function
-        hookMngr.hook((void *) &MyFunc, new DYNOHOOK_TEST_OBJECT({}, DataType::Void));
+        manager.hook((void *) &MyFunc, new DYNOHOOK_TEST_OBJECT({}, DataType::Void));
 
         // Call the function
         MyFunc();
 
-        hookMngr.unhookAll();
+        manager.unhookAll();
 
         printf("Test: \"%s\" was passed\n", DYNOHOOK_TEST_NAME);
     }

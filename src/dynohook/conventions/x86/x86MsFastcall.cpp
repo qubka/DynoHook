@@ -1,6 +1,6 @@
 #include "x86MsFastcall.hpp"
 
-#ifndef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 32
 
 using namespace dyno;
 
@@ -21,4 +21,4 @@ x86MsFastcall::x86MsFastcall(std::vector<DataObject> arguments, DataObject retur
     init();
 }
 
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86

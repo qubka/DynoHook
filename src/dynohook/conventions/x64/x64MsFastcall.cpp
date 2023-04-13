@@ -1,6 +1,6 @@
 #include "x64MsFastcall.hpp"
 
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
 
 using namespace dyno;
 
@@ -10,7 +10,7 @@ x64MsFastcall::x64MsFastcall(std::vector<DataObject> arguments, DataObject retur
     RegisterType registers[] = { RCX, RDX, R8, R9 };
     RegisterType sseRegisters[] = { XMM0, XMM1, XMM2, XMM3 };
 
-    size_t argSize = std::min(4, (int) m_arguments.size());
+    size_t argSize = std::min<size_t>(4, m_arguments.size());
 
     for (size_t i = 0; i < argSize; ++i) {
         DataObject& arg = m_arguments[i];
@@ -77,4 +77,4 @@ void* x64MsFastcall::getReturnPtr(const Registers& registers) {
     return *registers.at(m_return.reg, true);
 }
 
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86

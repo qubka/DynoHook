@@ -13,7 +13,7 @@ namespace dyno {
         DL,
         BL,
 
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         SPL,
         BPL,
         SIL,
@@ -26,7 +26,7 @@ namespace dyno {
         R13B,
         R14B,
         R15B,
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         AH,
         CH,
@@ -45,7 +45,7 @@ namespace dyno {
         SI,
         DI,
 
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         R8W,
         R9W,
         R10W,
@@ -54,7 +54,7 @@ namespace dyno {
         R13W,
         R14W,
         R15W,
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 32-bit General purpose registers
@@ -68,7 +68,7 @@ namespace dyno {
         ESI,
         EDI,
 
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         R8D,
         R9D,
         R10D,
@@ -77,12 +77,12 @@ namespace dyno {
         R13D,
         R14D,
         R15D,
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 64-bit General purpose registers
         // ========================================================================
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         RAX,
         RCX,
         RDX,
@@ -100,7 +100,7 @@ namespace dyno {
         R13,
         R14,
         R15,
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 64-bit MM (MMX) registers
@@ -125,7 +125,7 @@ namespace dyno {
         XMM5,
         XMM6,
         XMM7,
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         XMM8,
         XMM9,
         XMM10,
@@ -152,12 +152,12 @@ namespace dyno {
         XMM30,
         XMM31,
 #endif // DYNO_PLATFORM_AVX512
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 256-bit YMM registers
         // ========================================================================
-#ifdef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 64
         YMM0,
         YMM1,
         YMM2,
@@ -192,7 +192,7 @@ namespace dyno {
         YMM30,
         YMM31,
 #endif // DYNO_PLATFORM_AVX512
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
 
         // ========================================================================
         // >> 512-bit ZMM registers
@@ -245,7 +245,7 @@ namespace dyno {
         // ========================================================================
         // >> 80-bit FPU registers
         // ========================================================================
-#ifndef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 32
         ST0,
         ST1,
         ST2,
@@ -254,7 +254,7 @@ namespace dyno {
         ST5,
         ST6,
         ST7,
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
     };
 
     class Register {

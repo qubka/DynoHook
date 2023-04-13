@@ -1,6 +1,6 @@
 #include "x86MsStdcall.hpp"
 
-#ifndef DYNO_PLATFORM_X64
+#if DYNO_ARCH_X86 == 32
 
 using namespace dyno;
 
@@ -13,4 +13,4 @@ size_t x86MsStdcall::getPopSize() {
     return m_stackSize;
 }
 
-#endif // DYNO_PLATFORM_X64
+#endif // DYNO_ARCH_X86
