@@ -25,7 +25,6 @@ namespace dyno {
 
     private:
         // we use a void pointer here since we can't forward declare the ZydisDecoder c typedef struct
-        // we do not want to include the zydis headers here since we then have to link against zydis (and not only hookFTW) when using hookFTW
         void* m_zydisDecoder;
     };
 }

@@ -29,7 +29,7 @@ namespace DYNOHOOK_TEST_NAMESPACE {
 	public:
 		MyClass() : m_iData{0} {}
 
-        ASMJIT_NOINLINE int DYNOHOOK_TEST_CONV myFunc(int x, int y) {
+        DYNO_NOINLINE int DYNOHOOK_TEST_CONV myFunc(int x, int y) {
 			g_MyFuncCallCount++;
 			assert(this == g_pMyClass);
 			assert(x == 3);

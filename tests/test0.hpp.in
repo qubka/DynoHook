@@ -22,7 +22,7 @@ namespace DYNOHOOK_TEST_NAMESPACE {
 
     using namespace dyno;
 
-    ASMJIT_NOINLINE int DYNOHOOK_TEST_CONV MyFunc(int x, int y) {
+    DYNO_NOINLINE int DYNOHOOK_TEST_CONV MyFunc(int x, int y) {
         g_MyFuncCallCount++;
         assert(x == 3);
         assert(y == 10);

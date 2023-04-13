@@ -3,7 +3,13 @@
 #include "registers.hpp"
 #include "convention.hpp"
 
-#include <asmjit/asmjit.h>
+namespace asmjit { inline namespace _abi_1_10 {
+        class JitRuntime;
+        namespace x86 {
+            class Assembler;
+        }
+    }
+}
 
 namespace dyno {
     enum class HookType : bool {
@@ -106,9 +112,9 @@ namespace dyno {
         void writeRegToMem(Assembler& a, const Register& reg, HookType hookType = HookType::Pre) const; // hookType not used on x64
         void writeMemToReg(Assembler& a, const Register& reg, HookType hookType = HookType::Pre) const; // hookType not used on x64
 
-        ASMJIT_NOINLINE ReturnAction ASMJIT_CDECL hookHandler(HookType hookType);
-        ASMJIT_NOINLINE void* ASMJIT_CDECL getReturnAddress(void* stackPtr);
-        ASMJIT_NOINLINE void ASMJIT_CDECL setReturnAddress(void* retAddr, void* stackPtr);
+        DYNO_NOINLINE ReturnAction DYNO_CDECL hookHandler(HookType hookType);
+        DYNO_NOINLINE void* DYNO_CDECL getReturnAddress(void* stackPtr);
+        DYNO_NOINLINE void DYNO_CDECL setReturnAddress(void* retAddr, void* stackPtr);
 
     public:
         // Runtime designed for JIT
@@ -131,7 +137,6 @@ namespace dyno {
 
         // Instructions of the original function
         int8_t* m_originalBytes;
-
         size_t m_hookLength;
 
         // Register storage
@@ -144,6 +149,7 @@ namespace dyno {
         //
         std::map<void*, std::vector<void*>> m_retAddr;
 
+        //
         std::map<HookType, std::vector<HookHandler*>> m_handlers;
     };
 }

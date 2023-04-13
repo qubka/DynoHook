@@ -3,6 +3,8 @@
 #include "trampoline.hpp"
 #include "decoder.hpp"
 
+#include <asmjit/asmjit.h>
+
 using namespace dyno;
 using namespace asmjit;
 using namespace asmjit::x86;
@@ -11,10 +13,6 @@ Hook::Hook(asmjit::JitRuntime& jit, void* func, ICallingConvention* convention) 
     m_jit(jit),
     m_func(func),
     m_callingConvention(convention),
-    m_bridge(nullptr),
-    m_trampoline(nullptr),
-    m_newRetAddr(nullptr),
-    m_originalBytes(nullptr),
     m_registers(convention->getRegisters()),
     m_scratchRegisters(createScratchRegisters()),
     m_hookLength(0) {
@@ -25,19 +23,19 @@ Hook::Hook(asmjit::JitRuntime& jit, void* func, ICallingConvention* convention) 
     bool restrictedRelocation;
     m_trampoline = Trampoline::HandleTrampolineAllocation(m_func, restrictedRelocation);
     if (!m_trampoline) {
-        printf("[Error] - Detour - Failed to allocate trampoline\n");
+        printf("[Error] - Hook - Failed to allocate trampoline\n");
         return;
     }
 
     // Create the bridge function
     if (!createBridge()) {
-        printf("[Error] - Detour - Failed to create bridge\n");
+        printf("[Error] - Hook - Failed to create bridge\n");
         return;
     }
 
     // Create the trampoline function
     if (!createTrampoline(restrictedRelocation)) {
-        printf("[Error] - Detour - Failed to create trampoline\n");
+        printf("[Error] - Hook - Failed to create trampoline\n");
         return;
     }
 }
@@ -169,7 +167,7 @@ ReturnAction Hook::hookHandler(HookType hookType) {
 void* Hook::getReturnAddress(void* stackPtr) {
     auto it = m_retAddr.find(stackPtr);
     if (it == m_retAddr.end()) {
-        puts("Failed to find return address of original function. Check the arguments and return type of your detour setup.");
+        printf("[Error] - Hook - Failed to find return address of original function. Check the arguments and return type of your detour setup.");
         return nullptr;
     }
 
@@ -212,7 +210,7 @@ bool Hook::createTrampoline(bool restrictedRelocation) {
     // relocate to be overwritten instructions to trampoline
     auto relocatedBytes = decoder.relocate(sourceAddress, m_hookLength, m_trampoline, restrictedRelocation);
     if (relocatedBytes.empty()) {
-        printf("[Error] - Detour - Relocation of bytes replaced by hook failed\n");
+        printf("[Error] - Hook - Relocation of bytes replaced by hook failed\n");
         return false;
     }
 
@@ -319,7 +317,7 @@ bool Hook::createBridge() const {
     // Generate code
     Error err = m_jit.add(&m_bridge, &code);
     if (err) {
-        printf("AsmJit failed: %s\n", DebugUtils::errorAsString(err));
+        printf("[Error] - Hook - AsmJit failed: %s\n", DebugUtils::errorAsString(err));
         return false;
     }
 
@@ -456,7 +454,7 @@ bool Hook::createPostCallback() const {
     // Generate code
     Error err = m_jit.add(&m_newRetAddr, &code);
     if (err) {
-        printf("AsmJit failed: %s\n", DebugUtils::errorAsString(err));
+        printf("[Error] - Hook - AsmJit failed: %s\n", DebugUtils::errorAsString(err));
         return false;
     }
 
