@@ -20,7 +20,7 @@ One of the key advantages of DynoHook library over other function hooking implem
 This module requires the following modules:
 
 - [AsmJit](https://asmjit.com/)
-- [Capstone](https://www.capstone-engine.org/)
+- [Zydis](https://zydis.re/)
 
 ## Examples
 ### Static functions
@@ -195,6 +195,7 @@ cmake -G "Visual Studio 15 2017" ..
 ## Credits
 - [Ayuto](https://github.com/Ayuto/) - DynamicHooks library
 - [peace-maker](https://github.com/peace-maker) - DHooks with detour support
+- [Fahersto](https://github.com/Fahersto/hookFTW) - hookFTW's range allocation, trampoline creation and disassembling
 - [Kailo](https://github.com/Kailo97) - Help with assembly porting from x32 to x64 and fixing crashes
 
 ## Links
