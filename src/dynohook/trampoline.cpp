@@ -213,7 +213,7 @@ void* Trampoline::AllocateTrampolineWithinBounds(void* sourceAddress, intptr_t l
 #elif DYNO_ARCH_X86 == 32
             restrictedRelocation = false;
             // we currently have no way to deal with this situation in 32 Bits. I never observed this to be an issue though. There may be a guarantee that this never happens?
-            return false;
+            return nullptr;
 #endif // DYNO_ARCH_X86
             // this should not be reached
             restrictedRelocation = false;

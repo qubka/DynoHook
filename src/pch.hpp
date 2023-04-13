@@ -5,9 +5,9 @@
 #include <map>
 #include <memory>
 #include <utility>
-#include <cstdio>
-#include <cstdlib>
+#include <string>
 #include <cstring>
+#include <ostream>
 #include <cassert>
 
 #include "dynohook/platform.hpp"

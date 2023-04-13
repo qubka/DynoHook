@@ -66,8 +66,6 @@ const Register& Registers::operator[](RegisterType regType) const {
 }
 
 const Register& Registers::at(RegisterType regType, bool reverse) const {
-    static Register s_None{NONE, 0};
-
     if (reverse)
         for (size_t i = m_registers.size() - 1; i != -1; --i) {
             const auto& reg = m_registers[i];

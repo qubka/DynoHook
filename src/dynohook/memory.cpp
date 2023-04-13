@@ -4,6 +4,8 @@
 #include <windows.h>
 #elif DYNO_PLATFORM_LINUX
 #include <sys/mman.h>
+#include <unistd.h>
+#include <fstream>
 #else
 #error "Platform not supported!"
 #endif
@@ -197,7 +199,7 @@ namespace dyno {
         munmap(address, size);
     }
 
-    static size_t Memory::GetPageSize() {
+    size_t Memory::GetPageSize() {
         return sysconf(_SC_PAGE_SIZE);
     }
 

@@ -520,13 +520,13 @@ std::vector<RegisterType> Hook::createScratchRegisters() const {
     registers.push_back(R11);
 #endif
     registers.push_back(XMM0);
-    /*registers.push_back(XMM1);
+    registers.push_back(XMM1);
     registers.push_back(XMM2);
     registers.push_back(XMM3);
     registers.push_back(XMM4);
     registers.push_back(XMM5);
     registers.push_back(XMM6);
-    registers.push_back(XMM7);*/
+    registers.push_back(XMM7);
 // TODO: Do we need to save all sse registers ?
 /*#ifdef DYNO_PLATFORM_AVX512
     registers.push_back(ZMM0);

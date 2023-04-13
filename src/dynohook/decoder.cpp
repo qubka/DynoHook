@@ -111,16 +111,16 @@ bool RelocateCallInstruction(ZydisDecodedInstruction& instruction, const ZydisDe
         // we can use rax here as it has not to be preserved in function calls
         uint8_t relocatedCallInstructions[relocatedCallInstructionsLength] = {
             0x48, 0xB8, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11,			//movabs rax, 0x1122334455667788. 
-            0xFF, 0xD0															 								//call   rax
+            0xFF, 0xD0															//call   rax
         };
         *(uint64_t*)&relocatedCallInstructions[2] = originalJumpTarget;
         relocatedbytes.insert(relocatedbytes.end(), relocatedCallInstructions, relocatedCallInstructions + relocatedCallInstructionsLength);
 #elif DYNO_ARCH_X86 == 32
         const int relocatedCallInstructionsLength = 7;
         // we can use eax here as it has not to be preserved in function calls
-        int8_t relocatedCallInstructions[relocatedCallInstructionsLength] = {
+        uint8_t relocatedCallInstructions[relocatedCallInstructionsLength] = {
             0xB8, 0x44, 0x33, 0x22, 0x11,			//mov  eax,0x11223344
-            0xFF, 0xD0								//call eax
+            0xFF, 0xD0											//call eax
         };
         *(uint32_t*)&relocatedCallInstructions[1] = originalJumpTarget;
         relocatedbytes.insert(relocatedbytes.end(), relocatedCallInstructions, relocatedCallInstructions + relocatedCallInstructionsLength);

@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.21)
-set(DYNOHOOK dynohook)
-project(${DYNOHOOK})
+set(PROJECT_NAME dynohook)
+project(${PROJECT_NAME})
 
 set(DYNOHOOK_BUILD_TESTS ON)
+set(DYNOHOOK_BUILD_64 ON)
+set(DYNOHOOK_BUILD_32 OFF)
 
 # Force all compilers to use the correct C and C++ standard versions.
 # Needed to allow for CheckCXXSourceCompiles to work correctly.
@@ -10,9 +12,10 @@ set(CMAKE_REQUIRED_FLAGS "-std=c++17 -std=c11")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-#set(CMAKE_CXX_FLAGS "-m64")
 if (WIN32)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /INCREMENTAL:NO" )
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /INCREMENTAL:NO")
+elseif (DYNOHOOK_BUILD_32)
+    set(CMAKE_CXX_FLAGS -m32)
 endif ()
 
 # Asmjit
@@ -37,11 +40,23 @@ file(GLOB_RECURSE DYNOHOOK_SRC_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "src/d
 file(GLOB_RECURSE DYNOHOOK_HDR_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "src/dynohook/*.hpp")
 set(DYNOHOOK_PCH_FILE "src/pch.hpp")
 
-add_library(${DYNOHOOK} ${DYNOHOOK_SRC_FILES} ${DYNOHOOK_HDR_FILES})
+add_library(${PROJECT_NAME} ${DYNOHOOK_SRC_FILES} ${DYNOHOOK_HDR_FILES})
 
-target_link_libraries(${DYNOHOOK} PUBLIC asmjit)
-target_link_libraries(${DYNOHOOK} PUBLIC Zydis)
-target_precompile_headers(${DYNOHOOK} PUBLIC ${DYNOHOOK_PCH_FILE})
+target_link_libraries(${PROJECT_NAME} PUBLIC asmjit)
+target_link_libraries(${PROJECT_NAME} PUBLIC Zydis)
+target_precompile_headers(${PROJECT_NAME} PUBLIC ${DYNOHOOK_PCH_FILE})
+
+if (DYNOHOOK_BUILD_32)
+    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
+    message(STATUS "Excluding 64bit library paths from search.")
+    set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS OFF)
+    set(ARCH i686)
+elseif (DYNOHOOK_BUILD_64)
+    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS  "-m64" LINK_FLAGS "-m64")
+    set(ARCH amd64)
+else()
+    set(ARCH amd64)
+endif()
 
 #######################
 
@@ -90,18 +105,18 @@ if (DYNOHOOK_BUILD_TESTS)
     endmacro ()
 
     if (WIN32)
-        if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+        if (DYNOHOOK_BUILD_64)
             create_dyno_hooks_test(x64 /*MS_ABI*/ x64MsFastcall)
-        elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
+        elseif (DYNOHOOK_BUILD_32)
             create_dyno_hooks_test(x86 ASMJIT_CDECL x86MsCdecl)
             create_dyno_hooks_test(x86 ASMJIT_STDCALL x86MsStdcall)
             create_dyno_hooks_test(x86 ASMJIT_FASTCALL x86MsFastcall)
             create_dyno_hooks_test(x86 /*ASMJIT_THISCALL*/ x86MsThiscall 6) # Only generate test6.hpp
         endif()
     else ()
-        if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+        if (DYNOHOOK_BUILD_64)
             create_dyno_hooks_test(x64 /*SYSV_ABI*/ x64SystemVcall)
-        elseif (CMAKE_SIZEOF_VOID_P EQUAL 4)
+        elseif (DYNOHOOK_BUILD_32)
             create_dyno_hooks_test(x86 ASMJIT_CDECL x86GccCdecl)
             create_dyno_hooks_test(x86 /*ASMJIT_THISCALL*/ x86GccThiscall 6) # Only generate test6.hpp
         endif()
@@ -117,5 +132,5 @@ if (DYNOHOOK_BUILD_TESTS)
         set_property(TARGET ${TEST_NAME} APPEND_STRING PROPERTY LINK_FLAGS " /INCREMENTAL:NO")
     endif()
     include_directories(src/)
-    target_link_libraries(${TEST_NAME} PUBLIC ${DYNOHOOK})
+    target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME})
 endif()
