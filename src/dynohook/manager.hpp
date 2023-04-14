@@ -19,7 +19,7 @@ namespace dyno {
          * @param convention
          * @return
          */
-        Hook* hook(void* func, ICallingConvention* convention);
+        Hook* hook(void* func, CallingConvention* convention);
 
         /**
          * @brief Removes all callbacks and restores the original function.

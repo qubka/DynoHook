@@ -14,7 +14,7 @@ HookManager::~HookManager() {
         delete hook;
 }
 
-Hook* HookManager::hook(void* func, ICallingConvention* convention) {
+Hook* HookManager::hook(void* func, CallingConvention* convention) {
     if (!func)
         return nullptr;
 

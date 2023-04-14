@@ -9,12 +9,12 @@ using namespace dyno;
 using namespace asmjit;
 using namespace asmjit::x86;
 
-Hook::Hook(asmjit::JitRuntime& jit, void* func, ICallingConvention* convention) :
+Hook::Hook(asmjit::JitRuntime& jit, void* func, CallingConvention* convention) :
     m_jit(jit),
     m_func(func),
     m_callingConvention(convention),
     m_registers(convention->getRegisters()),
-    m_scratchRegisters(createScratchRegisters()),
+    m_scratchRegisters(Registers::ScratchList()),
     m_hookLength(0) {
     // make page of detour address writeable
     MemoryProtect protector(m_func, 32, RWX);
@@ -487,100 +487,6 @@ void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
 	a.call((void *&) hookHandler);
 	a.add(esp, 12);
 #endif // DYNO_ARCH_X86
-}
-
-std::vector<RegisterType> Hook::createScratchRegisters() const {
-    // https://www.agner.org/optimize/calling_conventions.pdf
-
-    std::vector<RegisterType> registers;
-    
-#if DYNO_ARCH_X86 == 64
-#ifdef DYNO_PLATFORM_WINDOWS
-    registers.push_back(RAX);
-    registers.push_back(RCX);
-    registers.push_back(RDX);
-    registers.push_back(R8);
-    registers.push_back(R9);
-    registers.push_back(R10);
-    registers.push_back(R11);
-#else // __systemV__
-    registers.push_back(RAX);
-    registers.push_back(RDI);
-    registers.push_back(RSI);
-    registers.push_back(RDX);
-    registers.push_back(RCX);
-    registers.push_back(R8);
-    registers.push_back(R9);
-    registers.push_back(R10);
-    registers.push_back(R11);
-#endif
-    registers.push_back(XMM0);
-    registers.push_back(XMM1);
-    registers.push_back(XMM2);
-    registers.push_back(XMM3);
-    registers.push_back(XMM4);
-    registers.push_back(XMM5);
-    registers.push_back(XMM6);
-    registers.push_back(XMM7);
-// TODO: Do we need to save all sse registers ?
-/*#ifdef DYNO_PLATFORM_AVX512
-    registers.push_back(ZMM0);
-    registers.push_back(ZMM1);
-    registers.push_back(ZMM2);
-    registers.push_back(ZMM3);
-    registers.push_back(ZMM4);
-    registers.push_back(ZMM5);
-    registers.push_back(ZMM6);
-    registers.push_back(ZMM7);
-    registers.push_back(ZMM8);
-    registers.push_back(ZMM9);
-    registers.push_back(ZMM10);
-    registers.push_back(ZMM11);
-    registers.push_back(ZMM12);
-    registers.push_back(ZMM13);
-    registers.push_back(ZMM14);
-    registers.push_back(ZMM15);
-    registers.push_back(ZMM16);
-    registers.push_back(ZMM17);
-    registers.push_back(ZMM18);
-    registers.push_back(ZMM19);
-    registers.push_back(ZMM20);
-    registers.push_back(ZMM21);
-    registers.push_back(ZMM22);
-    registers.push_back(ZMM23);
-    registers.push_back(ZMM24);
-    registers.push_back(ZMM25);
-    registers.push_back(ZMM26);
-    registers.push_back(ZMM27);
-    registers.push_back(ZMM28);
-    registers.push_back(ZMM29);
-    registers.push_back(ZMM30);
-    registers.push_back(ZMM31);
-#else
-    registers.push_back(YMM0);
-    registers.push_back(YMM1);
-    registers.push_back(YMM2);
-    registers.push_back(YMM3);
-    registers.push_back(YMM4);
-    registers.push_back(YMM5);
-    registers.push_back(YMM6);
-    registers.push_back(YMM7);
-    registers.push_back(YMM8);
-    registers.push_back(YMM9);
-    registers.push_back(YMM10);
-    registers.push_back(YMM11);
-    registers.push_back(YMM12);
-    registers.push_back(YMM13);
-    registers.push_back(YMM14);
-    registers.push_back(YMM15);
-#endif // DYNO_PLATFORM_AVX512*/
-#elif DYNO_ARCH_X86 == 32
-    registers.push_back(EAX);
-    registers.push_back(ECX);
-    registers.push_back(EDX);
-#endif // DYNO_ARCH_X86
-    
-    return registers;
 }
 
 #if DYNO_ARCH_X86 == 64

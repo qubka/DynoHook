@@ -37,7 +37,7 @@ namespace dyno {
          * @param func The address of the function to hook.
          * @param convention The calling convention of <func>.
          */
-        Hook(asmjit::JitRuntime& jit, void* func, ICallingConvention* convention);
+        Hook(asmjit::JitRuntime& jit, void* func, CallingConvention* convention);
         ~Hook();
 
     public:
@@ -99,7 +99,6 @@ namespace dyno {
         bool createTrampoline(bool restrictedRelocation);
         bool createBridge() const;
         bool createPostCallback() const;
-        std::vector<RegisterType> createScratchRegisters() const;
 
         typedef asmjit::x86::Assembler Assembler;
 
@@ -124,7 +123,7 @@ namespace dyno {
         void* m_func;
 
         // Interface if the calling convention
-        ICallingConvention* m_callingConvention;
+        CallingConvention* m_callingConvention;
 
         // Address of the bridge
         void* m_bridge;
