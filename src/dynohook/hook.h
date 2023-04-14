@@ -135,8 +135,7 @@ namespace dyno {
         void* m_newRetAddr;
 
         // Instructions of the original function
-        std::unique_ptr<int8_t[]> m_originalBytes;
-        size_t m_hookLength;
+        std::vector<int8_t> m_originalBytes;
 
         // Register storage
         Registers m_registers;
@@ -145,10 +144,10 @@ namespace dyno {
         // Save the last return action of the pre HookHandler for use in the post handler.
         std::vector<ReturnAction> m_lastPreReturnAction;
 
-        //
+        // Individual return's stack for stack pointers
         std::map<void*, std::vector<void*>> m_retAddr;
 
-        //
+        // Callbacks list
         std::map<HookType, std::vector<HookHandler*>> m_handlers;
     };
 }

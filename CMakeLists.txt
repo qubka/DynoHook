@@ -1,10 +1,9 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.9 FATAL_ERROR)
 set(PROJECT_NAME dynohook)
 project(${PROJECT_NAME})
 
 set(DYNOHOOK_BUILD_TESTS ON)
 set(DYNOHOOK_BUILD_64 ON)
-set(DYNOHOOK_BUILD_32 OFF)
 
 # Force all compilers to use the correct C and C++ standard versions.
 # Needed to allow for CheckCXXSourceCompiles to work correctly.
@@ -52,7 +51,7 @@ add_library(${PROJECT_NAME} ${DYNOHOOK_SRC_FILES} ${DYNOHOOK_HDR_FILES})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE asmjit)
 target_link_libraries(${PROJECT_NAME} PRIVATE Zydis)
-target_precompile_headers(${PROJECT_NAME} PUBLIC ${DYNOHOOK_PCH_FILE})
+target_precompile_headers(${PROJECT_NAME} PRIVATE ${DYNOHOOK_PCH_FILE})
 
 if (DYNOHOOK_BUILD_32)
     if (NOT MSVC)
@@ -99,7 +98,7 @@ if (DYNOHOOK_BUILD_TESTS)
             if (${optional_test} EQUAL -1 OR ${optional_test} EQUAL ${i})
                 # Append generated file to header list
                 set(FILE "test${obj}${i}.h")
-                list(APPEND DYNOHOOK_TEST_HDR_FILES "tests/${FILE}")
+                list(APPEND DYNOHOOK_TEST_HDR_FILES "${CMAKE_CURRENT_BINARY_DIR}/tests/${FILE}")
 
                 # Pass data into configuration file
                 set(DYNOHOOK_TEST_CONV "${call}")
@@ -139,10 +138,11 @@ if (DYNOHOOK_BUILD_TESTS)
     configure_file("tests/main.cpp.in" "tests/main.cpp" @ONLY)
 
     set(TEST_NAME dynohook_test)
-    add_executable(${TEST_NAME} "tests/main.cpp" ${DYNOHOOK_TEST_HDR_FILES})
+    add_executable(${TEST_NAME} "${CMAKE_CURRENT_BINARY_DIR}/tests/main.cpp" ${DYNOHOOK_TEST_HDR_FILES})
     if (MSVC)
         set_property(TARGET ${TEST_NAME} APPEND_STRING PROPERTY LINK_FLAGS " /INCREMENTAL:NO")
     endif()
     include_directories(src/)
     target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME})
+    target_precompile_headers(${TEST_NAME} PRIVATE ${DYNOHOOK_PCH_FILE})
 endif()

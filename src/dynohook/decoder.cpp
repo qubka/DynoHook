@@ -10,7 +10,7 @@ using namespace dyno;
  *	@param instruction instruction to be examined
  *	@return true if the passed instruction is a call instruction. false otherwhise.
  */
-bool IsCallInstruction(ZydisDecodedInstruction& instruction) {
+bool IsCallInstruction(const ZydisDecodedInstruction& instruction) {
     return instruction.mnemonic == ZYDIS_MNEMONIC_CALL;
 }
 
@@ -20,7 +20,7 @@ bool IsCallInstruction(ZydisDecodedInstruction& instruction) {
  *	@param instruction instruction to be examined
  *	@return true if the passed instruction is a branch instruction instruction (jcc or loopcc). false otherwhise.
  */
-bool IsBranchInstruction(ZydisDecodedInstruction& instruction) {
+bool IsBranchInstruction(const ZydisDecodedInstruction& instruction) {
     switch (instruction.mnemonic) {
         case ZYDIS_MNEMONIC_JB:
         case ZYDIS_MNEMONIC_JBE:
@@ -59,7 +59,7 @@ bool IsBranchInstruction(ZydisDecodedInstruction& instruction) {
  *	@param instruction instruction to be examined
  *	@return true if the passed instruction contains a rip-relative memory access (x64 only). false otherwhise.
  */
-bool IsRipRelativeMemoryInstruction(ZydisDecodedInstruction& instruction) {
+bool IsRipRelativeMemoryInstruction(const ZydisDecodedInstruction& instruction) {
 #if DYNO_ARCH_X86 == 64
     // For reference see: https://software.intel.com/content/www/us/en/develop/download/intel-64-and-ia-32-architectures-sdm-combined-volumes-2a-2b-2c-and-2d-instruction-set-reference-a-z.html
     // Table 2-2. 32-Bit Addressing Forms with the ModR/M Byte (x64 only)
@@ -77,7 +77,7 @@ bool IsRipRelativeMemoryInstruction(ZydisDecodedInstruction& instruction) {
  *	@param instructionAddress original address of the call instruction
  *	@param relocatedbytes relocated bytes
  */
-bool RelocateCallInstruction(ZydisDecodedInstruction& instruction, const ZydisDecodedOperand* operand, int8_t* instructionAddress, std::vector<int8_t>& relocatedbytes) {
+bool RelocateCallInstruction(const ZydisDecodedInstruction& instruction, const ZydisDecodedOperand* operand, int8_t* instructionAddress, std::vector<int8_t>& relocatedbytes) {
     ZyanU64 originalJumpTarget;
     if (instruction.attributes & ZYDIS_ATTRIB_HAS_MODRM) {
         if (instruction.raw.modrm.mod == 0 && instruction.raw.modrm.rm == 5) {
@@ -139,7 +139,7 @@ bool RelocateCallInstruction(ZydisDecodedInstruction& instruction, const ZydisDe
  *	@param instructionAddress original address of the branch instruction
  *	@param relocatedbytes relocated bytes
  */
-bool RelocateBranchInstruction(ZydisDecodedInstruction& instruction, const ZydisDecodedOperand* operand, int8_t* instructionAddress, const int8_t* relocatedInstructionAddress, std::vector<int8_t>& relocatedbytes) {
+bool RelocateBranchInstruction(const ZydisDecodedInstruction& instruction, const ZydisDecodedOperand* operand, int8_t* instructionAddress, const int8_t* relocatedInstructionAddress, std::vector<int8_t>& relocatedbytes) {
     ZyanU64 originalJumpTarget;
     ZydisCalcAbsoluteAddress(&instruction, operand, (ZyanU64)instructionAddress, &originalJumpTarget);
 
@@ -257,7 +257,7 @@ bool RelocateBranchInstruction(ZydisDecodedInstruction& instruction, const Zydis
  *
  *  @return true if successful, false otherwise.
  */
-bool RelocateRipRelativeMemoryInstruction(ZydisDecodedInstruction& instruction, int8_t* instructionAddress, const int8_t* relocatedInstructionAddress, std::vector<int8_t>& relocatedbytes) {
+bool RelocateRipRelativeMemoryInstruction(const ZydisDecodedInstruction& instruction, int8_t* instructionAddress, const int8_t* relocatedInstructionAddress, std::vector<int8_t>& relocatedbytes) {
     int8_t* tmpBuffer = (int8_t*)malloc(instruction.length);
 
     // copy original instruction
@@ -509,8 +509,8 @@ bool Decoder::calculateRipRelativeMemoryAccessBounds(void* sourceAddress, size_t
         byteCount += instruction.length;
     }
 
-    lowestAddress = tmpLowestAddress;
-    highestAddress = tmpHighestAddress;
+    lowestAddress = (int64_t) tmpLowestAddress;
+    highestAddress = (int64_t) tmpHighestAddress;
     return true;
 }
 

@@ -12,10 +12,11 @@ using namespace asmjit::x86;
 Hook::Hook(asmjit::JitRuntime& jit, void* func, CallingConvention* convention) :
     m_jit(jit),
     m_func(func),
+    m_bridge(nullptr),
+    m_newRetAddr(nullptr),
     m_callingConvention(convention),
     m_registers(convention->getRegisters()),
-    m_scratchRegisters(Registers::ScratchList()),
-    m_hookLength(0) {
+    m_scratchRegisters(Registers::ScratchList()) {
     // make page of detour address writeable
     MemoryProtect protector(m_func, 32, RWX);
 
@@ -48,14 +49,14 @@ Hook::~Hook() {
     m_jit.release(m_newRetAddr);
 
     // Probably hook wasn't generated successfully
-    if (m_hookLength == 0)
+    if (m_originalBytes.empty())
         return;
 
     // Allow to write and read
-    MemoryProtect protector(m_func, m_hookLength, RWX);
+    MemoryProtect protector(m_func, m_originalBytes.size(), RWX);
 
     // Copy back the previously copied bytes
-    std::memcpy(m_func, m_originalBytes.get(), m_hookLength);
+    std::memcpy(m_func, m_originalBytes.data(), m_originalBytes.size());
 
     // Free trampoline memory page
     Memory::FreeMemory(m_trampoline, 0);
@@ -190,22 +191,22 @@ bool Hook::createTrampoline(bool restrictedRelocation) {
     Decoder decoder;
     intptr_t addressDelta = (intptr_t)targetAddress - (intptr_t)sourceAddress;
 
+    size_t hookLength;
 #if DYNO_ARCH_X86 == 64
     if (addressDelta > INT32_MAX || addressDelta < INT32_MIN)
-        m_hookLength = decoder.getLengthOfInstructions(sourceAddress, 14);
+        hookLength = decoder.getLengthOfInstructions(sourceAddress, 14);
     else
 #endif
-        m_hookLength = decoder.getLengthOfInstructions(sourceAddress, 5);
+        hookLength = decoder.getLengthOfInstructions(sourceAddress, 5);
 
     // 5 bytes are required to place detour
-    assert(m_hookLength >= 5);
+    assert(hookLength >= 5);
 
     // save original bytes
-    m_originalBytes = std::make_unique<int8_t[]>(m_hookLength);
-    memcpy(m_originalBytes.get(), sourceAddress, m_hookLength);
+    m_originalBytes = std::vector<int8_t>(sourceAddress, sourceAddress + hookLength);
 
     // relocate to be overwritten instructions to trampoline
-    auto relocatedBytes = decoder.relocate(sourceAddress, m_hookLength, m_trampoline, restrictedRelocation);
+    auto relocatedBytes = decoder.relocate(sourceAddress, hookLength, m_trampoline, restrictedRelocation);
     if (relocatedBytes.empty()) {
         printf("[Error] - Hook - Relocation of bytes replaced by hook failed\n");
         return false;
@@ -224,7 +225,7 @@ bool Hook::createTrampoline(bool restrictedRelocation) {
     addressAfterRelocatedBytes[0] = 0xFF;														//opcodes = JMP [rip+0]
     addressAfterRelocatedBytes[1] = 0x25;														//opcodes = JMP [rip+0]
     *(int32_t*)(&addressAfterRelocatedBytes[2]) = 0;											//relative distance from RIP (+0)
-    *(int64_t*)(&addressAfterRelocatedBytes[2 + 4]) = (int64_t)(sourceAddress + m_hookLength);	//destination to jump to
+    *(int64_t*)(&addressAfterRelocatedBytes[2 + 4]) = (int64_t)(sourceAddress + hookLength);	//destination to jump to
 
     // check if a jmp rel32 can reach
     if (addressDelta > INT32_MAX || addressDelta < INT32_MIN) {
@@ -252,7 +253,7 @@ bool Hook::createTrampoline(bool restrictedRelocation) {
 #endif // DYNO_ARCH_X86
 
     // NOP left over bytes
-    for (size_t i = jmpToHookedFunctionLength; i < m_hookLength; i++)
+    for (size_t i = jmpToHookedFunctionLength; i < hookLength; i++)
         sourceAddress[i] = 0x90;
 
     return true;
