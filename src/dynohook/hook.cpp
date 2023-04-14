@@ -55,13 +55,10 @@ Hook::~Hook() {
     MemoryProtect protector(m_func, m_hookLength, RWX);
 
     // Copy back the previously copied bytes
-    std::memcpy(m_func, m_originalBytes, m_hookLength);
+    std::memcpy(m_func, m_originalBytes.get(), m_hookLength);
 
     // Free trampoline memory page
     Memory::FreeMemory(m_trampoline, 0);
-
-    // Clean up allocated memory
-    delete[] m_originalBytes;
 }
 
 void Hook::addCallback(HookType hookType, HookHandler* handler) {
@@ -204,8 +201,8 @@ bool Hook::createTrampoline(bool restrictedRelocation) {
     assert(m_hookLength >= 5);
 
     // save original bytes
-    m_originalBytes = new int8_t[m_hookLength];
-    memcpy(m_originalBytes, sourceAddress, m_hookLength);
+    m_originalBytes = std::make_unique<int8_t[]>(m_hookLength);
+    memcpy(m_originalBytes.get(), sourceAddress, m_hookLength);
 
     // relocate to be overwritten instructions to trampoline
     auto relocatedBytes = decoder.relocate(sourceAddress, m_hookLength, m_trampoline, restrictedRelocation);

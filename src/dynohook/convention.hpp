@@ -104,7 +104,8 @@ namespace dyno {
     }
 
     /**
-     * This is the base class for every calling convention.
+     * @brief This is the base class for every calling convention.
+     *
      * Inherit from this class to create your own calling convention.
      */
     class ICallingConvention {

@@ -136,7 +136,7 @@ namespace dyno {
         void* m_newRetAddr;
 
         // Instructions of the original function
-        int8_t* m_originalBytes;
+        std::unique_ptr<int8_t[]> m_originalBytes;
         size_t m_hookLength;
 
         // Register storage
