@@ -1,4 +1,4 @@
-#include "memory.hpp"
+#include "memory.h"
 
 #ifdef DYNO_PLATFORM_WINDOWS
 #include <windows.h>

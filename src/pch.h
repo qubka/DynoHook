@@ -10,5 +10,5 @@
 #include <ostream>
 #include <cassert>
 
-#include "dynohook/platform.hpp"
-#include "dynohook/core.hpp"
+#include "dynohook/platform.h"
+#include "dynohook/core.h"

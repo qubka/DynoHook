@@ -1,4 +1,4 @@
-#include "x86MsCdecl.hpp"
+#include "x86MsCdecl.h"
 
 #if DYNO_ARCH_X86 == 32
 

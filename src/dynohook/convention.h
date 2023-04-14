@@ -1,6 +1,6 @@
 #pragma once
 
-#include "registers.hpp"
+#include "registers.h"
 
 namespace dyno {
     enum class DataType : uint8_t {

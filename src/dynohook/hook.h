@@ -1,7 +1,7 @@
 #pragma once
 
-#include "registers.hpp"
-#include "convention.hpp"
+#include "registers.h"
+#include "convention.h"
 
 namespace asmjit { inline namespace _abi_1_10 {
         class JitRuntime;

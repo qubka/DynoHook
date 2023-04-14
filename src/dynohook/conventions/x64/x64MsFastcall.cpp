@@ -1,4 +1,4 @@
-#include "x64MsFastcall.hpp"
+#include "x64MsFastcall.h"
 
 #if DYNO_ARCH_X86 == 64
 

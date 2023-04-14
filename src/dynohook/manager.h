@@ -1,7 +1,7 @@
 #pragma once
 
-#include "hook.hpp"
-#include "convention.hpp"
+#include "hook.h"
+#include "convention.h"
 
 namespace dyno {
     class HookManager {

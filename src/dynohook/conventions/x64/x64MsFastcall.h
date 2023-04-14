@@ -2,7 +2,7 @@
 
 #if DYNO_ARCH_X86 == 64
 
-#include "dynohook/convention.hpp"
+#include "dynohook/convention.h"
 
 /*
     Source: DynCall manual and Windows docs

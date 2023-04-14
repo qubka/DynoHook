@@ -45,8 +45,8 @@ add_subdirectory(src/external/zydis)
 
 # DYNOHOOK
 file(GLOB_RECURSE DYNOHOOK_SRC_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "src/dynohook/*.cpp")
-file(GLOB_RECURSE DYNOHOOK_HDR_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "src/dynohook/*.hpp")
-set(DYNOHOOK_PCH_FILE "src/pch.hpp")
+file(GLOB_RECURSE DYNOHOOK_HDR_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "src/dynohook/*.h")
+set(DYNOHOOK_PCH_FILE "src/pch.h")
 
 add_library(${PROJECT_NAME} ${DYNOHOOK_SRC_FILES} ${DYNOHOOK_HDR_FILES})
 
@@ -98,7 +98,7 @@ if (DYNOHOOK_BUILD_TESTS)
         foreach (i RANGE ${DYNOHOOK_TEST_COUNT})
             if (${optional_test} EQUAL -1 OR ${optional_test} EQUAL ${i})
                 # Append generated file to header list
-                set(FILE "test${obj}${i}.hpp")
+                set(FILE "test${obj}${i}.h")
                 list(APPEND DYNOHOOK_TEST_HDR_FILES "tests/${FILE}")
 
                 # Pass data into configuration file

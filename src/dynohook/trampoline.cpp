@@ -1,6 +1,6 @@
-#include "trampoline.hpp"
-#include "memory.hpp"
-#include "decoder.hpp"
+#include "trampoline.h"
+#include "memory.h"
+#include "decoder.h"
 
 using namespace dyno;
 

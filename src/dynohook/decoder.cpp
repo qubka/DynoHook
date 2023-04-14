@@ -1,4 +1,4 @@
-#include "decoder.hpp"
+#include "decoder.h"
 
 #include <Zydis/Zydis.h>
 

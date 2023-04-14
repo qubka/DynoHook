@@ -9,10 +9,10 @@
 #cmakedefine DYNOHOOK_TEST_NAME "@DYNOHOOK_TEST_NAME@"
 #cmakedefine DYNOHOOK_TEST_CONV @DYNOHOOK_TEST_CONV@
 #cmakedefine DYNOHOOK_TEST_OBJECT @DYNOHOOK_TEST_OBJECT@
-#cmakedefine DYNOHOOK_TEST_HEADER "dynohook/conventions/@DYNOHOOK_TEST_HEADER@.hpp"
+#cmakedefine DYNOHOOK_TEST_HEADER "dynohook/conventions/@DYNOHOOK_TEST_HEADER@.h"
 #cmakedefine DYNOHOOK_TEST_NAMESPACE @DYNOHOOK_TEST_NAMESPACE@
 
-#include "dynohook/manager.hpp"
+#include "dynohook/manager.h"
 #include DYNOHOOK_TEST_HEADER
 
 namespace DYNOHOOK_TEST_NAMESPACE {

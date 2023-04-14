@@ -1,7 +1,7 @@
-#include "hook.hpp"
-#include "memory.hpp"
-#include "trampoline.hpp"
-#include "decoder.hpp"
+#include "hook.h"
+#include "memory.h"
+#include "trampoline.h"
+#include "decoder.h"
 
 #include <asmjit/asmjit.h>
 

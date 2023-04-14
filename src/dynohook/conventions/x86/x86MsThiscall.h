@@ -2,8 +2,8 @@
 
 #if DYNO_ARCH_X86 == 32
 
-#include "dynohook/convention.hpp"
-#include "x86MsStdcall.hpp"
+#include "dynohook/convention.h"
+#include "x86MsStdcall.h"
 
 /*
     Source: DynCall manual and Windows docs
