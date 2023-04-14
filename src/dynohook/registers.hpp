@@ -1,7 +1,7 @@
 #pragma once
 
 namespace dyno {
-    enum RegisterType : uint8_t {
+    enum register_t : uint8_t {
         // No register at all.
         NONE,
 
@@ -259,7 +259,7 @@ namespace dyno {
 
     class Register {
     public:
-        Register(RegisterType type, size_t size, size_t alignment = 0);
+        Register(register_t type, size_t size, size_t alignment = 0);
         ~Register();
         Register(const Register& other);
         Register(Register&& other) noexcept;
@@ -270,7 +270,7 @@ namespace dyno {
             return m_address;
         }
 
-        operator RegisterType() const {
+        operator register_t() const {
             return m_type;
         }
 
@@ -306,37 +306,42 @@ namespace dyno {
     private:
         void* m_address;
         uint16_t m_size;
-        RegisterType m_type;
+        register_t m_type;
         uint8_t m_alignment;
     };
 
     class Registers {
     public:
-        Registers(const std::vector<RegisterType>& registers);
+        Registers(const std::vector<register_t>& registers);
         ~Registers() = default;
         NONCOPYABLE(Registers);
 
-        const Register& operator[](RegisterType regType) const;
-        const Register& at(RegisterType regType, bool reverse = false) const;
+        ITERATABLE(Register, m_registers);
+
+        const Register& operator[](register_t regType) const;
+        const Register& at(register_t regType, bool reverse = false) const;
 
         size_t size() const {
             return m_registers.size();
         }
 
-        ITERATABLE(Register, m_registers);
+        static const std::vector<register_t>& ScratchList() {
+            return s_Scratch;
+        }
 
     private:
         std::vector<Register> m_registers;
 
         static Register s_None;
+        static std::vector<register_t> s_Scratch;
     };
 
-    const char* RegisterTypeToName(RegisterType regType);
-    size_t RegisterTypeToSize(RegisterType regType);
-    size_t RegisterTypeToAlignment(RegisterType regType);
+    const char* RegisterTypeToName(register_t regType);
+    size_t RegisterTypeToSize(register_t regType);
+    size_t RegisterTypeToAlignment(register_t regType);
 
-    size_t RegisterTypeToSSEIndex(RegisterType regType);
-    RegisterType SSEIndexToRegisterType(size_t index, size_t size = 0);
+    size_t RegisterTypeToSSEIndex(register_t regType);
+    register_t SSEIndexToRegisterType(size_t index, size_t size = 0);
 
     enum RegisterSize : uint8_t {
         SIZE_BYTE = 1,
@@ -350,4 +355,4 @@ namespace dyno {
     };
 }
 
-std::ostream& operator<<(std::ostream& os, dyno::RegisterType v);
+std::ostream& operator<<(std::ostream& os, dyno::register_t v);

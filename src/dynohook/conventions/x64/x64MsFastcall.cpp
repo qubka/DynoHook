@@ -5,10 +5,10 @@
 using namespace dyno;
 
 x64MsFastcall::x64MsFastcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
-        ICallingConvention(std::move(arguments), returnType, alignment) {
+        CallingConvention(std::move(arguments), returnType, alignment) {
     // Don't force the register on the user.
-    RegisterType registers[] = { RCX, RDX, R8, R9 };
-    RegisterType sseRegisters[] = { XMM0, XMM1, XMM2, XMM3 };
+    register_t registers[] = {RCX, RDX, R8, R9 };
+    register_t sseRegisters[] = {XMM0, XMM1, XMM2, XMM3 };
 
     size_t argSize = std::min<size_t>(4, m_arguments.size());
 
@@ -26,8 +26,8 @@ x64MsFastcall::x64MsFastcall(std::vector<DataObject> arguments, DataObject retur
     init();
 }
 
-std::vector<RegisterType> x64MsFastcall::getRegisters() {
-    std::vector<RegisterType> registers;
+std::vector<register_t> x64MsFastcall::getRegisters() {
+    std::vector<register_t> registers;
 
     registers.push_back(RSP);
 
@@ -54,7 +54,7 @@ void* x64MsFastcall::getArgumentPtr(size_t index, const Registers& registers) {
         return nullptr;
 
     // Check if this argument was passed in a register.
-    RegisterType regType = m_arguments[index].reg;
+    register_t regType = m_arguments[index].reg;
     if (regType != NONE)
         return *registers[regType];
 

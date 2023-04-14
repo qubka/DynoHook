@@ -2,9 +2,45 @@
 
 using namespace dyno;
 
-Register Registers::s_None{NONE, 0};
+Register Registers::s_None(NONE, 0);
+std::vector<register_t> Registers::s_Scratch = {
+#if DYNO_ARCH_X86 == 64
+#ifdef DYNO_PLATFORM_WINDOWS
+    RAX,
+    RCX,
+    RDX,
+    R8,
+    R9,
+    R10,
+    R11,
+#else // __systemV__
+    RAX,
+    RDI,
+    RSI,
+    RDX,
+    RCX,
+    R8,
+    R9,
+    R10,
+    R11,
+#endif
+    XMM0,
+    XMM1,
+    XMM2,
+    XMM3,
+    XMM4,
+    XMM5,
+    XMM6,
+    XMM7,
+// TODO: Do we need to save all sse registers ?
+#elif DYNO_ARCH_X86 == 32
+    EAX,
+    ECX,
+    EDX,
+#endif // DYNO_ARCH_X86
+};
 
-Register::Register(RegisterType type, size_t size, size_t alignment) : m_size(size), m_alignment(alignment), m_type(type) {
+Register::Register(register_t type, size_t size, size_t alignment) : m_size(size), m_alignment(alignment), m_type(type) {
     if (size == 0)
         m_address = nullptr;
     else if (alignment > 0)
@@ -53,19 +89,19 @@ Register::Register(Register&& other) noexcept {
     other.m_address = nullptr;
 }
 
-Registers::Registers(const std::vector<RegisterType>& registers) {
+Registers::Registers(const std::vector<register_t>& registers) {
     m_registers.reserve(registers.size());
 
-    for (RegisterType regType : registers) {
+    for (register_t regType : registers) {
         m_registers.emplace_back(regType, RegisterTypeToSize(regType), RegisterTypeToAlignment(regType));
     }
 }
 
-const Register& Registers::operator[](RegisterType regType) const {
+const Register& Registers::operator[](register_t regType) const {
     return at(regType);
 }
 
-const Register& Registers::at(RegisterType regType, bool reverse) const {
+const Register& Registers::at(register_t regType, bool reverse) const {
     if (reverse)
         for (size_t i = m_registers.size() - 1; i != -1; --i) {
             const auto& reg = m_registers[i];
@@ -84,7 +120,7 @@ const Register& Registers::at(RegisterType regType, bool reverse) const {
 
 namespace dyno {
 
-const char* RegisterTypeToName(RegisterType regType) {
+const char* RegisterTypeToName(register_t regType) {
     switch (regType) {
         // ========================================================================
         // >> 8-bit General purpose registers
@@ -340,7 +376,7 @@ const char* RegisterTypeToName(RegisterType regType) {
     return "NONE";
 }
 
-size_t RegisterTypeToSize(RegisterType regType) {
+size_t RegisterTypeToSize(register_t regType) {
     switch (regType) {
         // ========================================================================
         // >> 8-bit General purpose registers
@@ -596,7 +632,7 @@ size_t RegisterTypeToSize(RegisterType regType) {
     return 0;
 }
 
-size_t RegisterTypeToAlignment(RegisterType regType) {
+size_t RegisterTypeToAlignment(register_t regType) {
     switch (regType) {
         /**
          * The primary exceptions are the stack pointer, which are 16-byte aligned to aid performance.
@@ -738,7 +774,7 @@ size_t RegisterTypeToAlignment(RegisterType regType) {
     return 0;
 }
 
-size_t RegisterTypeToSSEIndex(RegisterType regType) {
+size_t RegisterTypeToSSEIndex(register_t regType) {
     switch (regType) {
         // ========================================================================
         // >> 128-bit XMM registers
@@ -861,7 +897,7 @@ size_t RegisterTypeToSSEIndex(RegisterType regType) {
     return -1;
 }
 
-RegisterType SSEIndexToRegisterType(size_t index, size_t size) {
+register_t SSEIndexToRegisterType(size_t index, size_t size) {
     switch (size) {
         // ========================================================================
         // >> 128-bit XMM registers
@@ -996,7 +1032,7 @@ RegisterType SSEIndexToRegisterType(size_t index, size_t size) {
     return NONE;
 }
 
-std::ostream& operator<<(std::ostream& os, RegisterType v) {
+std::ostream& operator<<(std::ostream& os, register_t v) {
     os << RegisterTypeToName(v);
     return os;
 }

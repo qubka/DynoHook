@@ -5,10 +5,10 @@
 using namespace dyno;
 
 x64SystemVcall::x64SystemVcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
-        ICallingConvention(std::move(arguments), returnType, alignment) {
+        CallingConvention(std::move(arguments), returnType, alignment) {
     // Don't force the register on the user.
 
-    RegisterType registers[] = { RDI, RSI, RDX, RCX, R8, R9 };
+    register_t registers[] = {RDI, RSI, RDX, RCX, R8, R9 };
 
     for (size_t i = 0, j = 0, k = 0; i < m_arguments.size(); ++i) {
         DataObject& arg = m_arguments[i];
@@ -46,8 +46,8 @@ x64SystemVcall::~x64SystemVcall() {
         free(m_returnBuffer);
 }
 
-std::vector<RegisterType> x64SystemVcall::getRegisters() {
-    std::vector<RegisterType> registers;
+std::vector<register_t> x64SystemVcall::getRegisters() {
+    std::vector<register_t> registers;
 
     registers.push_back(RSP);
 
@@ -79,7 +79,7 @@ void* x64SystemVcall::getArgumentPtr(size_t index, const Registers& registers) {
         return nullptr;
 
     // Check if this argument was passed in a register.
-    RegisterType regType = m_arguments[index].reg;
+    register_t regType = m_arguments[index].reg;
     if (regType != NONE)
         return *registers[regType];
 

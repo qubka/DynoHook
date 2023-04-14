@@ -25,12 +25,12 @@
         - floating pointer types are returned via the xmm0 register
 */
 namespace dyno {
-    class x64MsFastcall : public ICallingConvention {
+    class x64MsFastcall : public CallingConvention {
     public:
         x64MsFastcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = 8);
         ~x64MsFastcall() override = default;
 
-        std::vector<RegisterType> getRegisters() override;
+        std::vector<register_t> getRegisters() override;
 
         void** getStackArgumentPtr(const Registers &registers) override;
         void* getArgumentPtr(size_t index, const Registers& registers) override;

@@ -322,7 +322,7 @@ std::vector<int8_t> Decoder::relocate(void* sourceAddress, size_t length, void* 
         - loopcc
         - XBEGIN //not handled
        64bit:
-        -call
+        - call
         - jcc
         - loopcc
         - XBEGIN //not handled
@@ -352,8 +352,7 @@ std::vector<int8_t> Decoder::relocate(void* sourceAddress, size_t length, void* 
             }
         } else if (IsBranchInstruction(instruction)) {
             // handle relocation of branch instructions (jcc, loopcc)
-            if (!RelocateBranchInstruction(instruction, operands, currentAddress, (int8_t*) targetAddress + relocatedbytes.size(), relocatedbytes))
-            {
+            if (!RelocateBranchInstruction(instruction, operands, currentAddress, (int8_t*) targetAddress + relocatedbytes.size(), relocatedbytes)) {
                 printf("[Error] - Decoder - Failed to relocate branch instruction\n");
                 return {};
             }

@@ -27,12 +27,12 @@
         - floating pointer types are returned via the xmm0 and xmm1 register
 */
 namespace dyno {
-    class x64SystemVcall : public ICallingConvention {
+    class x64SystemVcall : public CallingConvention {
     public:
         x64SystemVcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = SIZE_QWORD);
         ~x64SystemVcall() override;
 
-        std::vector<RegisterType> getRegisters() override;
+        std::vector<register_t> getRegisters() override;
         void** getStackArgumentPtr(const Registers &registers) override;
 
         void* getArgumentPtr(size_t index, const Registers& registers) override;

@@ -28,10 +28,10 @@ namespace dyno {
 
     struct DataObject {
         DataType type;
-        RegisterType reg;
+        register_t reg;
         uint16_t size;
 
-        DataObject(DataType type, RegisterType reg = NONE, uint16_t size = 0) : type(type), reg(reg), size(size) {}
+        DataObject(DataType type, register_t reg = NONE, uint16_t size = 0) : type(type), reg(reg), size(size) {}
 
         bool isFlt() const { return type == DataType::Float || type == DataType::Double; }
         bool isHva() const { return type == DataType::M128 || type == DataType::M256 || type == DataType::M512; }
@@ -108,7 +108,7 @@ namespace dyno {
      *
      * Inherit from this class to create your own calling convention.
      */
-    class ICallingConvention {
+    class CallingConvention {
     public:
         /**
          * @brief Initializes the calling convention.
@@ -116,18 +116,14 @@ namespace dyno {
          * @param returnType The return type of the function.
          * @param alignment
          */
-        ICallingConvention(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
-            m_arguments(std::move(arguments)),
-            m_return(returnType),
-            m_alignment(alignment) {
-        }
-        virtual ~ICallingConvention() = default;
+        CallingConvention(std::vector<DataObject> arguments, DataObject returnType, size_t alignment);
+        virtual ~CallingConvention() = default;
 
         /**
          * @brief This should return a list of RegisterType values. These registers will be saved for later access.
          * @return
          */
-        virtual std::vector<RegisterType> getRegisters() = 0;
+        virtual std::vector<register_t> getRegisters() = 0;
 
         /**
          * Returns a pointer to the memory at the stack.
@@ -150,8 +146,7 @@ namespace dyno {
          * @param registers A snapshot of all saved registers.
          * @param argumentPtr A pointer to the argument at the given index.
          */
-        virtual void onArgumentPtrChanged(size_t index, const Registers& registers, void* argumentPtr) {
-        }
+        virtual void onArgumentPtrChanged(size_t index, const Registers& registers, void* argumentPtr) {}
 
         /**
          * @brief Returns a pointer to the return value.
@@ -165,29 +160,19 @@ namespace dyno {
          * @param registers A snapshot of all saved registers.
          * @param returnPtr A pointer to the return value.
          */
-        virtual void onReturnPtrChanged(const Registers& registers, void* returnPtr) {
-        }
+        virtual void onReturnPtrChanged(const Registers& registers, void* returnPtr) {}
 
         /**
          * @brief Save the return value in a seperate buffer, so we can restore it after calling the original function.
          * @param registers A snapshot of all saved registers.
          */
-        virtual void saveReturnValue(const Registers& registers) {
-            std::unique_ptr<uint8_t[]> savedReturnValue = std::make_unique<uint8_t[]>(m_return.size);
-            std::memcpy(savedReturnValue.get(), getReturnPtr(registers), m_return.size);
-            m_savedReturnBuffers.push_back(std::move(savedReturnValue));
-        }
+        virtual void saveReturnValue(const Registers& registers);
 
         /**
          * @brief
          * @param registers A snapshot of all saved registers.
          */
-        virtual void restoreReturnValue(const Registers& registers) {
-            uint8_t* savedReturnValue = m_savedReturnBuffers.back().get();
-            std::memcpy(getReturnPtr(registers), savedReturnValue, m_return.size);
-            onReturnPtrChanged(registers, savedReturnValue);
-            m_savedReturnBuffers.pop_back();
-        }
+        virtual void restoreReturnValue(const Registers& registers);
 
         /**
          * @brief Save the value of arguments in a seperate buffer for the post callback.
@@ -196,32 +181,13 @@ namespace dyno {
          * at some point. This leads to different values in the post hook.
          * @param registers A snapshot of all saved registers.
          */
-        virtual void saveCallArguments(const Registers& registers) {
-            size_t argTotalSize = getArgStackSize() + getArgRegisterSize();
-            std::unique_ptr<uint8_t[]> savedCallArguments = std::make_unique<uint8_t[]>(argTotalSize);
-            size_t offset = 0;
-            for (size_t i = 0; i < m_arguments.size(); ++i) {
-                size_t size = m_arguments[i].size;
-                std::memcpy((void*) ((uintptr_t) savedCallArguments.get() + offset), getArgumentPtr(i, registers), size);
-                offset += size;
-            }
-            m_savedCallArguments.push_back(std::move(savedCallArguments));
-        }
+        virtual void saveCallArguments(const Registers& registers);
 
         /**
          * @brief Restore the value of arguments from a seperate buffer for the call.
          * @param registers A snapshot of all saved registers.
          */
-        virtual void restoreCallArguments(const Registers& registers) {
-            uint8_t* savedCallArguments = m_savedCallArguments.back().get();
-            size_t offset = 0;
-            for (size_t i = 0; i < m_arguments.size(); ++i) {
-                size_t size = m_arguments[i].size;
-                std::memcpy(getArgumentPtr(i, registers), (void*) ((uintptr_t) savedCallArguments + offset), size);
-                offset += size;
-            }
-            m_savedCallArguments.pop_back();
-        }
+        virtual void restoreCallArguments(const Registers& registers);
 
         /**
          * @brief Returns the number of bytes that should be added to the stack to clean up.
@@ -260,23 +226,7 @@ namespace dyno {
         }
 
     protected:
-        void init() {
-            m_stackSize = 0;
-            m_registerSize = 0;
-
-            for (auto& [type, reg, size] : m_arguments) {
-                if (!size)
-                    size = GetDataTypeSize(type, m_alignment);
-
-                if (reg == NONE)
-                    m_stackSize += size;
-                else
-                    m_registerSize += size;
-            }
-
-            if (!m_return.size)
-                m_return.size = GetDataTypeSize(m_return.type, m_alignment);
-        }
+        void init();
 
     protected:
         std::vector<DataObject> m_arguments;
