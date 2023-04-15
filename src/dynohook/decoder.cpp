@@ -413,6 +413,8 @@ size_t Decoder::getLengthOfInstructions(void* sourceAddress, size_t length) cons
     return byteCount;
 }
 
+#if DYNO_ARCH_X86 == 64
+
 /**
  *  @brief Scans memory for specific instruction types. This is mainly used for testing.
  *
@@ -513,6 +515,8 @@ bool Decoder::calculateRipRelativeMemoryAccessBounds(void* sourceAddress, size_t
     highestAddress = (int64_t) tmpHighestAddress;
     return true;
 }
+
+#endif // DYNO_ARCH_X86
 
 /**
  * @brief Disassembles intructions and prints them

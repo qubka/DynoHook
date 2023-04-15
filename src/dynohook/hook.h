@@ -4,7 +4,6 @@
 #include "convention.h"
 
 namespace asmjit { inline namespace _abi_1_10 {
-        class JitRuntime;
         namespace x86 {
             class Assembler;
         }
@@ -37,7 +36,7 @@ namespace dyno {
          * @param func The address of the function to hook.
          * @param convention The calling convention of <func>.
          */
-        Hook(asmjit::JitRuntime& jit, void* func, CallingConvention* convention);
+        Hook(void* func, CallingConvention* convention);
         ~Hook();
 
     public:
@@ -97,12 +96,12 @@ namespace dyno {
 
     private:
         bool createTrampoline(bool restrictedRelocation);
-        bool createBridge() const;
-        bool createPostCallback() const;
+        bool createBridge();
+        bool createPostCallback();
 
         typedef asmjit::x86::Assembler Assembler;
 
-        void writeModifyReturnAddress(Assembler& a) const;
+        void writeModifyReturnAddress(Assembler& a);
         void writeCallHandler(Assembler& a, HookType hookType) const;
         void writeSaveRegisters(Assembler& a, HookType hookType) const;
         void writeRestoreRegisters(Assembler& a, HookType hookType) const;
@@ -116,9 +115,6 @@ namespace dyno {
         DYNO_NOINLINE void DYNO_CDECL setReturnAddress(void* retAddr, void* stackPtr);
 
     public:
-        // Runtime designed for JIT
-        asmjit::JitRuntime& m_jit;
-
         // Address of the original function
         void* m_func;
 

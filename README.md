@@ -73,11 +73,11 @@ void main() {
 	HookManager& manager = HookManager::Get();
 
 	// Hook the function
-	Hook* hook = manager.hook((void *) &MyFunc, new x64MsFastcall({DataType::Int, DataType::Int}, DataType::Int));
+	Hook* hook = manager.hook((void*) &MyFunc, new x64MsFastcall({DataType::Int, DataType::Int}, DataType::Int));
 
 	// Add the callbacks
-	hook->addCallback(HookType::Pre, (HookHandler *) (void *) &PreMyFunc);
-	hook->addCallback(HookType::Post, (HookHandler *) (void *) &PostMyFunc);
+	hook->addCallback(HookType::Pre, (HookHandler*) &PreMyFunc);
+	hook->addCallback(HookType::Post, (HookHandler*) &PostMyFunc);
 
 	// Call the function
 	int ret = MyFunc(3, 10);
@@ -161,11 +161,11 @@ void main() {
 	int (__fastcall MyClass::*myFunc)(int, int) = &MyClass::myFunc;
 
 	// Hook the function
-	Hook* hook = manager.hook((void *&) myFunc, new x64MsFastcall({DataType::Pointer, DataType::Int, DataType::Int}, DataType::Int));
+	Hook* hook = manager.hook((void*) &myFunc, new x64MsFastcall({DataType::Pointer, DataType::Int, DataType::Int}, DataType::Int));
 
 	// Add the callbacks
-	hook->addCallback(HookType::Pre, (HookHandler *) (void *) &PreMyFunc);
-	hook->addCallback(HookType::Post, (HookHandler *) (void *) &PostMyFunc);
+	hook->addCallback(HookType::Pre, (HookHandler*) &PreMyFunc);
+	hook->addCallback(HookType::Post, (HookHandler*) &PostMyFunc);
 
 	MyClass a;
 	g_pMyClass = &a;

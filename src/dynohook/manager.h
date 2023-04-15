@@ -47,8 +47,5 @@ namespace dyno {
 
     public:
         std::vector<Hook*> m_hooks;
-
-        // Runtime designed for JIT - it holds relocated functions and controls their lifetime.
-        asmjit::JitRuntime* m_jit;
     };
 }

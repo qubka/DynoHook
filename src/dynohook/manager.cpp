@@ -1,15 +1,11 @@
 #include "manager.h"
 
-#include <asmjit/asmjit.h>
-
 using namespace dyno;
-using namespace asmjit;
 
-HookManager::HookManager() : m_jit(new JitRuntime()) {
+HookManager::HookManager() {
 }
 
 HookManager::~HookManager() {
-    delete (JitRuntime*) m_jit;
     for (Hook* hook : m_hooks)
         delete hook;
 }
@@ -24,7 +20,7 @@ Hook* HookManager::hook(void* func, CallingConvention* convention) {
         return hook;
     }
 
-    hook = new Hook(*m_jit, func, convention);
+    hook = new Hook(func, convention);
     m_hooks.push_back(hook);
     return hook;
 }

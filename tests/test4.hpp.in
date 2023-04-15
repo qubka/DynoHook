@@ -71,11 +71,11 @@ namespace DYNOHOOK_TEST_NAMESPACE {
         HookManager& manager = HookManager::Get();
 
         // Hook the function
-        Hook* hook = manager.hook((void *) &MyFunc, new DYNOHOOK_TEST_OBJECT({DataType::Int, DataType::Float, DataType::Float}, DataType::Double));
+        Hook* hook = manager.hook((void*) &MyFunc, new DYNOHOOK_TEST_OBJECT({DataType::Int, DataType::Float, DataType::Float}, DataType::Double));
 
         // Add the callbacks
-        hook->addCallback(HookType::Pre, (HookHandler *) (void *) &PreMyFunc);
-        hook->addCallback(HookType::Post, (HookHandler *) (void *) &PostMyFunc);
+        hook->addCallback(HookType::Pre, (HookHandler*) &PreMyFunc);
+        hook->addCallback(HookType::Post, (HookHandler*) &PostMyFunc);
 
         // Call the function
         double ret = MyFunc(3, 10.0f, 20.f);

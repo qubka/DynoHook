@@ -9,17 +9,13 @@ using namespace dyno;
 using namespace asmjit;
 using namespace asmjit::x86;
 
-Hook::Hook(asmjit::JitRuntime& jit, void* func, CallingConvention* convention) :
-    m_jit(jit),
+Hook::Hook(void* func, CallingConvention* convention) :
     m_func(func),
     m_bridge(nullptr),
     m_newRetAddr(nullptr),
     m_callingConvention(convention),
     m_registers(convention->getRegisters()),
     m_scratchRegisters(Registers::ScratchList()) {
-    // make page of detour address writeable
-    MemoryProtect protector(m_func, 32, RWX);
-
     // allocate space for stub + space for overwritten bytes + jumpback
     bool restrictedRelocation;
     m_trampoline = Trampoline::HandleTrampolineAllocation(m_func, restrictedRelocation);
@@ -43,10 +39,6 @@ Hook::Hook(asmjit::JitRuntime& jit, void* func, CallingConvention* convention) :
 
 Hook::~Hook() {
     delete m_callingConvention;
-
-    // Free the asm bridge and new return address
-    m_jit.release(m_bridge);
-    m_jit.release(m_newRetAddr);
 
     // Probably hook wasn't generated successfully
     if (m_originalBytes.empty())
@@ -205,6 +197,9 @@ bool Hook::createTrampoline(bool restrictedRelocation) {
     // save original bytes
     m_originalBytes = std::vector<int8_t>(sourceAddress, sourceAddress + hookLength);
 
+    // make page of detour address writeable
+    MemoryProtect protector(m_func, hookLength, RWX);
+
     // relocate to be overwritten instructions to trampoline
     auto relocatedBytes = decoder.relocate(sourceAddress, hookLength, m_trampoline, restrictedRelocation);
     if (relocatedBytes.empty()) {
@@ -244,7 +239,7 @@ bool Hook::createTrampoline(bool restrictedRelocation) {
 #elif DYNO_ARCH_X86 == 32
     // write JMP back from trampoline to original code
     addressAfterRelocatedBytes[0] = 0xE9;
-    *(int32_t*)(addressAfterRelocatedBytes + 1) = (int32_t)(sourceAddress + m_hookLength - addressAfterRelocatedBytes) - 5;
+    *(int32_t*)(addressAfterRelocatedBytes + 1) = (int32_t)(sourceAddress + hookLength - addressAfterRelocatedBytes) - 5;
 
     // write JMP from original code to hook function
     sourceAddress[0] = 0xE9;
@@ -259,23 +254,15 @@ bool Hook::createTrampoline(bool restrictedRelocation) {
     return true;
 }
 
-// Used to print generated assembly
-#if 0
-FileLogger logger(stdout);
-#define LOGGER(a) a.setLogger(&logger);
-#else
-#define LOGGER(a)
-#endif
-
-bool Hook::createBridge() const {
+bool Hook::createBridge() {
     // Holds code and relocation information during code generation.
     CodeHolder code;
 
     // Code holder must be initialized before it can be used.
-    code.init(m_jit.environment(), m_jit.cpuFeatures());
+    code.init(Environment::host(), CpuInfo::host().features());
 
     // Emitters can emit code to CodeHolder
-    Assembler a(&code); LOGGER(a);
+    Assembler a(&code);
     Label override = a.newLabel();
 
     // Write a redirect to the post-hook code
@@ -306,7 +293,17 @@ bool Hook::createBridge() const {
         a.ret();
 
     // Generate code
-    Error err = m_jit.add(&m_bridge, &code);
+    code.flatten();
+    code.resolveUnresolvedLinks();
+
+    // We don't use JitAllocator, instead using trampoline page which we allocated near our hooked function
+    m_bridge = (uint8_t*) m_trampoline + 128;
+
+    // Now relocate the code to the address provided by the memory allocator
+    code.relocateToBase((uintptr_t) m_bridge);
+
+    // This will copy code from all sections to our memory
+    Error err = code.copyFlattenedData(m_bridge, code.codeSize(), CopySectionFlags::kPadSectionBuffer);
     if (err) {
         printf("[Error] - Hook - AsmJit failed: %s\n", DebugUtils::errorAsString(err));
         return false;
@@ -315,7 +312,7 @@ bool Hook::createBridge() const {
     return true;
 }
 
-void Hook::writeModifyReturnAddress(Assembler& a) const {
+void Hook::writeModifyReturnAddress(Assembler& a) {
     /// https://en.wikipedia.org/wiki/X86_calling_conventions
 
     // Save scratch registers that are used by setReturnAddress
@@ -323,25 +320,21 @@ void Hook::writeModifyReturnAddress(Assembler& a) const {
 
     // Save the original return address by using the current esp as the key.
     // This should be unique until we have returned to the original caller.
-    void (ASMJIT_CDECL Hook::*setReturnAddress)(void*, void*) = &Hook::setReturnAddress;
+    void (DYNO_CDECL Hook::*setReturnAddress)(void*, void*) = &Hook::setReturnAddress;
 
 #if DYNO_ARCH_X86 == 64
-    // Store the return address and stack pointer in rax/rcx
-    a.mov(rax, qword_ptr(rsp));
-    a.mov(rcx, rsp);
-
 #ifdef DYNO_PLATFORM_WINDOWS
-    a.sub(rsp, 40);
-    a.mov(r8, rcx);
-    a.mov(rdx, rax);
+    a.mov(r8, rsp);
+    a.mov(rdx, qword_ptr(rsp));
     a.mov(rcx, this);
-    a.call(void *&) setReturnAddress);
+    a.sub(rsp, 40);
+    a.call((void*&) setReturnAddress);
     a.add(rsp, 40);
 #else // __systemV__
-    a.mov(rdx, rcx);
-    a.mov(rsi, rax);
+    a.mov(rdx, rsp);
+    a.mov(rsi, qword_ptr(rsp));
     a.mov(rdi, this);
-    a.call((void *&) setReturnAddress);
+    a.call((void*&) setReturnAddress);
 #endif
 #elif DYNO_ARCH_X86 == 32
     // Store the return address in eax
@@ -361,24 +354,23 @@ void Hook::writeModifyReturnAddress(Assembler& a) const {
     createPostCallback();
 #if DYNO_ARCH_X86 == 64
     // Using rax because not possible to MOV r/m64, imm64
-    a.push(rax);
+    a.mov(qword_ptr(rsp), rax);
     a.mov(rax, m_newRetAddr);
-    a.mov(qword_ptr(rsp, 8), rax);
-    a.pop(rax);
+    a.xchg(qword_ptr(rsp), rax);
 #elif DYNO_ARCH_X86 == 32
     a.mov(dword_ptr(esp), m_newRetAddr);
 #endif // DYNO_ARCH_X86
 }
 
-bool Hook::createPostCallback() const {
+bool Hook::createPostCallback() {
     // Holds code and relocation information during code generation.
     CodeHolder code;
 
     // Code holder must be initialized before it can be used.
-    code.init(m_jit.environment(), m_jit.cpuFeatures());
+    code.init(Environment::host(), CpuInfo::host().features());
 
     // Emitters can emit code to CodeHolder
-    Assembler a(&code); LOGGER(a);
+    Assembler a(&code);
 
     // Gets pop size + return address
     size_t popSize = m_callingConvention->getPopSize() + sizeof(void*);
@@ -401,22 +393,19 @@ bool Hook::createPostCallback() const {
     writeSaveScratchRegisters(a);
 
     // Get the original return address
-    void* (ASMJIT_CDECL Hook::*getReturnAddress)(void*) = &Hook::getReturnAddress;
+    void* (DYNO_CDECL Hook::*getReturnAddress)(void*) = &Hook::getReturnAddress;
 
 #if DYNO_ARCH_X86 == 64
-    // Save current stack pointer
-    a.mov(rax, rsp);
-
 #ifdef DYNO_PLATFORM_WINDOWS
-    a.sub(rsp, 40);
-    a.mov(rdx, rax);
+    a.mov(rdx, rsp);
     a.mov(rcx, this);
-    a.call((void *&) getReturnAddress;
+    a.sub(rsp, 40);
+    a.call((void*&) getReturnAddress);
     a.add(rsp, 40);
 #else // __systemV__
-    a.mov(rsi, rax);
+    a.mov(rsi, rsp);
     a.mov(rdi, this);
-    a.call((void *&) getReturnAddress);
+    a.call((void*&) getReturnAddress);
 #endif
     // Save the original return address
     a.push(rax);
@@ -439,7 +428,17 @@ bool Hook::createPostCallback() const {
     a.ret(popSize);
 
     // Generate code
-    Error err = m_jit.add(&m_newRetAddr, &code);
+    code.flatten();
+    code.resolveUnresolvedLinks();
+
+    // We don't use JitAllocator, instead using trampoline page which we allocated near our hooked function
+    m_newRetAddr = (uint8_t*) m_trampoline + Memory::GetPageSize() / 2;
+
+    // Now relocate the code to the address provided by the memory allocator
+    code.relocateToBase((uintptr_t) m_newRetAddr);
+
+    // This will copy code from all sections to our memory
+    Error err = code.copyFlattenedData(m_newRetAddr, code.codeSize(), CopySectionFlags::kPadSectionBuffer);
     if (err) {
         printf("[Error] - Hook - AsmJit failed: %s\n", DebugUtils::errorAsString(err));
         return false;
@@ -449,7 +448,7 @@ bool Hook::createPostCallback() const {
 }
 
 void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
-    ReturnAction (ASMJIT_CDECL Hook::*hookHandler)(HookType) = &Hook::hookHandler;
+    ReturnAction (DYNO_CDECL Hook::*hookHandler)(HookType) = &Hook::hookHandler;
 
     // Save the registers so that we can access them in our handlers
     writeSaveRegisters(a, hookType);
@@ -457,22 +456,22 @@ void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
     // Call the global hook handler
 #if DYNO_ARCH_X86 == 64
 #ifdef DYNO_PLATFORM_WINDOWS
-    a.sub(rsp, 40);
-    a.mov(dl, hookType);
+    a.mov(rdx, hookType);
     a.mov(rcx, this);
-    a.call((void *&) hookHandler);
+    a.sub(rsp, 40);
+    a.call((void*&) hookHandler);
     a.add(rsp, 40);
 #else // __systemV__
-    a.mov(sil, hookType);
+    a.mov(rsi, hookType);
     a.mov(rdi, this);
-    a.call((void *&) hookHandler);
+    a.call((void*&) hookHandler);
 #endif
 #elif DYNO_ARCH_X86 == 32
 	// Subtract 4 bytes to preserve 16-Byte stack alignment for Linux
 	a.sub(esp, 4);
 	a.push(hookType);
 	a.push(this);
-	a.call((void *&) hookHandler);
+	a.call((void*&) hookHandler);
 	a.add(esp, 12);
 #endif // DYNO_ARCH_X86
 }
