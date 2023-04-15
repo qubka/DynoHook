@@ -292,11 +292,7 @@ bool Hook::createBridge() const {
     a.je(override);
 
     // Jump to the trampoline
-#if DYNO_ARCH_X86 == 64
     a.jmp(m_trampoline);
-#elif DYNO_ARCH_X86 == 32
-    a.jmp(m_trampoline);
-#endif // DYNO_ARCH_X86
 
     // This code will be executed if a pre-hook returns true
     a.bind(override);
