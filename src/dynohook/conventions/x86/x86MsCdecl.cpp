@@ -27,8 +27,8 @@ x86MsCdecl::~x86MsCdecl() {
         free(m_returnBuffer);
 }
 
-std::vector<RegisterType> x86MsCdecl::getRegisters() {
-    std::vector<RegisterType> registers;
+std::vector<dyno::register_t> x86MsCdecl::getRegisters() {
+    std::vector<register_t> registers;
 
     registers.push_back(ESP);
 
@@ -60,7 +60,7 @@ void* x86MsCdecl::getArgumentPtr(size_t index, const Registers& registers) {
         return nullptr;
 
     // Check if this argument was passed in a register.
-    RegisterType regType = m_arguments[index].reg;
+    register_t regType = m_arguments[index].reg;
     if (regType != NONE)
         return *registers[regType];
 

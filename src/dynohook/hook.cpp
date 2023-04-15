@@ -293,10 +293,7 @@ bool Hook::createBridge() const {
 
     // Jump to the trampoline
 #if DYNO_ARCH_X86 == 64
-    a.push(rax);
-    a.mov(rax, m_trampoline);
-    a.xchg(ptr(rsp), rax);
-    a.ret();
+    a.jmp(m_trampoline);
 #elif DYNO_ARCH_X86 == 32
     a.jmp(m_trampoline);
 #endif // DYNO_ARCH_X86
@@ -342,15 +339,13 @@ void Hook::writeModifyReturnAddress(Assembler& a) const {
     a.mov(r8, rcx);
     a.mov(rdx, rax);
     a.mov(rcx, this);
-    a.mov(rax, (void *&) setReturnAddress);
-    a.call(rax);
+    a.call(void *&) setReturnAddress);
     a.add(rsp, 40);
 #else // __systemV__
     a.mov(rdx, rcx);
     a.mov(rsi, rax);
     a.mov(rdi, this);
-    a.mov(rax, (void *&) setReturnAddress);
-    a.call(rax);
+    a.call((void *&) setReturnAddress);
 #endif
 #elif DYNO_ARCH_X86 == 32
     // Store the return address in eax
@@ -420,14 +415,12 @@ bool Hook::createPostCallback() const {
     a.sub(rsp, 40);
     a.mov(rdx, rax);
     a.mov(rcx, this);
-    a.mov(rax, (void *&) getReturnAddress);
-    a.call(rax);
+    a.call((void *&) getReturnAddress;
     a.add(rsp, 40);
 #else // __systemV__
     a.mov(rsi, rax);
     a.mov(rdi, this);
-    a.mov(rax, (void *&) getReturnAddress);
-    a.call(rax);
+    a.call((void *&) getReturnAddress);
 #endif
     // Save the original return address
     a.push(rax);
@@ -471,14 +464,12 @@ void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
     a.sub(rsp, 40);
     a.mov(dl, hookType);
     a.mov(rcx, this);
-    a.mov(rax, (void *&) hookHandler);
-    a.call(rax);
+    a.call((void *&) hookHandler);
     a.add(rsp, 40);
 #else // __systemV__
     a.mov(sil, hookType);
     a.mov(rdi, this);
-    a.mov(rax, (void *&) hookHandler);
-    a.call(rax);
+    a.call((void *&) hookHandler);
 #endif
 #elif DYNO_ARCH_X86 == 32
 	// Subtract 4 bytes to preserve 16-Byte stack alignment for Linux

@@ -3,7 +3,7 @@
 using namespace dyno;
 
 Register Registers::s_None(NONE, 0);
-std::vector<register_t> Registers::s_Scratch = {
+std::vector<dyno::register_t> Registers::s_Scratch = {
 #if DYNO_ARCH_X86 == 64
 #ifdef DYNO_PLATFORM_WINDOWS
     RAX,

@@ -120,7 +120,7 @@ namespace dyno {
         virtual ~CallingConvention() = default;
 
         /**
-         * @brief This should return a list of RegisterType values. These registers will be saved for later access.
+         * @brief This should return a list of register_t values. These registers will be saved for later access.
          * @return
          */
         virtual std::vector<register_t> getRegisters() = 0;

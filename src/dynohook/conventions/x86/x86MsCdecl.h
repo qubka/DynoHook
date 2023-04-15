@@ -30,7 +30,7 @@ namespace dyno {
         x86MsCdecl(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = 4);
         ~x86MsCdecl() override;
 
-        std::vector<RegisterType> getRegisters() override;
+        std::vector<register_t> getRegisters() override;
         void** getStackArgumentPtr(const Registers& registers) override;
 
         void* getArgumentPtr(size_t index, const Registers& registers) override;

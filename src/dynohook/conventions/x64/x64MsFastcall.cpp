@@ -26,7 +26,7 @@ x64MsFastcall::x64MsFastcall(std::vector<DataObject> arguments, DataObject retur
     init();
 }
 
-std::vector<register_t> x64MsFastcall::getRegisters() {
+std::vector<dyno::register_t> x64MsFastcall::getRegisters() {
     std::vector<register_t> registers;
 
     registers.push_back(RSP);
