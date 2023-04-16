@@ -16,7 +16,7 @@ x64SystemVcall::x64SystemVcall(std::vector<DataObject> arguments, DataObject ret
         if (arg.reg == NONE) {
             // floating Point Arguments 1-8 ([XYZ]MM0 - [XYZ]MM7)
             if (k < 8 && (arg.isFlt() || arg.isHva()))
-                arg.reg = IndexToRegisterType(k++, arg.size);
+                arg.reg = SSEIndexToRegisterType(k++, arg.size);
             // integer/Pointer Arguments 1-6 (RDI, RSI, RDX, RCX, R8, R9)
             else if (j < 6)
                 arg.reg = registers[j++];
@@ -36,7 +36,7 @@ x64SystemVcall::x64SystemVcall(std::vector<DataObject> arguments, DataObject ret
         m_returnBuffer = nullptr;
 
     if (m_return.reg == NONE)
-        m_return.reg = nonScalar ? IndexToRegisterType(0, m_return.size) : RAX;
+        m_return.reg = nonScalar ? SSEIndexToRegisterType(0, m_return.size) : RAX;
 
     init();
 }

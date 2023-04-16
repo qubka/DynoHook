@@ -258,6 +258,7 @@ namespace dyno {
     };
 
     enum RegisterSize : uint8_t {
+        SIZE_INVALID = 0,
         SIZE_BYTE = 1,
         SIZE_WORD = 2,
         SIZE_DWORD = 4,
@@ -271,8 +272,9 @@ namespace dyno {
     const char* RegisterTypeToName(RegisterType regType);
     size_t RegisterTypeToSize(RegisterType regType);
     size_t RegisterTypeToAlignment(RegisterType regType);
-    size_t RegisterTypeToIndex(RegisterType regType);
-    RegisterType IndexToRegisterType(size_t index, size_t size = 0);
+
+    size_t RegisterTypeToSSEIndex(RegisterType regType);
+    RegisterType SSEIndexToRegisterType(size_t index, size_t size = 0);
 
     class Register {
     public:
