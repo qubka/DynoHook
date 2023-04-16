@@ -390,7 +390,7 @@ size_t dyno::RegisterTypeToAlignment(RegisterType regType) {
     return s_RegisterTable.at(regType).alignment;
 }
 
-size_t RegisterTypeToSSEIndex(RegisterType regType) {
+size_t dyno::RegisterTypeToSSEIndex(RegisterType regType) {
     switch (regType) {
         // ========================================================================
         // >> 128-bit XMM registers
@@ -513,7 +513,7 @@ size_t RegisterTypeToSSEIndex(RegisterType regType) {
     return -1;
 }
 
-RegisterType SSEIndexToRegisterType(size_t index, size_t size) {
+RegisterType dyno::SSEIndexToRegisterType(size_t index, size_t size) {
     switch (size) {
         // ========================================================================
         // >> 128-bit XMM registers
