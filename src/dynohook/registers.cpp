@@ -413,7 +413,7 @@ size_t dyno::RegisterTypeToSSEIndex(RegisterType regType) {
         case XMM14: return 14;
         case XMM15: return 15;
 #ifdef DYNO_PLATFORM_AVX512
-            case XMM16: return 16;
+        case XMM16: return 16;
         case XMM17: return 17;
         case XMM18: return 18;
         case XMM19: return 19;
@@ -432,9 +432,9 @@ size_t dyno::RegisterTypeToSSEIndex(RegisterType regType) {
 #endif // DYNO_PLATFORM_AVX512
 #endif // DYNO_ARCH_X86
 
-            // ========================================================================
-            // >> 256-bit YMM registers
-            // ========================================================================
+        // ========================================================================
+        // >> 256-bit YMM registers
+        // ========================================================================
 #if DYNO_ARCH_X86 == 64
         case YMM0: return 0;
         case YMM1: return 1;
@@ -453,7 +453,7 @@ size_t dyno::RegisterTypeToSSEIndex(RegisterType regType) {
         case YMM14: return 14;
         case YMM15: return 15;
 #ifdef DYNO_PLATFORM_AVX512
-            case YMM16: return 16;
+        case YMM16: return 16;
         case YMM17: return 17;
         case YMM18: return 18;
         case YMM19: return 19;
@@ -472,11 +472,11 @@ size_t dyno::RegisterTypeToSSEIndex(RegisterType regType) {
 #endif // DYNO_PLATFORM_AVX512
 #endif // DYNO_ARCH_X86
 
-            // ========================================================================
-            // >> 512-bit ZMM registers
-            // ========================================================================
+        // ========================================================================
+        // >> 512-bit ZMM registers
+        // ========================================================================
 #ifdef DYNO_PLATFORM_AVX512
-            case ZMM0: return 0;
+        case ZMM0: return 0;
         case ZMM1: return 1;
         case ZMM2: return 2;
         case ZMM3: return 3;
@@ -538,7 +538,7 @@ RegisterType dyno::SSEIndexToRegisterType(size_t index, size_t size) {
                 case 14: return XMM14;
                 case 15: return XMM15;
 #ifdef DYNO_PLATFORM_AVX512
-                    case 16: return XMM16;
+                case 16: return XMM16;
                 case 17: return XMM17;
                 case 18: return XMM18;
                 case 19: return XMM19;
@@ -582,7 +582,7 @@ RegisterType dyno::SSEIndexToRegisterType(size_t index, size_t size) {
                 case 14: return YMM14;
                 case 15: return YMM15;
 #ifdef DYNO_PLATFORM_AVX512
-                    case 16: return YMM16;
+                case 16: return YMM16;
                 case 17: return YMM17;
                 case 18: return YMM18;
                 case 19: return YMM19;
