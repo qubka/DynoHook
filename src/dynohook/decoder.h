@@ -26,7 +26,7 @@ namespace dyno {
 #endif // DYNO_ARCH_X86
 
     private:
-        // we use a void pointer here since we can't forward declare the ZydisDecoder c typedef struct
+        // we use a void pointer here since we don't want forward declare the ZydisDecoder
         void* m_zydisDecoder;
     };
 }

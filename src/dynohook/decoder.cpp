@@ -479,8 +479,8 @@ std::vector<uint8_t*> Decoder::findRelativeInstructionsOfType(void* startAddress
  */
 bool Decoder::calculateRipRelativeMemoryAccessBounds(void* sourceAddress, size_t length, int64_t& lowestAddress, int64_t& highestAddress) const {
     size_t byteCount = 0;
-    uint64_t tmpLowestAddress = 0xffffffffffffffff;
-    uint64_t tmpHighestAddress = 0;
+    int64_t tmpLowestAddress = (int64_t) 0xffffffffffffffff;
+    int64_t tmpHighestAddress = 0;
 
     // we will atleast relocate "length" bytes. To avoid splitting an instruction we might relocate more.
     while (byteCount < length) {
@@ -511,8 +511,8 @@ bool Decoder::calculateRipRelativeMemoryAccessBounds(void* sourceAddress, size_t
         byteCount += instruction.length;
     }
 
-    lowestAddress = (int64_t) tmpLowestAddress;
-    highestAddress = (int64_t) tmpHighestAddress;
+    lowestAddress = tmpLowestAddress;
+    highestAddress = tmpHighestAddress;
     return true;
 }
 
@@ -554,7 +554,7 @@ void Decoder::printInstructions(void* address, size_t byteCount) const {
 
         char buffer[256];
         printf("[%llx]", runtime_address);
-        ZydisFormatterFormatInstruction(&formatter, &instruction, operands, operands->element_count, buffer, sizeof(buffer), runtime_address, nullptr);
+        ZydisFormatterFormatInstruction(&formatter, &instruction, operands, (ZyanU8) operands->element_count, buffer, sizeof(buffer), runtime_address, nullptr);
         printf("%s\n", buffer);
 
         offset += instruction.length;
