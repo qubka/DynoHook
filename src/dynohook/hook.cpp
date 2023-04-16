@@ -467,12 +467,12 @@ void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
     a.call((void*&) hookHandler);
 #endif
 #elif DYNO_ARCH_X86 == 32
-	// Subtract 4 bytes to preserve 16-Byte stack alignment for Linux
-	a.sub(esp, 4);
-	a.push(hookType);
-	a.push(this);
-	a.call((void*&) hookHandler);
-	a.add(esp, 12);
+    // Subtract 4 bytes to preserve 16-Byte stack alignment for Linux
+    a.sub(esp, 4);
+    a.push(hookType);
+    a.push(this);
+    a.call((void*&) hookHandler);
+    a.add(esp, 12);
 #endif // DYNO_ARCH_X86
 }
 
