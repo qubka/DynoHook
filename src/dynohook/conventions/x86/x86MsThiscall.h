@@ -31,9 +31,6 @@ namespace dyno {
     public:
         x86MsThiscall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = 4);
         ~x86MsThiscall() override = default;
-
-    private:
-        void* m_returnBuffer;
     };
 }
 

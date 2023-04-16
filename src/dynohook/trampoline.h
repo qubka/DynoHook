@@ -8,6 +8,6 @@ namespace dyno {
     public:
         static void* HandleTrampolineAllocation(void* sourceAddress, bool& restrictedRelocation);
         static void* AllocateTrampoline(void* sourceAddress, bool& restrictedRelocation);
-        static void* AllocateTrampolineWithinBounds(void* sourceAddress, intptr_t lowestRipRelativeMemoryAccess, intptr_t highestRipRelativeMemoryAddress, bool& restrictedRelocation);
+        static void* AllocateTrampolineWithinBounds(void* sourceAddress, int64_t lowestRipRelativeMemoryAccess, int64_t highestRipRelativeMemoryAddress, bool& restrictedRelocation);
     };
 }

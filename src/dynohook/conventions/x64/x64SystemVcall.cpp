@@ -100,7 +100,7 @@ void* x64SystemVcall::getReturnPtr(const Registers& registers) {
     if (m_returnBuffer) {
         // first half in rax, second half in rdx
         std::memcpy(m_returnBuffer, *registers.at(RAX, true), 8);
-        std::memcpy((void*) ((uintptr_t) m_returnBuffer + 8), *registers.at(RDX, true), 8);
+        std::memcpy((uint8_t*) m_returnBuffer + 8, *registers.at(RDX, true), 8);
         return m_returnBuffer;
     }
 
@@ -111,7 +111,7 @@ void x64SystemVcall::onReturnPtrChanged(const Registers& registers, void* return
     if (m_returnBuffer) {
         // first half in rax, second half in rdx
         std::memcpy(*registers.at(RAX, true), m_returnBuffer, 8);
-        std::memcpy(*registers.at(RDX, true), (void*) ((uintptr_t) m_returnBuffer + 8), 8);
+        std::memcpy(*registers.at(RDX, true), (uint8_t*) m_returnBuffer + 8, 8);
     }
 }
 

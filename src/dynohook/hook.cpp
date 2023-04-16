@@ -181,10 +181,9 @@ bool Hook::createTrampoline(bool restrictedRelocation) {
     uint8_t* targetAddress = (uint8_t*) m_bridge;
 
     Decoder decoder;
-    intptr_t addressDelta = (intptr_t)targetAddress - (intptr_t)sourceAddress;
-
     size_t hookLength;
 #if DYNO_ARCH_X86 == 64
+    int64_t addressDelta = (int64_t)targetAddress - (int64_t)sourceAddress;
     if (addressDelta > INT32_MAX || addressDelta < INT32_MIN)
         hookLength = decoder.getLengthOfInstructions(sourceAddress, 14);
     else
@@ -300,7 +299,7 @@ bool Hook::createBridge() {
     m_bridge = (uint8_t*) m_trampoline + 128;
 
     // now relocate the code to the address provided by the memory allocator
-    code.relocateToBase((uintptr_t) m_bridge);
+    code.relocateToBase((uint64_t) m_bridge);
 
     // this will copy code from all sections to our memory
     Error err = code.copyFlattenedData(m_bridge, code.codeSize(), CopySectionFlags::kPadSectionBuffer);
@@ -435,7 +434,7 @@ bool Hook::createPostCallback() {
     m_newRetAddr = (uint8_t*) m_trampoline + Memory::GetPageSize() / 2;
 
     // now relocate the code to the address provided by the memory allocator
-    code.relocateToBase((uintptr_t) m_newRetAddr);
+    code.relocateToBase((uint64_t) m_newRetAddr);
 
     // this will copy code from all sections to our memory
     Error err = code.copyFlattenedData(m_newRetAddr, code.codeSize(), CopySectionFlags::kPadSectionBuffer);
@@ -547,7 +546,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
      * where 8, 16, 32 and 64 refer to the size of the data. The address-size attribute of the instruction determines the size of the offset, either 16, 32 or 64 bits.
      * Supported only by RAX, EAX, AX, AL registers.
      */
-    uintptr_t addr = reg.getAddress<uintptr_t>();
+    uint64_t addr = reg.getAddress<uint64_t>();
     switch (reg) {
         // ========================================================================
         // >> 8-bit General purpose registers
@@ -785,7 +784,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
      * Supported only by RAX, EAX, AX, AL registers.
      */
 
-    uintptr_t addr = reg.getAddress<uintptr_t>();
+    uint64_t addr = reg.getAddress<uint64_t>();
     switch (reg) {
         // ========================================================================
         // >> 8-bit General purpose registers
@@ -1043,7 +1042,7 @@ void Hook::writeRestoreRegisters(Assembler& a, HookType hookType) const {
 }
 
 void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) const {
-    uintptr_t addr = reg.getAddress<uintptr_t>();
+    uint64_t addr = reg.getAddress<uint64_t>();
     switch (reg) {
         // ========================================================================
         // >> 8-bit General purpose registers
@@ -1143,7 +1142,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
 }
 
 void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) const {
-    uintptr_t addr = reg.getAddress<uintptr_t>();
+    uint64_t addr = reg.getAddress<uint64_t>();
     switch (reg) {
         // ========================================================================
         // >> 8-bit General purpose registers

@@ -81,7 +81,7 @@ void* x86MsCdecl::getReturnPtr(const Registers& registers) {
     if (m_returnBuffer) {
         // first half in eax, second half in edx
         std::memcpy(m_returnBuffer, *registers.at(EAX, true), 4);
-        std::memcpy((void*) ((uintptr_t) m_returnBuffer + 4), *registers.at(EDX, true), 4);
+        std::memcpy((uint8_t*) m_returnBuffer + 4, *registers.at(EDX, true), 4);
         return m_returnBuffer;
     }
 
@@ -92,7 +92,7 @@ void x86MsCdecl::onReturnPtrChanged(const Registers& registers, void* returnPtr)
     if (m_returnBuffer) {
         // first half in eax, second half in edx
         std::memcpy(*registers.at(EAX, true), m_returnBuffer, 4);
-        std::memcpy(*registers.at(EDX, true), (void*) ((uintptr_t) m_returnBuffer + 4), 4);
+        std::memcpy(*registers.at(EDX, true), (uint8_t*) m_returnBuffer + 4, 4);
     }
 }
 

@@ -298,13 +298,13 @@ namespace dyno {
         }
 
         template<class T>
-        T getPointerValue(size_t offset = 0) const {
-            return *(T*) (getValue<uintptr_t>() + offset);
+        void setValue(T value) {
+            *(T*) m_address = value;
         }
 
         template<class T>
-        void setValue(T value) {
-            *(T*) m_address = value;
+        T getPointerValue(size_t offset = 0) const {
+            return *(T*) (getValue<uintptr_t>() + offset);
         }
 
         template<class T>

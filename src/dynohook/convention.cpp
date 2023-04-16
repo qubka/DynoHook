@@ -52,7 +52,7 @@ void CallingConvention::saveCallArguments(const Registers& registers) {
     size_t offset = 0;
     for (size_t i = 0; i < m_arguments.size(); ++i) {
         size_t size = m_arguments[i].size;
-        std::memcpy((void*) ((uintptr_t) savedCallArguments.get() + offset), getArgumentPtr(i, registers), size);
+        std::memcpy(savedCallArguments.get() + offset, getArgumentPtr(i, registers), size);
         offset += size;
     }
     m_savedCallArguments.push_back(std::move(savedCallArguments));
@@ -63,7 +63,7 @@ void CallingConvention::restoreCallArguments(const Registers& registers) {
     size_t offset = 0;
     for (size_t i = 0; i < m_arguments.size(); ++i) {
         size_t size = m_arguments[i].size;
-        std::memcpy(getArgumentPtr(i, registers), (void*) ((uintptr_t) savedCallArguments + offset), size);
+        std::memcpy(getArgumentPtr(i, registers), (savedCallArguments + offset), size);
         offset += size;
     }
     m_savedCallArguments.pop_back();
