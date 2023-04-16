@@ -34,7 +34,7 @@ namespace dyno {
         return static_cast<underlying>(lhs) & static_cast<underlying>(rhs);
     }
 
-    std::ostream& operator<<(std::ostream& os, ProtFlag flags) {
+    /*std::ostream& operator<<(std::ostream& os, ProtFlag flags) {
         if (flags == ProtFlag::UNSET) {
             os << "UNSET";
             return os;
@@ -65,7 +65,7 @@ namespace dyno {
         else if (flags & ProtFlag::S)
             os << " shared";
         return os;
-    }
+    }*/
 
 #ifdef DYNO_PLATFORM_WINDOWS
 

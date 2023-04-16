@@ -1,8 +1,8 @@
 #pragma once
 
 namespace dyno {
-    enum register_t : uint8_t {
-        // No register at all.
+    enum RegisterType : uint8_t {
+        // no register at all.
         NONE,
 
         // ========================================================================
@@ -257,9 +257,26 @@ namespace dyno {
 #endif // DYNO_ARCH_X86
     };
 
+    enum RegisterSize : uint8_t {
+        SIZE_BYTE = 1,
+        SIZE_WORD = 2,
+        SIZE_DWORD = 4,
+        SIZE_QWORD = 8,
+        SIZE_TWORD = 10,
+        SIZE_XMMWORD = 16,
+        SIZE_YMMWORD = 32,
+        SIZE_ZMMWORD = 64,
+    };
+
+    const char* RegisterTypeToName(RegisterType regType);
+    size_t RegisterTypeToSize(RegisterType regType);
+    size_t RegisterTypeToAlignment(RegisterType regType);
+    size_t RegisterTypeToIndex(RegisterType regType);
+    RegisterType IndexToRegisterType(size_t index, size_t size = 0);
+
     class Register {
     public:
-        Register(register_t type, size_t size, size_t alignment = 0);
+        Register(RegisterType type, RegisterSize size, uint8_t alignment = 0);
         ~Register();
         Register(const Register& other);
         Register(Register&& other) noexcept;
@@ -268,14 +285,6 @@ namespace dyno {
 
         void* operator*() const {
             return m_address;
-        }
-
-        operator register_t() const {
-            return m_type;
-        }
-
-        size_t size() const {
-            return m_size;
         }
 
         template<class T>
@@ -303,29 +312,37 @@ namespace dyno {
             *(T*) (getValue<uintptr_t>() + offset) = value;
         }
 
+        RegisterType getType() const {
+            return m_type;
+        }
+
+        operator RegisterType() const {
+            return m_type;
+        }
+
     private:
         void* m_address;
-        uint16_t m_size;
-        register_t m_type;
+        RegisterType m_type;
+        RegisterSize m_size;
         uint8_t m_alignment;
     };
 
     class Registers {
     public:
-        Registers(const std::vector<register_t>& registers);
+        Registers(const std::vector<RegisterType>& registers);
         ~Registers() = default;
         NONCOPYABLE(Registers);
 
         ITERATABLE(Register, m_registers);
 
-        const Register& operator[](register_t regType) const;
-        const Register& at(register_t regType, bool reverse = false) const;
+        const Register& operator[](RegisterType regType) const;
+        const Register& at(RegisterType regType, bool reverse = false) const;
 
         size_t size() const {
             return m_registers.size();
         }
 
-        static const std::vector<register_t>& ScratchList() {
+        static const std::vector<RegisterType>& ScratchList() {
             return s_Scratch;
         }
 
@@ -333,26 +350,9 @@ namespace dyno {
         std::vector<Register> m_registers;
 
         static Register s_None;
-        static std::vector<register_t> s_Scratch;
+        static std::vector<RegisterType> s_Scratch;
     };
 
-    const char* RegisterTypeToName(register_t regType);
-    size_t RegisterTypeToSize(register_t regType);
-    size_t RegisterTypeToAlignment(register_t regType);
-
-    size_t RegisterTypeToSSEIndex(register_t regType);
-    register_t SSEIndexToRegisterType(size_t index, size_t size = 0);
-
-    enum RegisterSize : uint8_t {
-        SIZE_BYTE = 1,
-        SIZE_WORD = 2,
-        SIZE_DWORD = 4,
-        SIZE_QWORD = 8,
-        SIZE_TWORD = 10,
-        SIZE_XMMWORD = 16,
-        SIZE_YMMWORD = 32,
-        SIZE_ZMMWORD = 64,
-    };
 }
 
-std::ostream& operator<<(std::ostream& os, dyno::register_t v);
+//std::ostream& operator<<(std::ostream& os, dyno::RegisterType v);

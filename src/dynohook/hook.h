@@ -115,35 +115,35 @@ namespace dyno {
         DYNO_NOINLINE void DYNO_CDECL setReturnAddress(void* retAddr, void* stackPtr);
 
     public:
-        // Address of the original function
+        // address of the original function
         void* m_func;
 
-        // Interface if the calling convention
+        // interface if the calling convention
         CallingConvention* m_callingConvention;
 
-        // Address of the bridge
+        // address of the bridge
         void* m_bridge;
 
-        // Address of the trampoline
+        // address of the trampoline
         void* m_trampoline;
 
-        // New return address
+        // new return address
         void* m_newRetAddr;
 
-        // Instructions of the original function
-        std::vector<int8_t> m_originalBytes;
+        // instructions of the original function
+        std::vector<uint8_t> m_originalBytes;
 
-        // Register storage
+        // register storage
         Registers m_registers;
         Registers m_scratchRegisters;
 
-        // Save the last return action of the pre HookHandler for use in the post handler.
+        // save the last return action of the pre HookHandler for use in the post handler.
         std::vector<ReturnAction> m_lastPreReturnAction;
 
-        // Individual return's stack for stack pointers
+        // individual return's stack for stack pointers
         std::map<void*, std::vector<void*>> m_retAddr;
 
-        // Callbacks list
+        // callbacks list
         std::map<HookType, std::vector<HookHandler*>> m_handlers;
     };
 }

@@ -28,10 +28,10 @@ namespace dyno {
 
     struct DataObject {
         DataType type;
-        register_t reg;
+        RegisterType reg;
         uint16_t size;
 
-        DataObject(DataType type, register_t reg = NONE, uint16_t size = 0) : type(type), reg(reg), size(size) {}
+        DataObject(DataType type, RegisterType reg = NONE, uint16_t size = 0) : type(type), reg(reg), size(size) {}
 
         bool isFlt() const { return type == DataType::Float || type == DataType::Double; }
         bool isHva() const { return type == DataType::M128 || type == DataType::M256 || type == DataType::M512; }
@@ -120,10 +120,10 @@ namespace dyno {
         virtual ~CallingConvention() = default;
 
         /**
-         * @brief This should return a list of register_t values. These registers will be saved for later access.
+         * @brief This should return a list of RegisterType values. These registers will be saved for later access.
          * @return
          */
-        virtual std::vector<register_t> getRegisters() = 0;
+        virtual std::vector<RegisterType> getRegisters() = 0;
 
         /**
          * Returns a pointer to the memory at the stack.
@@ -235,9 +235,9 @@ namespace dyno {
         size_t m_stackSize;
         size_t m_registerSize;
 
-        // Save the return in case we call the original function and want to override the return again.
+        // save the return in case we call the original function and want to override the return again.
         std::vector<std::unique_ptr<uint8_t[]>> m_savedReturnBuffers;
-        // Save call arguments in case the function reuses the space and overwrites the values for the post hook.
+        // save call arguments in case the function reuses the space and overwrites the values for the post hook.
         std::vector<std::unique_ptr<uint8_t[]>> m_savedCallArguments;
     };
 }

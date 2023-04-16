@@ -2,12 +2,12 @@
 
 /// https://github.com/steinwurf/platform
 
-// Here we create a number of defines to make it easy to choose between
+// here we create a number of defines to make it easy to choose between
 // different compilers, operatings systems and CPU architectures.
-// Some information about the defines used can be found here:
+// some information about the defines used can be found here:
 // http://sourceforge.net/p/predef/wiki/Architectures/
 
-// Detect operating systems
+// detect operating systems
 #if defined(__linux__)
 #define DYNO_PLATFORM_LINUX 1
 #if defined(__ANDROID__)
@@ -23,7 +23,7 @@
 #endif
 #elif defined(__APPLE__)
 #define DYNO_PLATFORM_APPLE 1
-// Detect iOS before MacOSX (__MACH__ is also defined for iOS)
+// detect iOS before MacOSX (__MACH__ is also defined for iOS)
 #if defined(IPHONE)
 #define DYNO_PLATFORM_IOS 1
 #elif defined(__MACH__)
@@ -35,9 +35,9 @@
 #error "Unable to determine operating system"
 #endif
 
-// Detect compilers and CPU architectures
-// Note: clang also defines __GNUC__ since it aims to be compatible with GCC.
-// Therefore we need to check for __clang__ or __llvm__ first.
+// detect compilers and CPU architectures
+// note: clang also defines __GNUC__ since it aims to be compatible with GCC.
+// therefore we need to check for __clang__ or __llvm__ first.
 #if defined(__clang__) || defined(__llvm__)
 #define DYNO_PLATFORM_CLANG 1
 #define DYNO_PLATFORM_GCC_COMPATIBLE 1
@@ -87,7 +87,7 @@
 #error "Unable to determine compiler"
 #endif
 
-// Define macros for supported CPU instruction sets
+// define macros for supported CPU instruction sets
 #if defined(DYNO_PLATFORM_GCC_COMPATIBLE)
 #if defined(__MMX__)
 #define DYNO_PLATFORM_MMX 1
@@ -122,7 +122,7 @@
 #if defined(__ARM_NEON__) || defined(__ARM_NEON)
 #define DYNO_PLATFORM_NEON 1
 #endif
-// First, check the PLATFORM_WINDOWS_PHONE define, because
+// first, check the PLATFORM_WINDOWS_PHONE define, because
 // the X86 instructions sets are not supported on the Windows Phone emulator
 #elif defined(DYNO_PLATFORM_WINDOWS_PHONE)
 #if defined(DYNO_PLATFORM_MSVC_ARM)
@@ -156,7 +156,7 @@
 #endif
 #endif
 
-// Define macros for architecture type
+// define macros for architecture type
 #if DYNO_PLATFORM_X86
 #if UINTPTR_MAX == UINT64_MAX
 #define DYNO_ARCH_X86 64
@@ -167,7 +167,7 @@
 #endif
 #endif
 
-// Function attributes
+// function attributes
 #if !defined(DYNO_BUILD_DEBUG) && defined(__GNUC__)
 #define DYNO_FORCE_INLINE inline __attribute__((__always_inline__))
 #elif !defined(DYNO_BUILD_DEBUG) && defined(_MSC_VER)
@@ -187,7 +187,7 @@
 #define DYNO_NORETURN
 #endif
 
-// Calling conventions
+// calling conventions
 #if DYNO_ARCH_X86 == 32 && defined(__GNUC__)
 #define DYNO_CDECL __attribute__((__cdecl__))
 #define DYNO_STDCALL __attribute__((__stdcall__))

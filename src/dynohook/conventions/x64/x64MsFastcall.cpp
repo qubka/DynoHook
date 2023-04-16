@@ -6,9 +6,9 @@ using namespace dyno;
 
 x64MsFastcall::x64MsFastcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
         CallingConvention(std::move(arguments), returnType, alignment) {
-    // Don't force the register on the user.
-    register_t registers[] = {RCX, RDX, R8, R9 };
-    register_t sseRegisters[] = {XMM0, XMM1, XMM2, XMM3 };
+    // don't force the register on the user.
+    RegisterType registers[] = {RCX, RDX, R8, R9 };
+    RegisterType sseRegisters[] = {XMM0, XMM1, XMM2, XMM3 };
 
     size_t argSize = std::min<size_t>(4, m_arguments.size());
 
@@ -26,12 +26,12 @@ x64MsFastcall::x64MsFastcall(std::vector<DataObject> arguments, DataObject retur
     init();
 }
 
-std::vector<dyno::register_t> x64MsFastcall::getRegisters() {
-    std::vector<register_t> registers;
+std::vector<RegisterType> x64MsFastcall::getRegisters() {
+    std::vector<RegisterType> registers;
 
     registers.push_back(RSP);
 
-    // Save all the custom calling convention registers as well.
+    // save all the custom calling convention registers as well.
     for (const auto& [type, reg, size] : m_arguments) {
         if (reg == NONE)
             continue;
@@ -39,7 +39,7 @@ std::vector<dyno::register_t> x64MsFastcall::getRegisters() {
         registers.push_back(reg);
     }
 
-    // Save return register as last
+    // save return register as last
     registers.push_back(m_return.reg);
 
     return registers;
@@ -53,12 +53,12 @@ void* x64MsFastcall::getArgumentPtr(size_t index, const Registers& registers) {
     if (index >= m_arguments.size())
         return nullptr;
 
-    // Check if this argument was passed in a register.
-    register_t regType = m_arguments[index].reg;
+    // check if this argument was passed in a register.
+    RegisterType regType = m_arguments[index].reg;
     if (regType != NONE)
         return *registers[regType];
 
-    // In the Microsoft x64 calling convention, it is the caller's responsibility to allocate 32 bytes of "shadow space" on the stack right before calling the function (regardless of the actual number of parameters used),
+    // in the Microsoft x64 calling convention, it is the caller's responsibility to allocate 32 bytes of "shadow space" on the stack right before calling the function (regardless of the actual number of parameters used),
     // and to pop the stack after the call. The shadow space is used to spill RCX, RDX, R8, and R9,[24] but must be made available to all functions, even those with fewer than four parameters.
 
     size_t offset = 8;

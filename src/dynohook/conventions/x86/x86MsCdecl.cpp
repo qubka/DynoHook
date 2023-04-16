@@ -8,8 +8,8 @@ x86MsCdecl::x86MsCdecl(std::vector<DataObject> arguments, DataObject returnType,
         CallingConvention(std::move(arguments), returnType, alignment) {
     bool nonScalar = m_return.isFlt();
 
-    // Integer return values up to 32 bits in size are stored in EAX while values up to 64 bit are stored in EAX and EDX.
-    // Floating-point return values are similarly stored in ST0.
+    // integer return values up to 32 bits in size are stored in EAX while values up to 64 bit are stored in EAX and EDX.
+    // floating-point return values are similarly stored in ST0.
 
     if (!nonScalar && m_return.size > 4)
         m_returnBuffer = malloc(m_return.size);
@@ -27,12 +27,12 @@ x86MsCdecl::~x86MsCdecl() {
         free(m_returnBuffer);
 }
 
-std::vector<dyno::register_t> x86MsCdecl::getRegisters() {
-    std::vector<register_t> registers;
+std::vector<RegisterType> x86MsCdecl::getRegisters() {
+    std::vector<RegisterType> registers;
 
     registers.push_back(ESP);
 
-    // Save all the custom calling convention registers as well.
+    // save all the custom calling convention registers as well.
     for (const auto& [type, reg, size] : m_arguments) {
         if (reg == NONE)
             continue;
@@ -40,7 +40,7 @@ std::vector<dyno::register_t> x86MsCdecl::getRegisters() {
         registers.push_back(reg);
     }
 
-    // Save return register as last.
+    // save return register as last.
     if (m_returnBuffer) {
         registers.push_back(EAX);
         registers.push_back(EDX);
@@ -59,8 +59,8 @@ void* x86MsCdecl::getArgumentPtr(size_t index, const Registers& registers) {
     if (index >= m_arguments.size())
         return nullptr;
 
-    // Check if this argument was passed in a register.
-    register_t regType = m_arguments[index].reg;
+    // check if this argument was passed in a register.
+    RegisterType regType = m_arguments[index].reg;
     if (regType != NONE)
         return *registers[regType];
 
@@ -79,7 +79,7 @@ void x86MsCdecl::onArgumentPtrChanged(size_t index, const Registers& registers, 
 
 void* x86MsCdecl::getReturnPtr(const Registers& registers) {
     if (m_returnBuffer) {
-        // First half in eax, second half in edx
+        // first half in eax, second half in edx
         std::memcpy(m_returnBuffer, *registers.at(EAX, true), 4);
         std::memcpy((void*) ((uintptr_t) m_returnBuffer + 4), *registers.at(EDX, true), 4);
         return m_returnBuffer;
@@ -90,7 +90,7 @@ void* x86MsCdecl::getReturnPtr(const Registers& registers) {
 
 void x86MsCdecl::onReturnPtrChanged(const Registers& registers, void* returnPtr) {
     if (m_returnBuffer) {
-        // First half in eax, second half in edx
+        // first half in eax, second half in edx
         std::memcpy(*registers.at(EAX, true), m_returnBuffer, 4);
         std::memcpy(*registers.at(EDX, true), (void*) ((uintptr_t) m_returnBuffer + 4), 4);
     }

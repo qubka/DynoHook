@@ -24,13 +24,13 @@ Hook::Hook(void* func, CallingConvention* convention) :
         return;
     }
 
-    // Create the bridge function
+    // create the bridge function
     if (!createBridge()) {
         printf("[Error] - Hook - Failed to create bridge\n");
         return;
     }
 
-    // Create the trampoline function
+    // create the trampoline function
     if (!createTrampoline(restrictedRelocation)) {
         printf("[Error] - Hook - Failed to create trampoline\n");
         return;
@@ -40,17 +40,17 @@ Hook::Hook(void* func, CallingConvention* convention) :
 Hook::~Hook() {
     delete m_callingConvention;
 
-    // Probably hook wasn't generated successfully
+    // probably hook wasn't generated successfully
     if (m_originalBytes.empty())
         return;
 
-    // Allow to write and read
+    // allow to write and read
     MemoryProtect protector(m_func, m_originalBytes.size(), RWX);
 
-    // Copy back the previously copied bytes
+    // copy back the previously copied bytes
     std::memcpy(m_func, m_originalBytes.data(), m_originalBytes.size());
 
-    // Free trampoline memory page
+    // free trampoline memory page
     Memory::FreeMemory(m_trampoline, 0);
 }
 
@@ -126,7 +126,7 @@ ReturnAction Hook::hookHandler(HookType hookType) {
     ReturnAction returnAction = ReturnAction::Ignored;
     auto it = m_handlers.find(hookType);
     if (it == m_handlers.end()) {
-        // Still save the arguments for the post hook even if there
+        // still save the arguments for the post hook even if there
         // is no pre-handler registered.
         if (hookType == HookType::Pre) {
             m_lastPreReturnAction.push_back(returnAction);
@@ -165,7 +165,7 @@ void* Hook::getReturnAddress(void* stackPtr) {
     void* pRetAddr = v.back();
     v.pop_back();
 
-    // Clear the stack address from the cache now that we ran the last post hook.
+    // clear the stack address from the cache now that we ran the last post hook.
     if (v.empty())
         m_retAddr.erase(it);
 
@@ -177,8 +177,8 @@ void Hook::setReturnAddress(void* retAddr, void* stackPtr) {
 }
 
 bool Hook::createTrampoline(bool restrictedRelocation) {
-    int8_t* sourceAddress = (int8_t*) m_func;
-    int8_t* targetAddress = (int8_t*) m_bridge;
+    uint8_t* sourceAddress = (uint8_t*) m_func;
+    uint8_t* targetAddress = (uint8_t*) m_bridge;
 
     Decoder decoder;
     intptr_t addressDelta = (intptr_t)targetAddress - (intptr_t)sourceAddress;
@@ -195,7 +195,7 @@ bool Hook::createTrampoline(bool restrictedRelocation) {
     assert(hookLength >= 5);
 
     // save original bytes
-    m_originalBytes = std::vector<int8_t>(sourceAddress, sourceAddress + hookLength);
+    m_originalBytes = std::vector<uint8_t>(sourceAddress, sourceAddress + hookLength);
 
     // make page of detour address writeable
     MemoryProtect protector(m_func, hookLength, RWX);
@@ -210,7 +210,7 @@ bool Hook::createTrampoline(bool restrictedRelocation) {
     // copy overwritten bytes to trampoline
     memcpy(m_trampoline, relocatedBytes.data(), relocatedBytes.size());
 
-    int8_t* addressAfterRelocatedBytes = (int8_t*) m_trampoline + relocatedBytes.size();
+    uint8_t* addressAfterRelocatedBytes = (uint8_t*) m_trampoline + relocatedBytes.size();
 
     // length of jmp rel32
     size_t jmpToHookedFunctionLength = 5;
@@ -255,54 +255,54 @@ bool Hook::createTrampoline(bool restrictedRelocation) {
 }
 
 bool Hook::createBridge() {
-    // Holds code and relocation information during code generation.
+    // holds code and relocation information during code generation.
     CodeHolder code;
 
-    // Code holder must be initialized before it can be used.
+    // code holder must be initialized before it can be used.
     code.init(Environment::host(), CpuInfo::host().features());
 
-    // Emitters can emit code to CodeHolder
+    // emitters can emit code to CodeHolder
     Assembler a(&code);
     Label override = a.newLabel();
 
-    // Write a redirect to the post-hook code
+    // write a redirect to the post-hook code
     writeModifyReturnAddress(a);
 
-    // Call the pre-hook handler and jump to label override if true was returned
+    // call the pre-hook handler and jump to label override if true was returned
     writeCallHandler(a, HookType::Pre);
     a.cmp(al, ReturnAction::Supercede);
 
-    // Restore the previously saved registers, so any changes will be applied
+    // restore the previously saved registers, so any changes will be applied
     writeRestoreRegisters(a, HookType::Pre);
 
-    // Skip trampoline if equal
+    // skip trampoline if equal
     a.je(override);
 
-    // Jump to the trampoline
+    // jump to the trampoline
     a.jmp(m_trampoline);
 
-    // This code will be executed if a pre-hook returns true
+    // this code will be executed if a pre-hook returns true
     a.bind(override);
 
-    // Finally, return to the caller
-    // This will still call post hooks, but will skip the original function.
+    // finally, return to the caller
+    // this will still call post hooks, but will skip the original function.
     size_t popSize = m_callingConvention->getPopSize();
     if (popSize > 0)
         a.ret(popSize);
     else
         a.ret();
 
-    // Generate code
+    // generate code
     code.flatten();
     code.resolveUnresolvedLinks();
 
-    // We don't use JitAllocator, instead using trampoline page which we allocated near our hooked function
+    // we don't use JitAllocator, instead using trampoline page which we allocated near our hooked function
     m_bridge = (uint8_t*) m_trampoline + 128;
 
-    // Now relocate the code to the address provided by the memory allocator
+    // now relocate the code to the address provided by the memory allocator
     code.relocateToBase((uintptr_t) m_bridge);
 
-    // This will copy code from all sections to our memory
+    // this will copy code from all sections to our memory
     Error err = code.copyFlattenedData(m_bridge, code.codeSize(), CopySectionFlags::kPadSectionBuffer);
     if (err) {
         printf("[Error] - Hook - AsmJit failed: %s\n", DebugUtils::errorAsString(err));
@@ -315,11 +315,11 @@ bool Hook::createBridge() {
 void Hook::writeModifyReturnAddress(Assembler& a) {
     /// https://en.wikipedia.org/wiki/X86_calling_conventions
 
-    // Save scratch registers that are used by setReturnAddress
+    // save scratch registers that are used by setReturnAddress
     writeSaveScratchRegisters(a);
 
-    // Save the original return address by using the current esp as the key.
-    // This should be unique until we have returned to the original caller.
+    // save the original return address by using the current esp as the key.
+    // this should be unique until we have returned to the original caller.
     void (DYNO_CDECL Hook::*setReturnAddress)(void*, void*) = &Hook::setReturnAddress;
 
 #if DYNO_ARCH_X86 == 64
@@ -337,7 +337,7 @@ void Hook::writeModifyReturnAddress(Assembler& a) {
     a.call((void*&) setReturnAddress);
 #endif
 #elif DYNO_ARCH_X86 == 32
-    // Store the return address in eax
+    // store the return address in eax
     a.mov(eax, dword_ptr(esp));
 
     a.push(esp);
@@ -347,13 +347,13 @@ void Hook::writeModifyReturnAddress(Assembler& a) {
     a.add(esp, 12);
 #endif // DYNO_ARCH_X86
 
-    // Restore scratch registers
+    // restore scratch registers
     writeRestoreScratchRegisters(a);
 
-    // Override the return address. This is a redirect to our post-hook code
+    // override the return address. This is a redirect to our post-hook code
     createPostCallback();
 #if DYNO_ARCH_X86 == 64
-    // Using rax because not possible to MOV r/m64, imm64
+    // using rax because not possible to MOV r/m64, imm64
     a.mov(qword_ptr(rsp), rax);
     a.mov(rax, m_newRetAddr);
     a.xchg(qword_ptr(rsp), rax);
@@ -363,19 +363,19 @@ void Hook::writeModifyReturnAddress(Assembler& a) {
 }
 
 bool Hook::createPostCallback() {
-    // Holds code and relocation information during code generation.
+    // holds code and relocation information during code generation.
     CodeHolder code;
 
-    // Code holder must be initialized before it can be used.
+    // code holder must be initialized before it can be used.
     code.init(Environment::host(), CpuInfo::host().features());
 
-    // Emitters can emit code to CodeHolder
+    // emitters can emit code to CodeHolder
     Assembler a(&code);
 
-    // Gets pop size + return address
+    // gets pop size + return address
     size_t popSize = m_callingConvention->getPopSize() + sizeof(void*);
 
-    // Subtract the previously added bytes (stack size + return address), so
+    // subtract the previously added bytes (stack size + return address), so
     // that we can access the arguments again
 #if DYNO_ARCH_X86 == 64
     a.sub(rsp, popSize);
@@ -383,16 +383,16 @@ bool Hook::createPostCallback() {
     a.sub(esp, popSize);
 #endif // DYNO_ARCH_X86
 
-    // Call the post-hook handler
+    // call the post-hook handler
     writeCallHandler(a, HookType::Post);
 
-    // Restore the previously saved registers, so any changes will be applied
+    // restore the previously saved registers, so any changes will be applied
     writeRestoreRegisters(a, HookType::Post);
 
-    // Save scratch registers that are used by GetReturnAddress
+    // save scratch registers that are used by GetReturnAddress
     writeSaveScratchRegisters(a);
 
-    // Get the original return address
+    // get the original return address
     void* (DYNO_CDECL Hook::*getReturnAddress)(void*) = &Hook::getReturnAddress;
 
 #if DYNO_ARCH_X86 == 64
@@ -407,7 +407,7 @@ bool Hook::createPostCallback() {
     a.mov(rdi, this);
     a.call((void*&) getReturnAddress);
 #endif
-    // Save the original return address
+    // save the original return address
     a.push(rax);
 #elif DYNO_ARCH_X86 == 32
     a.push(esp);
@@ -415,29 +415,29 @@ bool Hook::createPostCallback() {
     a.call((void*&) getReturnAddress);
     a.add(esp, 8);
 
-    // Save the original return address
+    // save the original return address
     a.push(eax);
 #endif // DYNO_ARCH_X86
 
-    // Restore scratch registers
+    // restore scratch registers
     writeRestoreScratchRegisters(a);
 
-    // Return to the original address
-    // Add the bytes again to the stack (stack size + return address), so we
+    // return to the original address
+    // add the bytes again to the stack (stack size + return address), so we
     // don't corrupt the stack.
     a.ret(popSize);
 
-    // Generate code
+    // generate code
     code.flatten();
     code.resolveUnresolvedLinks();
 
-    // We don't use JitAllocator, instead using trampoline page which we allocated near our hooked function
+    // we don't use JitAllocator, instead using trampoline page which we allocated near our hooked function
     m_newRetAddr = (uint8_t*) m_trampoline + Memory::GetPageSize() / 2;
 
-    // Now relocate the code to the address provided by the memory allocator
+    // now relocate the code to the address provided by the memory allocator
     code.relocateToBase((uintptr_t) m_newRetAddr);
 
-    // This will copy code from all sections to our memory
+    // this will copy code from all sections to our memory
     Error err = code.copyFlattenedData(m_newRetAddr, code.codeSize(), CopySectionFlags::kPadSectionBuffer);
     if (err) {
         printf("[Error] - Hook - AsmJit failed: %s\n", DebugUtils::errorAsString(err));
@@ -450,10 +450,10 @@ bool Hook::createPostCallback() {
 void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
     ReturnAction (DYNO_CDECL Hook::*hookHandler)(HookType) = &Hook::hookHandler;
 
-    // Save the registers so that we can access them in our handlers
+    // save the registers so that we can access them in our handlers
     writeSaveRegisters(a, hookType);
 
-    // Call the global hook handler
+    // call the global hook handler
 #if DYNO_ARCH_X86 == 64
 #ifdef DYNO_PLATFORM_WINDOWS
     a.mov(rdx, hookType);
@@ -467,7 +467,7 @@ void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
     a.call((void*&) hookHandler);
 #endif
 #elif DYNO_ARCH_X86 == 32
-    // Subtract 4 bytes to preserve 16-Byte stack alignment for Linux
+    // subtract 4 bytes to preserve 16-Byte stack alignment for Linux
     a.sub(esp, 4);
     a.push(hookType);
     a.push(this);
@@ -478,7 +478,7 @@ void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
 
 #if DYNO_ARCH_X86 == 64
 void Hook::writeSaveScratchRegisters(Assembler& a) const {
-    // Save rax first, because we use it to save others
+    // save rax first, because we use it to save others
 
     for (const auto& reg : m_scratchRegisters) {
         if (reg == RAX) {
@@ -494,7 +494,7 @@ void Hook::writeSaveScratchRegisters(Assembler& a) const {
 }
 
 void Hook::writeRestoreScratchRegisters(Assembler& a) const {
-    // Restore rax last, because we use it to restore others
+    // restore rax last, because we use it to restore others
 
     for (const auto& reg : m_scratchRegisters) {
         if (reg != RAX)
@@ -510,7 +510,7 @@ void Hook::writeRestoreScratchRegisters(Assembler& a) const {
 }
 
 void Hook::writeSaveRegisters(Assembler& a, HookType hookType) const {
-    // Save rax first, because we use it to save others
+    // save rax first, because we use it to save others
 
     for (const auto& reg : m_registers) {
         if (reg == RAX) {
@@ -526,7 +526,7 @@ void Hook::writeSaveRegisters(Assembler& a, HookType hookType) const {
 }
 
 void Hook::writeRestoreRegisters(Assembler& a, HookType hookType) const {
-    // Restore rax last, because we use it to restore others
+    // restore rax last, because we use it to restore others
 
     for (const auto& reg : m_registers) {
         if (reg != RAX)
@@ -1120,7 +1120,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         // >> 80-bit FPU registers
         // ========================================================================
         case ST0:
-            // Don't mess with the FPU stack in a pre-hook. The float return is returned in st0,
+            // don't mess with the FPU stack in a pre-hook. The float return is returned in st0,
             // so only load it in a post hook to avoid writing back NaN.
             if (hookType == HookType::Post) {
                 switch (m_callingConvention->getReturn().size) {
@@ -1221,10 +1221,10 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         // ========================================================================
         case ST0:
             if (hookType == HookType::Post) {
-                // Replace the top of the FPU stack.
-                // Copy st0 to st0 and pop -> just pop the FPU stack.
+                // replace the top of the FPU stack.
+                // copy st0 to st0 and pop -> just pop the FPU stack.
                 a.fstp(st0);
-                // Push a value to the FPU stack.
+                // push a value to the FPU stack.
                 // TODO: Only write back when changed? Save full 80bits for that case.
                 //       Avoid truncation of the data if it's unchanged.
                 switch (m_callingConvention->getReturn().size) {

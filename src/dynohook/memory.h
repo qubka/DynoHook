@@ -9,15 +9,15 @@ namespace dyno {
         static size_t GetPageSize();
     };
 
-    //unsafe enum by design to allow binary OR
+    // unsafe enum by design to allow binary OR
     enum ProtFlag : uint8_t {
-        UNSET = 0, // Value means this give no information about protection state (un-read)
+        UNSET = 0, // value means this give no information about protection state (un-read)
         X = 1 << 1,
         R = 1 << 2,
         W = 1 << 3,
         S = 1 << 4,
         P = 1 << 5,
-        N = 1 << 6, // Value equaling the linux flag PROT_UNSET (read the prot, and the prot is unset)
+        N = 1 << 6, // value equaling the linux flag PROT_UNSET (read the prot, and the prot is unset)
         RWX = R | W | X
     };
 
@@ -42,4 +42,4 @@ namespace dyno {
 
 dyno::ProtFlag operator|(dyno::ProtFlag lhs, dyno::ProtFlag rhs);
 bool operator&(dyno::ProtFlag lhs, dyno::ProtFlag rhs);
-std::ostream& operator<<(std::ostream& os, dyno::ProtFlag v);
+//std::ostream& operator<<(std::ostream& os, dyno::ProtFlag v);

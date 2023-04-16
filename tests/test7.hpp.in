@@ -30,10 +30,10 @@ namespace DYNOHOOK_TEST_NAMESPACE {
     void test() {
         HookManager& manager = HookManager::Get();
 
-        // Hook the function
+        // hook the function
         manager.hook((void*) &MyFunc, new DYNOHOOK_TEST_OBJECT({}, DataType::Void));
 
-        // Call the function
+        // call the function
         MyFunc();
 
         manager.unhookAll();
