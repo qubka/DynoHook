@@ -149,6 +149,8 @@ void* Trampoline::AllocateTrampoline(void* sourceAddress, bool& restrictedReloca
     return trampoline;
 }
 
+#if DYNO_ARCH_X86 == 64
+
 /**
  * @brief Attempts to allocate a trampoline_ within +-2gb range with respect to rip-relative memory accesses.
  */
@@ -224,3 +226,5 @@ void* Trampoline::AllocateTrampolineWithinBounds(void* sourceAddress, int64_t lo
     restrictedRelocation = false;
     return trampoline;
 }
+
+#endif // DYNO_ARCH_X86
