@@ -192,7 +192,7 @@
 #define DYNO_CDECL __attribute__((__cdecl__))
 #define DYNO_STDCALL __attribute__((__stdcall__))
 #define DYNO_FASTCALL __attribute__((__fastcall__))
-#definee DYNO_THISCALL __attribute__((__thiscall__))
+#define DYNO_THISCALL __attribute__((__thiscall__))
 #define DYNO_REGPARM(N) __attribute__((__regparm__(N)))
 #elif DYNO_ARCH_X86 == 32 && defined(_MSC_VER)
 #define DYNO_CDECL __cdecl

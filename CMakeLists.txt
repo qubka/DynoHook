@@ -3,7 +3,7 @@ set(PROJECT_NAME dynohook)
 project(${PROJECT_NAME})
 
 set(DYNOHOOK_BUILD_TESTS ON)
-set(DYNOHOOK_BUILD_32 ON)
+set(DYNOHOOK_BUILD_64 ON)
 
 # Force all compilers to use the correct C and C++ standard versions.
 # Needed to allow for CheckCXXSourceCompiles to work correctly.
