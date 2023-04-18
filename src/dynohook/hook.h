@@ -107,8 +107,8 @@ namespace dyno {
         void writeRestoreRegisters(Assembler& a, HookType hookType) const;
         void writeSaveScratchRegisters(Assembler& a) const;
         void writeRestoreScratchRegisters(Assembler& a) const;
-        void writeRegToMem(Assembler& a, const Register& reg, HookType hookType = HookType::Pre) const; // hookType not used on x64
-        void writeMemToReg(Assembler& a, const Register& reg, HookType hookType = HookType::Pre) const; // hookType not used on x64
+        void writeRegToMem(Assembler& a, const Register& reg, HookType hookType = HookType::Pre) const;
+        void writeMemToReg(Assembler& a, const Register& reg, HookType hookType = HookType::Pre) const;
 
         DYNO_NOINLINE ReturnAction DYNO_CDECL hookHandler(HookType hookType);
         DYNO_NOINLINE void* DYNO_CDECL getReturnAddress(void* stackPtr);

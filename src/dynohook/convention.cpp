@@ -11,9 +11,6 @@ CallingConvention::CallingConvention(std::vector<DataObject> arguments, DataObje
 }
 
 void CallingConvention::init() {
-#pragma warning(push)
-#pragma warning(disable : 4267)
-
     m_stackSize = 0;
     m_registerSize = 0;
 
@@ -29,8 +26,6 @@ void CallingConvention::init() {
 
     if (!m_return.size)
         m_return.size = GetDataTypeSize(m_return.type, m_alignment);
-
-#pragma warning(pop)
 }
 
 void CallingConvention::saveReturnValue(const Registers& registers) {

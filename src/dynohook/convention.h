@@ -146,7 +146,7 @@ namespace dyno {
          * @param registers A snapshot of all saved registers.
          * @param argumentPtr A pointer to the argument at the given index.
          */
-        virtual void onArgumentPtrChanged(size_t index, const Registers& registers, void* argumentPtr) {}
+        virtual void onArgumentPtrChanged(size_t index, const Registers& registers, void* argumentPtr) = 0;
 
         /**
          * @brief Returns a pointer to the return value.
@@ -160,7 +160,7 @@ namespace dyno {
          * @param registers A snapshot of all saved registers.
          * @param returnPtr A pointer to the return value.
          */
-        virtual void onReturnPtrChanged(const Registers& registers, void* returnPtr) {}
+        virtual void onReturnPtrChanged(const Registers& registers, void* returnPtr) = 0;
 
         /**
          * @brief Save the return value in a seperate buffer, so we can restore it after calling the original function.

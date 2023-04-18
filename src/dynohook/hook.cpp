@@ -11,8 +11,6 @@ using namespace asmjit::x86;
 
 Hook::Hook(void* func, CallingConvention* convention) :
     m_func(func),
-    m_bridge(nullptr),
-    m_newRetAddr(nullptr),
     m_callingConvention(convention),
     m_registers(convention->getRegisters()),
     m_scratchRegisters(Registers::ScratchList()) {
@@ -332,7 +330,9 @@ void Hook::writeModifyReturnAddress(Assembler& a) {
     a.mov(rdx, rsp);
     a.mov(rsi, qword_ptr(rsp));
     a.mov(rdi, this);
+    a.sub(rsp, 24);
     a.call((void*&) setReturnAddress);
+    a.add(rsp, 24);
 #endif
 #elif DYNO_ARCH_X86 == 32
     // store the return address in eax
@@ -403,7 +403,9 @@ bool Hook::createPostCallback() {
 #else // __systemV__
     a.mov(rsi, rsp);
     a.mov(rdi, this);
+    a.sub(rsp, 24);
     a.call((void*&) getReturnAddress);
+    a.add(rsp, 24);
 #endif
     // save the original return address
     a.push(rax);
@@ -462,7 +464,9 @@ void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
 #else // __systemV__
     a.mov(rsi, hookType);
     a.mov(rdi, this);
+    a.sub(rsp, 24);
     a.call((void*&) hookHandler);
+    a.add(rsp, 24);
 #endif
 #elif DYNO_ARCH_X86 == 32
     // subtract 4 bytes to preserve 16-Byte stack alignment for Linux

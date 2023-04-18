@@ -73,8 +73,14 @@ void* x64MsFastcall::getArgumentPtr(size_t index, const Registers& registers) {
     return (void*) (registers[RSP].getValue<uintptr_t>() + offset);
 }
 
+void x64MsFastcall::onArgumentPtrChanged(size_t index, const Registers& registers, void* argumentPtr) {
+}
+
 void* x64MsFastcall::getReturnPtr(const Registers& registers) {
     return *registers.at(m_return.reg, true);
+}
+
+void x64MsFastcall::onReturnPtrChanged(const Registers& registers, void* returnPtr) {
 }
 
 #endif // DYNO_ARCH_X86

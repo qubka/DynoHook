@@ -269,7 +269,7 @@ bool RelocateRipRelativeMemoryInstruction(const ZydisDecodedInstruction& instruc
 
     // check if new displacement is within int32_t range
     if (relocatedRelativeAddress > INT32_MAX || relocatedRelativeAddress < INT32_MIN) {
-        printf("[Error] - Decoder - Failed to relocate a rip-relative memory instruction. RelocatedRelativeAddress: %llx\n", relocatedRelativeAddress);
+        printf("[Error] - Decoder - Failed to relocate a rip-relative memory instruction. RelocatedRelativeAddress: %p\n", (void*)relocatedRelativeAddress);
         free(tmpBuffer);
         return false;
     }
@@ -479,7 +479,7 @@ std::vector<uint8_t*> Decoder::findRelativeInstructionsOfType(void* startAddress
  */
 bool Decoder::calculateRipRelativeMemoryAccessBounds(void* sourceAddress, size_t length, int64_t& lowestAddress, int64_t& highestAddress) const {
     size_t byteCount = 0;
-    int64_t tmpLowestAddress = 0xffffffffffffffff;
+    int64_t tmpLowestAddress = int64_t(0xffffffffffffffff);
     int64_t tmpHighestAddress = 0;
 
     // we will atleast relocate "length" bytes. To avoid splitting an instruction we might relocate more.
@@ -553,7 +553,7 @@ void Decoder::printInstructions(void* address, size_t byteCount) const {
         ZydisFormatterInit(&formatter, ZYDIS_FORMATTER_STYLE_INTEL);
 
         char buffer[256];
-        printf("[%llx]", runtime_address);
+        printf("[%p]", (void*)runtime_address);
         ZydisFormatterFormatInstruction(&formatter, &instruction, operands, (ZyanU8) operands->element_count, buffer, sizeof(buffer), runtime_address, nullptr);
         printf("%s\n", buffer);
 
