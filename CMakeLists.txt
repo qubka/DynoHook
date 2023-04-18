@@ -3,7 +3,7 @@ set(PROJECT_NAME dynohook)
 project(${PROJECT_NAME})
 
 set(DYNOHOOK_BUILD_TESTS ON)
-set(DYNOHOOK_BUILD_64 ON)
+set(DYNOHOOK_BUILD_32 ON)
 
 # Force all compilers to use the correct C and C++ standard versions.
 # Needed to allow for CheckCXXSourceCompiles to work correctly.
@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 if (MSVC)
-    #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /INCREMENTAL:NO")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /INCREMENTAL:NO")
 endif ()
 
 if (DYNOHOOK_BUILD_32)
@@ -140,7 +140,7 @@ if (DYNOHOOK_BUILD_TESTS)
     set(TEST_NAME dynohook_test)
     add_executable(${TEST_NAME} "${CMAKE_CURRENT_BINARY_DIR}/tests/main.cpp" ${DYNOHOOK_TEST_HDR_FILES})
     if (MSVC)
-        #set_property(TARGET ${TEST_NAME} APPEND_STRING PROPERTY LINK_FLAGS " /INCREMENTAL:NO")
+        set_property(TARGET ${TEST_NAME} APPEND_STRING PROPERTY LINK_FLAGS " /INCREMENTAL:NO")
     endif()
     include_directories(src/)
     target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME})

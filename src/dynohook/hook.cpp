@@ -253,10 +253,10 @@ bool Hook::createTrampoline(bool restrictedRelocation) {
 }
 
 bool Hook::createBridge() {
-    // holds code and relocation information during code generation.
+    // holds code and relocation information during code generation
     CodeHolder code;
 
-    // code holder must be initialized before it can be used.
+    // code holder must be initialized before it can be used
     code.init(Environment::host(), CpuInfo::host().features());
 
     // emitters can emit code to CodeHolder
@@ -361,10 +361,10 @@ void Hook::writeModifyReturnAddress(Assembler& a) {
 }
 
 bool Hook::createPostCallback() {
-    // holds code and relocation information during code generation.
+    // holds code and relocation information during code generation
     CodeHolder code;
 
-    // code holder must be initialized before it can be used.
+    // code holder must be initialized before it can be used
     code.init(Environment::host(), CpuInfo::host().features());
 
     // emitters can emit code to CodeHolder
@@ -387,7 +387,7 @@ bool Hook::createPostCallback() {
     // restore the previously saved registers, so any changes will be applied
     writeRestoreRegisters(a, HookType::Post);
 
-    // save scratch registers that are used by GetReturnAddress
+    // save scratch registers that are used by getReturnAddress
     writeSaveScratchRegisters(a);
 
     // get the original return address
@@ -475,6 +475,7 @@ void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
 }
 
 #if DYNO_ARCH_X86 == 64
+
 void Hook::writeSaveScratchRegisters(Assembler& a) const {
     // save rax first, because we use it to save others
 
