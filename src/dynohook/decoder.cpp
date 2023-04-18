@@ -111,7 +111,7 @@ bool RelocateCallInstruction(const ZydisDecodedInstruction& instruction, const Z
         // we can use rax here as it has not to be preserved in function calls
         uint8_t relocatedCallInstructions[relocatedCallInstructionsLength] = {
             0x48, 0xB8, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11,			//movabs rax, 0x1122334455667788. 
-            0xFF, 0xD0															//call   rax
+            0xFF, 0xD0																							//call   rax
         };
         *(uint64_t*)&relocatedCallInstructions[2] = originalJumpTarget;
         relocatedbytes.insert(relocatedbytes.end(), relocatedCallInstructions, relocatedCallInstructions + relocatedCallInstructionsLength);
@@ -479,8 +479,8 @@ std::vector<uint8_t*> Decoder::findRelativeInstructionsOfType(void* startAddress
  */
 bool Decoder::calculateRipRelativeMemoryAccessBounds(void* sourceAddress, size_t length, int64_t& lowestAddress, int64_t& highestAddress) const {
     size_t byteCount = 0;
-    uint64_t tmpLowestAddress = 0xffffffffffffffff;
-    uint64_t tmpHighestAddress = 0;
+    int64_t tmpLowestAddress = 0xffffffffffffffff;
+    int64_t tmpHighestAddress = 0;
 
     // we will atleast relocate "length" bytes. To avoid splitting an instruction we might relocate more.
     while (byteCount < length) {

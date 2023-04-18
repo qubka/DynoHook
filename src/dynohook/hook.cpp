@@ -207,7 +207,7 @@ bool Hook::createTrampoline(bool restrictedRelocation) {
     }
 
     // copy overwritten bytes to trampoline
-    memcpy(m_trampoline, relocatedBytes.data(), relocatedBytes.size());
+    std::memcpy(m_trampoline, relocatedBytes.data(), relocatedBytes.size());
 
     uint8_t* addressAfterRelocatedBytes = (uint8_t*) m_trampoline + relocatedBytes.size();
 
@@ -243,7 +243,6 @@ bool Hook::createTrampoline(bool restrictedRelocation) {
     // write JMP from original code to hook function
     sourceAddress[0] = 0xE9;
     *(int32_t*)(sourceAddress + 1) = (int32_t)(targetAddress - sourceAddress) - 5;
-
 #endif // DYNO_ARCH_X86
 
     // NOP left over bytes
@@ -783,7 +782,6 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
      * where 8, 16, 32 and 64 refer to the size of the data. The address-size attribute of the instruction determines the size of the offset, either 16, 32 or 64 bits.
      * Supported only by RAX, EAX, AX, AL registers.
      */
-
     uint64_t addr = reg.getAddress<uint64_t>();
     switch (reg) {
         // ========================================================================
@@ -1244,4 +1242,5 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         default: puts("Unsupported register.");
     }
 }
+
 #endif // DYNO_ARCH_X86

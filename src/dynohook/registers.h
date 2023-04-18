@@ -255,6 +255,11 @@ namespace dyno {
         ST6,
         ST7,
 #endif // DYNO_ARCH_X86
+
+        // ========================================================================
+        // >> Maximum value of this enum.
+        // ========================================================================
+        REG_COUNT
     };
 
     enum RegisterSize : uint8_t {
@@ -266,12 +271,16 @@ namespace dyno {
         SIZE_TWORD = 10,
         SIZE_XMMWORD = 16,
         SIZE_YMMWORD = 32,
-        SIZE_ZMMWORD = 64,
+        SIZE_ZMMWORD = 64
     };
 
-    const char* RegisterTypeToName(RegisterType regType);
-    size_t RegisterTypeToSize(RegisterType regType);
-    size_t RegisterTypeToAlignment(RegisterType regType);
+    struct RegisterInfo {
+        std::string_view name;
+        RegisterSize size;
+        uint8_t alignment;
+    };
+
+    const RegisterInfo& RegisterTypeInfo(RegisterType regType);
 
     size_t RegisterTypeToSSEIndex(RegisterType regType);
     RegisterType SSEIndexToRegisterType(size_t index, size_t size = 0);

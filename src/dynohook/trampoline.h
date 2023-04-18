@@ -2,8 +2,8 @@
 
 namespace dyno {
     /**
-	 * @brief Allocates trampolines and provides information about it.
-	 */
+     * @brief Allocates trampolines and provides information about it.
+     */
     class Trampoline {
     public:
         static void* HandleTrampolineAllocation(void* sourceAddress, bool& restrictedRelocation);

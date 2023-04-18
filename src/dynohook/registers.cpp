@@ -89,13 +89,7 @@ Register::Register(Register&& other) noexcept {
     other.m_address = nullptr;
 }
 
-struct RegisterData {
-    const char* name;
-    RegisterSize size;
-    uint8_t alignment;
-};
-
-std::vector<RegisterData> s_RegisterTable = {
+std::array<RegisterInfo, REG_COUNT> s_RegisterTable = {{
     {"NONE", SIZE_INVALID, 0 },
 
     // ========================================================================
@@ -347,13 +341,13 @@ std::vector<RegisterData> s_RegisterTable = {
     {"ST6", SIZE_TWORD, 0 },
     {"ST7", SIZE_TWORD, 0 },
 #endif // DYNO_ARCH_X86
-};
+}};
 
 Registers::Registers(const std::vector<RegisterType>& registers) {
     m_registers.reserve(registers.size());
 
     for (RegisterType type : registers) {
-        const auto& [name, size, alignment] = s_RegisterTable[type];
+        const auto& [name, size, alignment] = s_RegisterTable.at(type);
         m_registers.emplace_back(type, size, alignment);
     }
 }
@@ -378,16 +372,8 @@ const Register& Registers::at(RegisterType regType, bool reverse) const {
     return s_None;
 }
 
-const char* dyno::RegisterTypeToName(RegisterType regType) {
-    return s_RegisterTable.at(regType).name;
-}
-
-size_t dyno::RegisterTypeToSize(RegisterType regType) {
-    return s_RegisterTable.at(regType).size;
-}
-
-size_t dyno::RegisterTypeToAlignment(RegisterType regType) {
-    return s_RegisterTable.at(regType).alignment;
+const RegisterInfo& RegisterTypeInfo(RegisterType regType){
+    return s_RegisterTable.at(regType);
 }
 
 size_t dyno::RegisterTypeToSSEIndex(RegisterType regType) {
