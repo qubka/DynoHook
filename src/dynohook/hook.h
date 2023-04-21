@@ -110,9 +110,16 @@ namespace dyno {
         void writeRegToMem(Assembler& a, const Register& reg, HookType hookType = HookType::Pre) const;
         void writeMemToReg(Assembler& a, const Register& reg, HookType hookType = HookType::Pre) const;
 
+#pragma OPT push_options
+#ifdef DYNO_PLATFORM_MSVC
+#pragma OPT optimize ("d", on)
+#elif DYNO_PLATFORM_GCC_COMPATIBLE
+#pragma OPT optimize ("O0")
+#endif
         DYNO_NOINLINE ReturnAction DYNO_CDECL hookHandler(HookType hookType);
         DYNO_NOINLINE void* DYNO_CDECL getReturnAddress(void* stackPtr);
         DYNO_NOINLINE void DYNO_CDECL setReturnAddress(void* retAddr, void* stackPtr);
+#pragma OPT pop_options
 
     public:
         // address of the original function

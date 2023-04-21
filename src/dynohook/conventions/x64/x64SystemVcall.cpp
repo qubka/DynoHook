@@ -6,7 +6,7 @@ using namespace dyno;
 
 x64SystemVcall::x64SystemVcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
         CallingConvention(std::move(arguments), returnType, alignment) {
-    // don't force the register on the user.
+    // don't force the register on the user
 
     RegisterType registers[] = {RDI, RSI, RDX, RCX, R8, R9 };
 
@@ -15,7 +15,7 @@ x64SystemVcall::x64SystemVcall(std::vector<DataObject> arguments, DataObject ret
 
         if (arg.reg == NONE) {
             // floating Point Arguments 1-8 ([XYZ]MM0 - [XYZ]MM7)
-            if (k < 8 && (arg.isFlt() || arg.isHva()))
+            if (k < 8 && (arg.isFlt() || arg.isVec()))
                 arg.reg = SSEIndexToRegisterType(k++, arg.size);
             // integer/Pointer Arguments 1-6 (RDI, RSI, RDX, RCX, R8, R9)
             else if (j < 6)
@@ -25,7 +25,7 @@ x64SystemVcall::x64SystemVcall(std::vector<DataObject> arguments, DataObject ret
         }
     }
 
-    bool nonScalar = m_return.isFlt() || m_return.isHva();
+    bool nonScalar = m_return.isFlt() || m_return.isVec();
 
     // integer return values up to 64 bits in size are stored in RAX while values up to 128 bit are stored in RAX and RDX.
     // floating-point return values are similarly stored in [XYZ]MM0 and [XYZ]MM1. TODO: We used [XYZ]MM0 by default, how we can detect another ?

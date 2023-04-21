@@ -34,7 +34,7 @@ namespace dyno {
         DataObject(DataType type, RegisterType reg = NONE, uint16_t size = 0) : type(type), reg(reg), size(size) {}
 
         bool isFlt() const { return type == DataType::Float || type == DataType::Double; }
-        bool isHva() const { return type == DataType::M128 || type == DataType::M256 || type == DataType::M512; }
+        bool isVec() const { return type == DataType::M128 || type == DataType::M256 || type == DataType::M512; }
     };
 
     /**
