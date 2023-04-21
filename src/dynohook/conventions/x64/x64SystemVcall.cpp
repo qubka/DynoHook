@@ -14,10 +14,10 @@ x64SystemVcall::x64SystemVcall(std::vector<DataObject> arguments, DataObject ret
         DataObject& arg = m_arguments[i];
 
         if (arg.reg == NONE) {
-            // floating Point Arguments 1-8 ([XYZ]MM0 - [XYZ]MM7)
+            // floating point arguments 1-8 ([XYZ]MM0 - [XYZ]MM7)
             if (k < 8 && (arg.isFlt() || arg.isVec()))
                 arg.reg = SSEIndexToRegisterType(k++, arg.size);
-            // integer/Pointer Arguments 1-6 (RDI, RSI, RDX, RCX, R8, R9)
+            // integer/pointer arguments 1-6 (RDI, RSI, RDX, RCX, R8, R9)
             else if (j < 6)
                 arg.reg = registers[j++];
             // static chain pointer (R10)

@@ -32,7 +32,7 @@ std::vector<RegisterType> x86MsCdecl::getRegisters() {
 
     registers.push_back(ESP);
 
-    // save all the custom calling convention registers as well.
+    // save all the custom calling convention registers as well
     for (const auto& [type, reg, size] : m_arguments) {
         if (reg == NONE)
             continue;
@@ -40,7 +40,7 @@ std::vector<RegisterType> x86MsCdecl::getRegisters() {
         registers.push_back(reg);
     }
 
-    // save return register as last.
+    // save return register as last
     if (m_returnBuffer) {
         registers.push_back(EAX);
         registers.push_back(EDX);

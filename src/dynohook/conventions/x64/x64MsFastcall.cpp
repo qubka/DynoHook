@@ -32,7 +32,7 @@ std::vector<RegisterType> x64MsFastcall::getRegisters() {
 
     registers.push_back(RSP);
 
-    // save all the custom calling convention registers as well.
+    // save all the custom calling convention registers as well
     for (const auto& [type, reg, size] : m_arguments) {
         if (reg == NONE)
             continue;
@@ -54,7 +54,7 @@ void* x64MsFastcall::getArgumentPtr(size_t index, const Registers& registers) {
     if (index >= m_arguments.size())
         return nullptr;
 
-    // check if this argument was passed in a register.
+    // check if this argument was passed in a register
     RegisterType regType = m_arguments[index].reg;
     if (regType != NONE)
         return *registers[regType];
