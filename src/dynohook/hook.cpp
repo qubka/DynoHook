@@ -1,7 +1,4 @@
 #include "hook.h"
-#include "memory.h"
-#include "trampoline.h"
-#include "decoder.h"
 
 #include <asmjit/asmjit.h>
 
@@ -9,47 +6,22 @@ using namespace dyno;
 using namespace asmjit;
 using namespace asmjit::x86;
 
-Hook::Hook(void* func, CallingConvention* convention) :
-    m_func(func),
+Hook::Hook(JitRuntime* jit, CallingConvention* convention) :
+    m_jit(jit),
     m_callingConvention(convention),
+    m_bridge(nullptr),
+    m_newRetAddr(nullptr),
     m_registers(convention->getRegisters()),
     m_scratchRegisters(Registers::ScratchList()) {
-    // allocate space for stub + space for overwritten bytes + jumpback
-    bool restrictedRelocation;
-    m_trampoline = Trampoline::HandleTrampolineAllocation(m_func, restrictedRelocation);
-    if (!m_trampoline) {
-        printf("[Error] - Hook - Failed to allocate trampoline\n");
-        return;
-    }
-
-    // create the bridge function
-    if (!createBridge()) {
-        printf("[Error] - Hook - Failed to create bridge\n");
-        return;
-    }
-
-    // create the trampoline function
-    if (!createTrampoline(restrictedRelocation)) {
-        printf("[Error] - Hook - Failed to create trampoline\n");
-        return;
-    }
 }
 
 Hook::~Hook() {
     delete m_callingConvention;
 
-    // probably hook wasn't generated successfully
-    if (m_originalBytes.empty())
-        return;
-
-    // allow to write and read
-    MemoryProtect protector(m_func, m_originalBytes.size(), RWX);
-
-    // copy back the previously copied bytes
-    std::memcpy(m_func, m_originalBytes.data(), m_originalBytes.size());
-
-    // free trampoline memory page
-    Memory::FreeMemory(m_trampoline, 0);
+    if (m_jit) {
+        m_jit->release(m_bridge);
+        m_jit->release(m_newRetAddr);
+    }
 }
 
 void Hook::addCallback(HookType hookType, HookHandler* handler) {
@@ -174,83 +146,7 @@ void Hook::setReturnAddress(void* retAddr, void* stackPtr) {
     m_retAddr[stackPtr].push_back(retAddr);
 }
 
-bool Hook::createTrampoline(bool restrictedRelocation) {
-    uint8_t* sourceAddress = (uint8_t*) m_func;
-    uint8_t* targetAddress = (uint8_t*) m_bridge;
-
-    Decoder decoder;
-    size_t hookLength;
-#if DYNO_ARCH_X86 == 64
-    int64_t addressDelta = (int64_t)targetAddress - (int64_t)sourceAddress;
-    if (addressDelta > INT32_MAX || addressDelta < INT32_MIN)
-        hookLength = decoder.getLengthOfInstructions(sourceAddress, 14);
-    else
-#endif
-        hookLength = decoder.getLengthOfInstructions(sourceAddress, 5);
-
-    // 5 bytes are required to place detour
-    assert(hookLength >= 5);
-
-    // save original bytes
-    m_originalBytes = std::vector<uint8_t>(sourceAddress, sourceAddress + hookLength);
-
-    // make page of detour address writeable
-    MemoryProtect protector(m_func, hookLength, RWX);
-
-    // relocate to be overwritten instructions to trampoline
-    auto relocatedBytes = decoder.relocate(sourceAddress, hookLength, m_trampoline, restrictedRelocation);
-    if (relocatedBytes.empty()) {
-        printf("[Error] - Hook - Relocation of bytes replaced by hook failed\n");
-        return false;
-    }
-
-    // copy overwritten bytes to trampoline
-    std::memcpy(m_trampoline, relocatedBytes.data(), relocatedBytes.size());
-
-    uint8_t* addressAfterRelocatedBytes = (uint8_t*) m_trampoline + relocatedBytes.size();
-
-    // length of jmp rel32
-    size_t jmpToHookedFunctionLength = 5;
-
-#if DYNO_ARCH_X86 == 64
-    // write JMP back from trampoline to original code
-    addressAfterRelocatedBytes[0] = 0xFF;														//opcodes = JMP [rip+0]
-    addressAfterRelocatedBytes[1] = 0x25;														//opcodes = JMP [rip+0]
-    *(int32_t*)(&addressAfterRelocatedBytes[2]) = 0;											//relative distance from RIP (+0)
-    *(int64_t*)(&addressAfterRelocatedBytes[2 + 4]) = (int64_t)(sourceAddress + hookLength);	//destination to jump to
-
-    // check if a jmp rel32 can reach
-    if (addressDelta > INT32_MAX || addressDelta < INT32_MIN) {
-        // need absolute 14 byte jmp
-        jmpToHookedFunctionLength = 14;
-        // write JMP from original code to hook function
-        sourceAddress[0] = 0xFF;																//opcodes = JMP [rip+0]
-        sourceAddress[1] = 0x25;																//opcodes = JMP [rip+0]
-        *(int32_t*)(&sourceAddress[2]) = 0;														//relative distance from RIP (+0)
-        *(int64_t*)(&sourceAddress[2 + 4]) = (int64_t)(targetAddress);							//destination to jump to
-    } else {
-        // jmp rel32 is enough
-        sourceAddress[0] = 0xE9;																//JMP rel32
-        *(int32_t*)(&sourceAddress[1]) = (int32_t)((int64_t)targetAddress - (int64_t)sourceAddress - 5);
-    }
-#elif DYNO_ARCH_X86 == 32
-    // write JMP back from trampoline to original code
-    addressAfterRelocatedBytes[0] = 0xE9;
-    *(int32_t*)(addressAfterRelocatedBytes + 1) = (int32_t)(sourceAddress + hookLength - addressAfterRelocatedBytes) - 5;
-
-    // write JMP from original code to hook function
-    sourceAddress[0] = 0xE9;
-    *(int32_t*)(sourceAddress + 1) = (int32_t)(targetAddress - sourceAddress) - 5;
-#endif // DYNO_ARCH_X86
-
-    // NOP left over bytes
-    for (size_t i = jmpToHookedFunctionLength; i < hookLength; i++)
-        sourceAddress[i] = 0x90;
-
-    return true;
-}
-
-bool Hook::createBridge() {
+bool Hook::createBridge(void* trampoline) {
     // holds code and relocation information during code generation
     CodeHolder code;
 
@@ -275,7 +171,7 @@ bool Hook::createBridge() {
     a.je(override);
 
     // jump to the trampoline
-    a.jmp(m_trampoline);
+    a.jmp(trampoline);
 
     // this code will be executed if a pre-hook returns true
     a.bind(override);
@@ -289,17 +185,22 @@ bool Hook::createBridge() {
         a.ret();
 
     // generate code
-    code.flatten();
-    code.resolveUnresolvedLinks();
+    Error err;
+    if (m_bridge) {
+        // allocate code to pre allocated memory
+        code.flatten();
+        code.resolveUnresolvedLinks();
 
-    // we don't use JitAllocator, instead using trampoline page which we allocated near our hooked function
-    m_bridge = (uint8_t*) m_trampoline + 128;
+        // now relocate the code to the address provided by the memory allocator
+        code.relocateToBase((uint64_t) m_bridge);
 
-    // now relocate the code to the address provided by the memory allocator
-    code.relocateToBase((uint64_t) m_bridge);
+        // this will copy code from all sections to our memory
+        err = code.copyFlattenedData(m_bridge, code.codeSize(), CopySectionFlags::kPadSectionBuffer);
+    } else {
+        // this function would copy the code from CodeHolder into memory with executable permission and relocate it
+        err = m_jit->add(&m_bridge, &code);
+    }
 
-    // this will copy code from all sections to our memory
-    Error err = code.copyFlattenedData(m_bridge, code.codeSize(), CopySectionFlags::kPadSectionBuffer);
     if (err) {
         printf("[Error] - Hook - AsmJit failed: %s\n", DebugUtils::errorAsString(err));
         return false;
@@ -428,17 +329,22 @@ bool Hook::createPostCallback() {
     a.ret(popSize);
 
     // generate code
-    code.flatten();
-    code.resolveUnresolvedLinks();
+    Error err;
+    if (m_newRetAddr) {
+        // allocate code to pre allocated memory
+        code.flatten();
+        code.resolveUnresolvedLinks();
 
-    // we don't use JitAllocator, instead using trampoline page which we allocated near our hooked function
-    m_newRetAddr = (uint8_t*) m_trampoline + Memory::GetPageSize() / 2;
+        // now relocate the code to the address provided by the memory allocator
+        code.relocateToBase((uint64_t) m_newRetAddr);
 
-    // now relocate the code to the address provided by the memory allocator
-    code.relocateToBase((uint64_t) m_newRetAddr);
+        // this will copy code from all sections to our memory
+        err = code.copyFlattenedData(m_newRetAddr, code.codeSize(), CopySectionFlags::kPadSectionBuffer);
+    } else {
+        // this function would copy the code from CodeHolder into memory with executable permission and relocate it
+        err = m_jit->add(&m_newRetAddr, &code);
+    }
 
-    // this will copy code from all sections to our memory
-    Error err = code.copyFlattenedData(m_newRetAddr, code.codeSize(), CopySectionFlags::kPadSectionBuffer);
     if (err) {
         printf("[Error] - Hook - AsmJit failed: %s\n", DebugUtils::errorAsString(err));
         return false;
@@ -477,6 +383,7 @@ void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
     a.add(esp, 12);
 #endif // DYNO_ARCH_X86
 }
+
 
 #if DYNO_ARCH_X86 == 64
 

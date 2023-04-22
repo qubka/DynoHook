@@ -4,6 +4,7 @@
 #include "convention.h"
 
 namespace asmjit { inline namespace _abi_1_10 {
+        class JitRuntime;
         namespace x86 {
             class Assembler;
         }
@@ -27,19 +28,16 @@ namespace dyno {
     typedef ReturnAction (*HookHandler)(HookType, Hook&);
 
     class Hook {
-    private:
-        friend class HookManager;
-
+        friend class VHook;
+    public:
         /**
          * @brief Creates a new function hook.
          * @param jit The jit runtime object.
          * @param func The address of the function to hook.
          * @param convention The calling convention of <func>.
          */
-        Hook(void* func, CallingConvention* convention);
-        ~Hook();
-
-    public:
+        Hook(asmjit::JitRuntime* jit, CallingConvention* convention);
+        virtual ~Hook();
         NONCOPYABLE(Hook);
 
         /**
@@ -94,11 +92,11 @@ namespace dyno {
             m_callingConvention->onReturnPtrChanged(m_registers, retunrPtr);
         }
 
-    private:
-        bool createTrampoline(bool restrictedRelocation);
-        bool createBridge();
+    protected:
+        bool createBridge(void* trampoline);
         bool createPostCallback();
 
+    private:
         typedef asmjit::x86::Assembler Assembler;
 
         void writeModifyReturnAddress(Assembler& a);
@@ -110,20 +108,24 @@ namespace dyno {
         void writeRegToMem(Assembler& a, const Register& reg, HookType hookType = HookType::Pre) const;
         void writeMemToReg(Assembler& a, const Register& reg, HookType hookType = HookType::Pre) const;
 
-#pragma OPT push_options
 #ifdef DYNO_PLATFORM_MSVC
-#pragma OPT optimize ("d", on)
+#pragma optimize ("", off)
 #elif DYNO_PLATFORM_GCC_COMPATIBLE
+#pragma OPT push_options
 #pragma OPT optimize ("O0")
 #endif
         DYNO_NOINLINE ReturnAction DYNO_CDECL hookHandler(HookType hookType);
         DYNO_NOINLINE void* DYNO_CDECL getReturnAddress(void* stackPtr);
         DYNO_NOINLINE void DYNO_CDECL setReturnAddress(void* retAddr, void* stackPtr);
+#ifdef DYNO_PLATFORM_MSVC
+#pragma optimize ("", on)
+#elif DYNO_PLATFORM_GCC_COMPATIBLE
 #pragma OPT pop_options
+#endif
 
-    public:
-        // address of the original function
-        void* m_func;
+    protected:
+        // runtime designed for JIT - it holds relocated functions and controls their lifetime
+        asmjit::JitRuntime* m_jit;
 
         // interface if the calling convention
         CallingConvention* m_callingConvention;
@@ -131,14 +133,8 @@ namespace dyno {
         // address of the bridge
         void* m_bridge;
 
-        // address of the trampoline
-        void* m_trampoline;
-
         // new return address
         void* m_newRetAddr;
-
-        // instructions of the original function
-        std::vector<uint8_t> m_originalBytes;
 
         // register storage
         Registers m_registers;

@@ -38,6 +38,14 @@ namespace dyno {
         ProtFlag m_flags;
         ProtFlag m_oldProtection;
     };
+
+// Credit to Dogmatt on unknowncheats.me for IsValidPtr
+#if DYNO_ARCH_X86 == 64
+#define _PTR_MAX_VALUE ((void*)0x000F000000000000)
+#elif DYNO_ARCH_X86 == 32
+#define _PTR_MAX_VALUE ((void*)0xFFF00000)
+#endif
+    inline bool IsValidPtr(void* ptr) { return (ptr >= (void*)0x10000) && (ptr < _PTR_MAX_VALUE) && ptr != nullptr; }
 }
 
 dyno::ProtFlag operator|(dyno::ProtFlag lhs, dyno::ProtFlag rhs);
