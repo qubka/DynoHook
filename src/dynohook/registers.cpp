@@ -174,7 +174,7 @@ std::array<RegisterInfo, REG_COUNT> s_RegisterTable = {{
     {"RCX", SIZE_QWORD, 0 },
     {"RDX", SIZE_QWORD, 0 },
     {"RBX", SIZE_QWORD, 0 },
-    {"RSP", SIZE_QWORD, SIZE_XMMWORD },
+    {"RSP", SIZE_QWORD, 0 },
     {"RBP", SIZE_QWORD, 0 },
     {"RSI", SIZE_QWORD, 0 },
     {"RDI", SIZE_QWORD, 0 },
@@ -593,7 +593,7 @@ RegisterType dyno::SSEIndexToRegisterType(size_t index, size_t size) {
             // >> 512-bit ZMM registers
             // ========================================================================
 #ifdef DYNO_PLATFORM_AVX512
-            case SIZE_ZMMWORD:
+        case SIZE_ZMMWORD:
             switch (index) {
                 case 0: return ZMM0;
                 case 1: return ZMM1;

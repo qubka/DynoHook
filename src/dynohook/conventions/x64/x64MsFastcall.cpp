@@ -5,11 +5,11 @@
 using namespace dyno;
 
 x64MsFastcall::x64MsFastcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
-        CallingConvention(std::move(arguments), returnType, alignment) {
+    CallingConvention(std::move(arguments), returnType, alignment) {
     // don't force the register on the user
 
-    RegisterType registers[] = {RCX, RDX, R8, R9 };
-    RegisterType sseRegisters[] = {XMM0, XMM1, XMM2, XMM3 };
+    RegisterType registers[] = { RCX, RDX, R8, R9 };
+    RegisterType sseRegisters[] = { XMM0, XMM1, XMM2, XMM3 };
 
     size_t argSize = std::min<size_t>(4, m_arguments.size());
 
