@@ -173,7 +173,7 @@ namespace dyno {
                     if (strend[2] == 'x')
                         res.prot = res.prot | ProtFlag::X;
 
-                    if(res.prot == ProtFlag::UNSET)
+                    if (res.prot == ProtFlag::UNSET)
                         res.prot = ProtFlag::N;
 
                     break;
@@ -223,7 +223,7 @@ namespace dyno {
     ProtFlag TranslateProtection(int prot) {
         ProtFlag flags = ProtFlag::UNSET;
 
-        if(prot & PROT_EXEC)
+        if (prot & PROT_EXEC)
             flags = flags | ProtFlag::X;
 
         if (prot & PROT_READ)

@@ -26,7 +26,7 @@ void* Trampoline::HandleTrampolineAllocation(void* sourceAddress, bool& restrict
 
     // attempt using 5 bytes
     if (!decoder.calculateRipRelativeMemoryAccessBounds(sourceAddress, fiveBytesWithoutCuttingInstructions, lowestRelativeAddress, hightestRelativeAddress)) {
-        printf("[Error] - Trampoline - Could not calculate bounds of relative instructions replaced by hook!\n");
+        puts("[Error] - Trampoline - Could not calculate bounds of relative instructions replaced by hook!");
         return nullptr;
     }
 
@@ -51,14 +51,14 @@ void* Trampoline::HandleTrampolineAllocation(void* sourceAddress, bool& restrict
             // there were no rip-relative memory accesses within fiveBytesWithoutCuttingInstructions of the hook address.
             // since we failed to allocate withing +-2GB range we now need to check fourteenBytesWithoutCuttingInstructions for rip-relative instructions
             if (!decoder.calculateRipRelativeMemoryAccessBounds(sourceAddress, fourteenBytesWithoutCuttingInstructions, lowestRelativeAddress, hightestRelativeAddress)) {
-                printf("[Error] - Trampoline - Could not calculate bounds of relative instructions replaced by hook!\n");
+                puts("[Error] - Trampoline - Could not calculate bounds of relative instructions replaced by hook!");
                 return nullptr;
             }
 
             // check if there is rip-relative memory access. Since we need to use a fourteenBytesWithoutCuttingInstructions byte jump we don't support relocating rip-relative instructions
             // if we have rip-relativ memory access here, hooking failed
             if (lowestRelativeAddress == maxAddress && hightestRelativeAddress == minAddress) {
-                printf("[Error] - Trampoline - The trampoline could not be allocated withing +-2GB range. The instructions at the hook address do contain rip-relative memory access. Relocating those is not supported when the trampoline is not in +-2GB range!\n");
+                puts("[Error] - Trampoline - The trampoline could not be allocated withing +-2GB range. The instructions at the hook address do contain rip-relative memory access. Relocating those is not supported when the trampoline is not in +-2GB range!");
                 return nullptr;
             }
         }
@@ -74,7 +74,7 @@ void* Trampoline::HandleTrampolineAllocation(void* sourceAddress, bool& restrict
         // we know there is rip-relative memory access within fiveBytesWithoutCuttingInstructions bytes of the hooking address which is supported
         // if we failed to allocate the trampoline withing +-2GB range it is not supported
         if (restrictedRelocation) {
-            printf("[Error] - Trampoline - The trampoline could not be allocated withing +-2GB range. The instructions at the hook address do contain rip-relative memory access. Relocating those is not supported when the trampoline is not in +-2GB range!\n");
+            puts("[Error] - Trampoline - The trampoline could not be allocated withing +-2GB range. The instructions at the hook address do contain rip-relative memory access. Relocating those is not supported when the trampoline is not in +-2GB range!");
             return nullptr;
         }
     }
@@ -133,7 +133,7 @@ void* Trampoline::AllocateTrampoline(void* sourceAddress, bool& restrictedReloca
             //we now require 14 bytes at the hook address to write an absolute JMP and we no longer can relocate rip-relative memory accesses
             restrictedRelocation = true;
 
-            printf("[Warning] - Trampoline - Could not allocate trampoline within desired range. We currently can't relocate rip-relative instructions in this case!\n");
+            puts("[Warning] - Trampoline - Could not allocate trampoline within desired range. We currently can't relocate rip-relative instructions in this case!");
 
             return trampoline;
 

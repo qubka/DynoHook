@@ -3,31 +3,20 @@
 #include "hook.h"
 
 namespace dyno {
-    class VHook {
-        friend class HookManager;
+    class VTHook : public Hook {
     public:
-        VHook(asmjit::JitRuntime* jit, void* pClass);
-        ~VHook();
+        VTHook(void* pFunc, const ConvFunc& convention);
+        ~VTHook() override;
 
-        Hook* hook(size_t index, CallingConvention* convention);
-        void unhook(size_t index);
-
-        Hook* find(size_t index);
+        void* getOriginal() const override {
+            return m_func;
+        }
 
     private:
-        class VTHook : public Hook {
-        public:
-            VTHook(void* original, asmjit::JitRuntime* jit, CallingConvention* convention);
-        };
+        // address of the original function
+        void* m_func;
 
-        static size_t GetVFuncCount(void** vtable);
-
-        asmjit::JitRuntime* m_jit;
-
-        std::unique_ptr<void*[]> m_newVtable;
-        void** m_origVtable;
-        void*** m_class;
-        size_t m_vFuncCount;
-        std::map<size_t, std::unique_ptr<VTHook>> m_hookedFunc;
+        // address of the page
+        void* m_page;
     };
 }

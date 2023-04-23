@@ -1,28 +1,32 @@
 #include "detour.h"
-#include "trampoline.h"
-#include "decoder.h"
 #include "memory.h"
+#include "decoder.h"
+#include "trampoline.h"
 
 using namespace dyno;
 
-Detour::Detour(void* pFunc, CallingConvention* convention) : m_func(pFunc), m_hookLength(0), Hook(nullptr, convention) {
+Detour::Detour(void* pFunc, const ConvFunc& convention) : m_func(pFunc), m_hookLength(0), Hook(convention) {
     // allocate space for stub + space for overwritten bytes + jumpback
     bool restrictedRelocation;
     m_trampoline = Trampoline::HandleTrampolineAllocation(m_func, restrictedRelocation);
     if (!m_trampoline) {
-        printf("[Error] - Hook - Failed to allocate trampoline\n");
+        puts("[Error] - Detour - Failed to allocate trampoline");
         return;
     }
 
+    // we don't use JitAllocator, instead using trampoline page which we allocated near our hooked function
+    m_bridge = (uint8_t*) m_trampoline + 128; // trampoline not generally big enough
+    m_newRetAddr = (uint8_t*) m_trampoline + Memory::GetPageSize() / 2;
+
     // create the bridge function
-    if (!createBridge(m_trampoline)) {
-        printf("[Error] - Hook - Failed to create bridge\n");
+    if (!createBridge()) {
+        puts("[Error] - Detour - Failed to create bridge");
         return;
     }
 
     // create the trampoline function
     if (!createTrampoline(restrictedRelocation)) {
-        printf("[Error] - Hook - Failed to create trampoline\n");
+        puts("[Error] - Detour - Failed to create trampoline");
         return;
     }
 }
@@ -68,7 +72,7 @@ bool Detour::createTrampoline(bool restrictedRelocation) {
     // relocate to be overwritten instructions to trampoline
     auto relocatedBytes = decoder.relocate(sourceAddress, m_hookLength, m_trampoline, restrictedRelocation);
     if (relocatedBytes.empty()) {
-        printf("[Error] - Hook - Relocation of bytes replaced by hook failed\n");
+        puts("[Error] - Detour - Relocation of bytes replaced by hook failed");
         return false;
     }
 
@@ -104,7 +108,7 @@ bool Detour::createTrampoline(bool restrictedRelocation) {
 #elif DYNO_ARCH_X86 == 32
     // write JMP back from trampoline to original code
     addressAfterRelocatedBytes[0] = 0xE9;
-    *(int32_t*)(addressAfterRelocatedBytes + 1) = (int32_t)(sourceAddress + hookLength - addressAfterRelocatedBytes) - 5;
+    *(int32_t*)(addressAfterRelocatedBytes + 1) = (int32_t)(sourceAddress + m_hookLength - addressAfterRelocatedBytes) - 5;
 
     // write JMP from original code to hook function
     sourceAddress[0] = 0xE9;

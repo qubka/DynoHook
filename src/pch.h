@@ -6,6 +6,7 @@
 #include <utility>
 #include <string>
 #include <memory>
+#include <mutex>
 #include <cstring>
 #include <cassert>
 

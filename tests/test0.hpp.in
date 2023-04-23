@@ -64,7 +64,7 @@ namespace DYNOHOOK_TEST_NAMESPACE {
         HookManager& manager = HookManager::Get();
 
         // hook the function
-        Hook* hook = manager.hook((void*) &MyFunc, new DYNOHOOK_TEST_OBJECT({DataType::Int, DataType::Int}, DataType::Int));
+        Hook* hook = manager.hook((void*) &MyFunc, [] { return new DYNOHOOK_TEST_OBJECT({DataType::Int, DataType::Int}, DataType::Int); });
 
         // add the callbacks
         hook->addCallback(HookType::Pre, (HookHandler*) &PreMyFunc);

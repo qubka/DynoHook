@@ -6,22 +6,12 @@ using namespace dyno;
 using namespace asmjit;
 using namespace asmjit::x86;
 
-Hook::Hook(JitRuntime* jit, CallingConvention* convention) :
-    m_jit(jit),
-    m_callingConvention(convention),
+Hook::Hook(const ConvFunc& convention) :
     m_bridge(nullptr),
     m_newRetAddr(nullptr),
-    m_registers(convention->getRegisters()),
+    m_callingConvention(convention()),
+    m_registers(m_callingConvention->getRegisters()),
     m_scratchRegisters(Registers::ScratchList()) {
-}
-
-Hook::~Hook() {
-    delete m_callingConvention;
-
-    if (m_jit) {
-        m_jit->release(m_bridge);
-        m_jit->release(m_newRetAddr);
-    }
 }
 
 void Hook::addCallback(HookType hookType, HookHandler* handler) {
@@ -51,6 +41,8 @@ void Hook::removeCallback(HookType hookType, HookHandler* handler) {
     for (size_t i = 0; i < callbacks.size(); ++i) {
         if (callbacks[i] == handler) {
             callbacks.erase(callbacks.begin() + i);
+            if (callbacks.empty())
+                m_handlers.erase(it);
             return;
         }
     }
@@ -127,7 +119,7 @@ ReturnAction Hook::hookHandler(HookType hookType) {
 void* Hook::getReturnAddress(void* stackPtr) {
     auto it = m_retAddr.find(stackPtr);
     if (it == m_retAddr.end()) {
-        printf("[Error] - Hook - Failed to find return address of original function. Check the arguments and return type of your detour setup.");
+        puts("[Error] - Hook - Failed to find return address of original function. Check the arguments and return type of your detour setup.");
         return nullptr;
     }
 
@@ -146,7 +138,7 @@ void Hook::setReturnAddress(void* retAddr, void* stackPtr) {
     m_retAddr[stackPtr].push_back(retAddr);
 }
 
-bool Hook::createBridge(void* trampoline) {
+bool Hook::createBridge() const {
     // holds code and relocation information during code generation
     CodeHolder code;
 
@@ -170,8 +162,8 @@ bool Hook::createBridge(void* trampoline) {
     // skip trampoline if equal
     a.je(override);
 
-    // jump to the trampoline
-    a.jmp(trampoline);
+    // jump to the trampoline/original
+    a.jmp(getOriginal());
 
     // this code will be executed if a pre-hook returns true
     a.bind(override);
@@ -185,31 +177,23 @@ bool Hook::createBridge(void* trampoline) {
         a.ret();
 
     // generate code
-    Error err;
-    if (m_bridge) {
-        // allocate code to pre allocated memory
-        code.flatten();
-        code.resolveUnresolvedLinks();
+    code.flatten();
+    code.resolveUnresolvedLinks();
 
-        // now relocate the code to the address provided by the memory allocator
-        code.relocateToBase((uint64_t) m_bridge);
+    // now relocate the code to the address provided by the memory allocator
+    code.relocateToBase((uint64_t) m_bridge);
 
-        // this will copy code from all sections to our memory
-        err = code.copyFlattenedData(m_bridge, code.codeSize(), CopySectionFlags::kPadSectionBuffer);
-    } else {
-        // this function would copy the code from CodeHolder into memory with executable permission and relocate it
-        err = m_jit->add(&m_bridge, &code);
-    }
-
+    // this will copy code from all sections to our memory
+    Error err = code.copyFlattenedData(m_bridge, code.codeSize(), CopySectionFlags::kPadSectionBuffer);
     if (err) {
-        printf("[Error] - Hook - AsmJit failed: %s\n", DebugUtils::errorAsString(err));
+        puts(DebugUtils::errorAsString(err));
         return false;
     }
 
     return true;
 }
 
-void Hook::writeModifyReturnAddress(Assembler& a) {
+void Hook::writeModifyReturnAddress(Assembler& a) const {
     /// https://en.wikipedia.org/wiki/X86_calling_conventions
 
     // save scratch registers that are used by setReturnAddress
@@ -261,7 +245,7 @@ void Hook::writeModifyReturnAddress(Assembler& a) {
 #endif // DYNO_ARCH_X86
 }
 
-bool Hook::createPostCallback() {
+bool Hook::createPostCallback() const {
     // holds code and relocation information during code generation
     CodeHolder code;
 
@@ -329,24 +313,16 @@ bool Hook::createPostCallback() {
     a.ret(popSize);
 
     // generate code
-    Error err;
-    if (m_newRetAddr) {
-        // allocate code to pre allocated memory
-        code.flatten();
-        code.resolveUnresolvedLinks();
+    code.flatten();
+    code.resolveUnresolvedLinks();
 
-        // now relocate the code to the address provided by the memory allocator
-        code.relocateToBase((uint64_t) m_newRetAddr);
+    // now relocate the code to the address provided by the memory allocator
+    code.relocateToBase((uint64_t) m_newRetAddr);
 
-        // this will copy code from all sections to our memory
-        err = code.copyFlattenedData(m_newRetAddr, code.codeSize(), CopySectionFlags::kPadSectionBuffer);
-    } else {
-        // this function would copy the code from CodeHolder into memory with executable permission and relocate it
-        err = m_jit->add(&m_newRetAddr, &code);
-    }
-
+    // this will copy code from all sections to our memory
+    Error err = code.copyFlattenedData(m_newRetAddr, code.codeSize(), CopySectionFlags::kPadSectionBuffer);
     if (err) {
-        printf("[Error] - Hook - AsmJit failed: %s\n", DebugUtils::errorAsString(err));
+        puts(DebugUtils::errorAsString(err));
         return false;
     }
 
@@ -684,7 +660,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         case FS: a.mov(rax, addr); a.mov(word_ptr(rax), fs); break;
         case GS: a.mov(rax, addr); a.mov(word_ptr(rax), gs); break;
 
-        default: puts("Unsupported register.");
+        default: puts("[Warning] - Hook - Unsupported register.");
     }
 }
 
@@ -921,7 +897,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         case FS: a.mov(rax, addr); a.mov(fs, word_ptr(rax)); break;
         case GS: a.mov(rax, addr); a.mov(gs, word_ptr(rax)); break;
 
-        default: puts("Unsupported register.");
+        default: puts("[Warning] - Hook - Unsupported register.");
     }
 }
 
@@ -1047,7 +1023,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         //case ST6: a.movl(tword_ptr(addr), st6); break;
         //case ST7: a.movl(tword_ptr(addr), st7); break;
 
-        default: puts("Unsupported register.");
+        default: puts("[Warning] - Hook - Unsupported register.");
     }
 }
 
@@ -1151,7 +1127,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         //case ST6: a.movl(st6, tword_ptr(addr)); break;
         //case ST7: a.movl(st7, tword_ptr(addr)); break;
 
-        default: puts("Unsupported register.");
+        default: puts("[Warning] - Hook - Unsupported register.");
     }
 }
 

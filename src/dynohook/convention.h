@@ -98,7 +98,7 @@ namespace dyno {
             case DataType::M512:
                 return Align(sizeof(float) * 16, alignment);
             default:
-                puts("Unknown data type.");
+                puts("[Warning] - Convention - Unknown data type.");
         }
         return 0;
     }
@@ -118,6 +118,7 @@ namespace dyno {
          */
         CallingConvention(std::vector<DataObject> arguments, DataObject returnType, size_t alignment);
         virtual ~CallingConvention() = default;
+        NONCOPYABLE(CallingConvention);
 
         /**
          * @brief This should return a list of RegisterType values. These registers will be saved for later access.

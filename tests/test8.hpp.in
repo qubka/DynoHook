@@ -22,39 +22,39 @@ namespace DYNOHOOK_TEST_NAMESPACE {
 
     using namespace dyno;
 
-	class MyClass;
-	MyClass* g_pMyClass = nullptr;
+    class MyClass;
+    MyClass* g_pMyClass = nullptr;
 
-	class MyClass {
-	public:
-		MyClass() : m_iData{0} {}
+    class MyClass {
+    public:
+        MyClass() : m_iData{0} {}
 
-        DYNO_NOINLINE int DYNOHOOK_TEST_CONV myFunc(int x, int y) {
-			g_MyFuncCallCount++;
-			assert(this == g_pMyClass);
-			assert(x == 3);
-			assert(y == 10);
+        virtual DYNO_NOINLINE int DYNOHOOK_TEST_CONV myFunc(int x, int y) {
+            g_MyFuncCallCount++;
+            assert(this == g_pMyClass);
+            assert(x == 3);
+            assert(y == 10);
 
-			int result = x + y;
-			assert(result == 13);
+            int result = x + y;
+            assert(result == 13);
 
-			m_iData++;
+            m_iData++;
 
-			return result;
-		}
-	private:
-		int m_iData;
-	};
+            return result;
+        }
+    private:
+        int m_iData;
+    };
 
     ReturnAction PreMyFunc(HookType hookType, Hook& hook) {
         g_PreMyFuncCallCount++;
         MyClass* pMyClass = hook.getArgument<MyClass *>(0);
-		assert(pMyClass == g_pMyClass);
+        assert(pMyClass == g_pMyClass);
 
         int x = hook.getArgument<int>(1);
         assert(x == 3);
 
-		int y = hook.getArgument<int>(2);
+        int y = hook.getArgument<int>(2);
         assert(y == 10);
 
         return ReturnAction::Ignored;
@@ -63,12 +63,12 @@ namespace DYNOHOOK_TEST_NAMESPACE {
     ReturnAction PostMyFunc(HookType hookType, Hook& hook) {
         g_PostMyFuncCallCount++;
         MyClass* pMyClass = hook.getArgument<MyClass *>(0);
-		assert(pMyClass == g_pMyClass);
+        assert(pMyClass == g_pMyClass);
 
         int x = hook.getArgument<int>(1);
         assert(x == 3);
 
-		int y = hook.getArgument<int>(2);
+        int y = hook.getArgument<int>(2);
         assert(y == 10);
 
         int return_value = hook.getReturnValue<int>();
@@ -82,20 +82,22 @@ namespace DYNOHOOK_TEST_NAMESPACE {
     void test() {
         HookManager& manager = HookManager::Get();
 
-		int (DYNOHOOK_TEST_CONV MyClass::*myFunc)(int, int) = &MyClass::myFunc;
+        typedef int(DYNOHOOK_TEST_CONV *MyFunc)(void*, int, int);
+
+        MyClass a;
+        g_pMyClass = &a;
 
         // hook the function
-        Hook* hook = manager.hook((void*&) myFunc, [] { return new DYNOHOOK_TEST_OBJECT({DataType::Pointer, DataType::Int, DataType::Int}, DataType::Int); });
+        Hook* hook = manager.hook(&a, 0, [] { return new DYNOHOOK_TEST_OBJECT({DataType::Pointer, DataType::Int, DataType::Int}, DataType::Int); });
 
         // add the callbacks
         hook->addCallback(HookType::Pre, (HookHandler*) &PreMyFunc);
         hook->addCallback(HookType::Post, (HookHandler*) &PostMyFunc);
 
-		MyClass a;
-		g_pMyClass = &a;
-
         // call the function
-        int ret = a.myFunc(3, 10);
+        void** vtable = *(void***)&a;
+        MyFunc myFunc = (MyFunc)(vtable[0]);
+        int ret = myFunc(&a, 3, 10);
 
         assert(g_MyFuncCallCount == 1);
         assert(g_PreMyFuncCallCount == 1);

@@ -128,7 +128,7 @@ bool RelocateCallInstruction(const ZydisDecodedInstruction& instruction, const Z
     }
     // the program can return to the return address pushed on the stack (at time of the call) at any time.
     // if the hook is removed (and therefore the trampoline freed) the return address might not contain valid code --> crash
-    printf("[Warning] - Decoder - Relocated a call instruction. Unhooking is not safe!\n");
+    puts("[Warning] - Decoder - Relocated a call instruction. Unhooking is not safe!");
     return true;
 }
 
@@ -207,7 +207,7 @@ bool RelocateBranchInstruction(const ZydisDecodedInstruction& instruction, const
 
                     relocatedbytes.insert(relocatedbytes.end(), (uint8_t*)&originalJumpTarget, (uint8_t*)&originalJumpTarget + 8); // destination to jump to: 8 Bytes
 
-                    printf("[Warning] - Decoder - Relocated an indirect branch instruction by using a direct JMP because the memory address could not be reached. This may result in undifined behavior\n");
+                    puts("[Warning] - Decoder - Relocated an indirect branch instruction by using a direct JMP because the memory address could not be reached. This may result in undifined behavior");
                 } else {
                     // use indirect memory jmp
                     relocatedbytes.push_back(0xFF);	//opcodes = JMP [rip+displacement]
@@ -240,7 +240,7 @@ bool RelocateBranchInstruction(const ZydisDecodedInstruction& instruction, const
         }
     }
 
-    printf("[Info] - Decoder - Relocated a branch instruction\n");
+    puts("[Info] - Decoder - Relocated a branch instruction");
     return true;
 }
 
@@ -281,7 +281,7 @@ bool RelocateRipRelativeMemoryInstruction(const ZydisDecodedInstruction& instruc
     relocatedbytes.insert(relocatedbytes.end(), tmpBuffer, tmpBuffer + instruction.length);
 
     free(tmpBuffer);
-    printf("[Info] - Decoder - Relocated a rip-relative memory instruction\n");
+    puts("[Info] - Decoder - Relocated a rip-relative memory instruction");
     return true;
 }
 
@@ -339,7 +339,7 @@ std::vector<uint8_t> Decoder::relocate(void* sourceAddress, size_t length, void*
         ZydisDecodedOperand operands[ZYDIS_MAX_OPERAND_COUNT];
         ZyanStatus decodeResult = ZydisDecoderDecodeFull((ZydisDecoder*)m_zydisDecoder, currentAddress, ZYDIS_MAX_INSTRUCTION_LENGTH, &instruction, operands);
         if (decodeResult != ZYAN_STATUS_SUCCESS) {
-            printf("[Error] - Decoder - Could not decode instruction\n");
+            puts("[Error] - Decoder - Could not decode instruction");
             return {};
         }
 
@@ -347,26 +347,26 @@ std::vector<uint8_t> Decoder::relocate(void* sourceAddress, size_t length, void*
         if (IsCallInstruction(instruction)) {
             // handle relocation of call instructions
             if (!RelocateCallInstruction(instruction, operands, currentAddress, relocatedbytes)) {
-                printf("[Error] - Decoder - Failed to relocate call instruction\n");
+                puts("[Error] - Decoder - Failed to relocate call instruction");
                 return {};
             }
         } else if (IsBranchInstruction(instruction)) {
             // handle relocation of branch instructions (jcc, loopcc)
             if (!RelocateBranchInstruction(instruction, operands, currentAddress, (uint8_t*) targetAddress + relocatedbytes.size(), relocatedbytes)) {
-                printf("[Error] - Decoder - Failed to relocate branch instruction\n");
+                puts("[Error] - Decoder - Failed to relocate branch instruction");
                 return {};
             }
         } else if (IsRipRelativeMemoryInstruction(instruction)) {
             // restricted relocation is enabled when the trampoline could not be allocated withing +-2GB range
             // rip-relative memory instructions may not be able to reach their target address (TODO check this on an instruction based level... there are some cases when this works)
             if (restrictedRelocation) {
-                printf("[Error] - Decoder - Can't relocate a rip-relative memory access with restricted relocation enabled (trampoline is not in rel32 range). This is currently not supported.\n");
+                puts("[Error] - Decoder - Can't relocate a rip-relative memory access with restricted relocation enabled (trampoline is not in rel32 range). This is currently not supported.");
                 return {};
             }
             // handle relocation of rip-relative memory addresses (x64 only)
             if (!RelocateRipRelativeMemoryInstruction(instruction, currentAddress, (uint8_t*) targetAddress + relocatedbytes.size(), relocatedbytes)) {
                 printInstructions(currentAddress, 1);
-                printf("[Error] - Decoder - Failed to relocate rip-relative instruction\n");
+                puts("[Error] - Decoder - Failed to relocate rip-relative instruction");
                 return {};
             }
         } else if (instruction.mnemonic == ZYDIS_MNEMONIC_XBEGIN) {
@@ -374,7 +374,7 @@ std::vector<uint8_t> Decoder::relocate(void* sourceAddress, size_t length, void*
             // and even physically removed support for it on never processors
             // additionally windows (and linux) allow for disabling tsx support
             // we expect to never encounter this instruction
-            printf("[Error] - Decoder - Encountered XBEGIN instruction which is a relative but unhandled instruction!\n");
+            puts("[Error] - Decoder - Encountered XBEGIN instruction which is a relative but unhandled instruction!");
             return {};
         } else {
             // instruction does not need to be modified. Just copy the original Bytes.
@@ -403,7 +403,7 @@ size_t Decoder::getLengthOfInstructions(void* sourceAddress, size_t length) cons
         ZydisDecodedOperand operands[ZYDIS_MAX_OPERAND_COUNT];
         ZyanStatus decodeResult = ZydisDecoderDecodeFull((ZydisDecoder*)m_zydisDecoder, currentAddress, ZYDIS_MAX_INSTRUCTION_LENGTH, &instruction, operands);
         if (decodeResult != ZYAN_STATUS_SUCCESS) {
-            printf("[Error] - Decoder - Could not decode instruction\n");
+            puts("[Error] - Decoder - Could not decode instruction");
             return 0;
         }
 
@@ -436,7 +436,7 @@ std::vector<uint8_t*> Decoder::findRelativeInstructionsOfType(void* startAddress
         ZydisDecodedOperand operands[ZYDIS_MAX_OPERAND_COUNT];
         decodeResult = ZydisDecoderDecodeFull((ZydisDecoder*)m_zydisDecoder, currentAddress, ZYDIS_MAX_INSTRUCTION_LENGTH, &instruction, operands);
         if (decodeResult != ZYAN_STATUS_SUCCESS) {
-            printf("[Error] - Decoder - Could not decode instruction\n");
+            puts("[Error] - Decoder - Could not decode instruction");
             offset += instruction.length;
             continue;
         }
@@ -489,7 +489,7 @@ bool Decoder::calculateRipRelativeMemoryAccessBounds(void* sourceAddress, size_t
         ZydisDecodedOperand operands[ZYDIS_MAX_OPERAND_COUNT];
         ZyanStatus decodeResult = ZydisDecoderDecodeFull((ZydisDecoder*)m_zydisDecoder, currentAddress, ZYDIS_MAX_INSTRUCTION_LENGTH, &instruction, operands);
         if (decodeResult != ZYAN_STATUS_SUCCESS) {
-            printf("[Error] - Decoder - Could not decode instruction\n");
+            puts("[Error] - Decoder - Could not decode instruction");
             return false;
         }
 
@@ -545,7 +545,7 @@ void Decoder::printInstructions(void* address, size_t byteCount) const {
         ZydisDecodedOperand operands[ZYDIS_MAX_OPERAND_COUNT];
         ZyanStatus decodeResult = ZydisDecoderDecodeFull((ZydisDecoder*)m_zydisDecoder, data + offset, ZYDIS_MAX_INSTRUCTION_LENGTH, &instruction, operands);
         if (decodeResult != ZYAN_STATUS_SUCCESS) {
-            printf("[Error] - Decoder - Could not decode instruction\n");
+            puts("[Error] - Decoder - Could not decode instruction");
             return;
         }
 
@@ -555,7 +555,7 @@ void Decoder::printInstructions(void* address, size_t byteCount) const {
         char buffer[256];
         printf("[%p]", (void*)runtime_address);
         ZydisFormatterFormatInstruction(&formatter, &instruction, operands, (ZyanU8) operands->element_count, buffer, sizeof(buffer), runtime_address, nullptr);
-        printf("%s\n", buffer);
+        puts(buffer);
 
         offset += instruction.length;
         runtime_address += instruction.length;

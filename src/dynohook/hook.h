@@ -4,7 +4,6 @@
 #include "convention.h"
 
 namespace asmjit { inline namespace _abi_1_10 {
-        class JitRuntime;
         namespace x86 {
             class Assembler;
         }
@@ -26,18 +25,22 @@ namespace dyno {
 
     class Hook;
     typedef ReturnAction (*HookHandler)(HookType, Hook&);
+    using ConvFunc = std::function<CallingConvention*()>;
 
+    /**
+	 * @brief Creates and manages hooks at the beginning of a function.
+	 *
+	 * This hooking method requires knowledge of parameters and calling convention of the target function.
+	 */
     class Hook {
-        friend class VHook;
     public:
         /**
          * @brief Creates a new function hook.
-         * @param jit The jit runtime object.
          * @param func The address of the function to hook.
          * @param convention The calling convention of <func>.
          */
-        Hook(asmjit::JitRuntime* jit, CallingConvention* convention);
-        virtual ~Hook();
+        Hook(const ConvFunc& convention);
+        virtual ~Hook() = default;
         NONCOPYABLE(Hook);
 
         /**
@@ -87,19 +90,25 @@ namespace dyno {
 
         template<class T>
         void setReturnValue(T value) {
-            void* retunrPtr = m_callingConvention->getReturnPtr(m_registers);
-            *(T*) retunrPtr = value;
-            m_callingConvention->onReturnPtrChanged(m_registers, retunrPtr);
+            void* returnPtr = m_callingConvention->getReturnPtr(m_registers);
+            *(T*) returnPtr = value;
+            m_callingConvention->onReturnPtrChanged(m_registers, returnPtr);
         }
 
+        void* getBridge() const {
+            return m_bridge;
+        }
+
+        virtual void* getOriginal() const = 0;
+
     protected:
-        bool createBridge(void* trampoline);
-        bool createPostCallback();
+        bool createBridge() const;
+        bool createPostCallback() const;
 
     private:
         typedef asmjit::x86::Assembler Assembler;
 
-        void writeModifyReturnAddress(Assembler& a);
+        void writeModifyReturnAddress(Assembler& a) const;
         void writeCallHandler(Assembler& a, HookType hookType) const;
         void writeSaveRegisters(Assembler& a, HookType hookType) const;
         void writeRestoreRegisters(Assembler& a, HookType hookType) const;
@@ -114,9 +123,11 @@ namespace dyno {
 #pragma OPT push_options
 #pragma OPT optimize ("O0")
 #endif
+
         DYNO_NOINLINE ReturnAction DYNO_CDECL hookHandler(HookType hookType);
         DYNO_NOINLINE void* DYNO_CDECL getReturnAddress(void* stackPtr);
         DYNO_NOINLINE void DYNO_CDECL setReturnAddress(void* retAddr, void* stackPtr);
+
 #ifdef DYNO_PLATFORM_MSVC
 #pragma optimize ("", on)
 #elif DYNO_PLATFORM_GCC_COMPATIBLE
@@ -124,17 +135,14 @@ namespace dyno {
 #endif
 
     protected:
-        // runtime designed for JIT - it holds relocated functions and controls their lifetime
-        asmjit::JitRuntime* m_jit;
-
-        // interface if the calling convention
-        CallingConvention* m_callingConvention;
-
         // address of the bridge
         void* m_bridge;
 
         // new return address
         void* m_newRetAddr;
+
+        // interface if the calling convention
+        std::unique_ptr<CallingConvention> m_callingConvention;
 
         // register storage
         Registers m_registers;

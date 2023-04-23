@@ -4,10 +4,17 @@
 
 namespace dyno {
     class Detour : public Hook {
-        friend class HookManager;
     public:
-        Detour(void* pFunc, CallingConvention* convention);
+        Detour(void* pFunc, const ConvFunc& convention);
         ~Detour() override;
+
+        void* getOriginal() const override {
+            return m_trampoline;
+        }
+
+        bool operator==(void* pFunc) {
+            return m_func == pFunc;
+        }
 
     private:
         bool createTrampoline(bool restrictedRelocation);
@@ -22,7 +29,7 @@ namespace dyno {
         // instructions of the original function
         std::unique_ptr<uint8_t[]> m_originalBytes;
 
-        //
+        // length of the original instructions
         size_t m_hookLength;
     };
 }

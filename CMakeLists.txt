@@ -20,9 +20,9 @@ endif ()
 
 if (DYNOHOOK_BUILD_32)
     if (MSVC)
-        if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        if (CMAKE_SIZEOF_VOID_P EQUAL 8)
             message(SEND_ERROR "You need to specify correct MSVC 32-bit compiler!" )
-        endif()
+        endif ()
     else ()
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32")
     endif ()
@@ -68,9 +68,9 @@ elseif (DYNOHOOK_BUILD_64)
         set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS  "-m64" LINK_FLAGS "-m64")
     endif ()
     set(DYNOHOOK_ARCH amd64)
-else()
+else ()
     set(DYNOHOOK_ARCH amd64)
-endif()
+endif ()
 
 #######################
 
@@ -79,62 +79,46 @@ if (DYNOHOOK_BUILD_TESTS)
     set(DYNOHOOK_TEST_HDR_FILES "")
     set(DYNOHOOK_TEST_ENTRIES "\nint main() {")
 
-    file(GLOB_RECURSE DYNOHOOK_TEST_TEMPLATES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "tests/*.hpp.in")
-    list(LENGTH DYNOHOOK_TEST_TEMPLATES DYNOHOOK_TEST_COUNT)
-    math(EXPR DYNOHOOK_TEST_COUNT "${DYNOHOOK_TEST_COUNT}-1")
-
-    macro (create_dyno_hooks_test mode call obj)
-        # Cannot use ARGN directly with list() command,
-        # so copy it to a variable first.
-        set(extra_args ${ARGN})
-        set(optional_test -1)
-
-        # Did we get any optional args?
-        list(LENGTH extra_args extra_count)
-        if (${extra_count} GREATER 0)
-            list(GET extra_args 0 optional_test)
-            message ("Got an optional test: ${optional_test}")
-        endif ()
-
+    macro (create_dyno_hooks_test mode call obj list)
         # Generate required tests
-        foreach (i RANGE ${DYNOHOOK_TEST_COUNT})
-            if (${optional_test} EQUAL -1 OR ${optional_test} EQUAL ${i})
-                # Append generated file to header list
-                set(FILE "test${obj}${i}.h")
-                list(APPEND DYNOHOOK_TEST_HDR_FILES "${CMAKE_CURRENT_BINARY_DIR}/tests/${FILE}")
+        string(REPLACE " " ";" INDEX_LIST ${list})
+        foreach (i ${INDEX_LIST})
+            # Append generated file to header list
+            set(FILE "test${obj}${i}.h")
+            list(APPEND DYNOHOOK_TEST_HDR_FILES "${CMAKE_CURRENT_BINARY_DIR}/tests/${FILE}")
 
-                # Pass data into configuration file
-                set(DYNOHOOK_TEST_CONV "${call}")
-                set(DYNOHOOK_TEST_OBJECT "${obj}")
-                set(DYNOHOOK_TEST_HEADER "${mode}/${obj}")
-                set(DYNOHOOK_TEST_NAME "${obj}${i}")
-                set(DYNOHOOK_TEST_NAMESPACE "test${DYNOHOOK_TEST_NAME}")
-                set(DYNOHOOK_TEST_ENTRIES "${DYNOHOOK_TEST_ENTRIES}\n\t${DYNOHOOK_TEST_NAMESPACE}::test();")
-                set(DYNOHOOK_TEST_CONTENTS "${DYNOHOOK_TEST_CONTENTS}\n#include \"${FILE}\"")
+            # Pass data into configuration file
+            set(DYNOHOOK_TEST_CONV "${call}")
+            set(DYNOHOOK_TEST_OBJECT "${obj}")
+            set(DYNOHOOK_TEST_HEADER "${mode}/${obj}")
+            set(DYNOHOOK_TEST_NAME "${obj}${i}")
+            set(DYNOHOOK_TEST_NAMESPACE "test${DYNOHOOK_TEST_NAME}")
+            set(DYNOHOOK_TEST_ENTRIES "${DYNOHOOK_TEST_ENTRIES}\n\t${DYNOHOOK_TEST_NAMESPACE}::test();")
+            set(DYNOHOOK_TEST_CONTENTS "${DYNOHOOK_TEST_CONTENTS}\n#include \"${FILE}\"")
 
-                # Generate test file
-                configure_file("tests/test${i}.hpp.in" "tests/${FILE}" @ONLY)
-            endif ()
+            # Generate test file
+            configure_file("tests/test${i}.hpp.in" "tests/${FILE}" @ONLY)
         endforeach ()
     endmacro ()
 
     if (WIN32)
+
         if (${DYNOHOOK_ARCH} MATCHES "amd64")
-            create_dyno_hooks_test(x64 /*MS_ABI*/ x64MsFastcall)
+            create_dyno_hooks_test(x64 /*MS_ABI*/ x64MsFastcall "0 1 2 3 4 5 6 7 8")
         else ()
-            create_dyno_hooks_test(x86 DYNO_CDECL x86MsCdecl)
-            create_dyno_hooks_test(x86 DYNO_STDCALL x86MsStdcall)
-            create_dyno_hooks_test(x86 DYNO_FASTCALL x86MsFastcall)
-            create_dyno_hooks_test(x86 DYNO_THISCALL x86MsThiscall 6) # Only generate test6.hpp
-        endif()
+            create_dyno_hooks_test(x86 DYNO_CDECL x86MsCdecl "0 1 2 3 4 5 6 7 8")
+            create_dyno_hooks_test(x86 DYNO_STDCALL x86MsStdcall "0 1 2 3 4 5 6 7 8")
+            create_dyno_hooks_test(x86 DYNO_FASTCALL x86MsFastcall "0 1 2 3 4 5 6 7 8")
+            create_dyno_hooks_test(x86 DYNO_THISCALL x86MsThiscall "6 8")
+        endif ()
     else ()
         if (${DYNOHOOK_ARCH} MATCHES "amd64")
-            create_dyno_hooks_test(x64 /*SYSV_ABI*/ x64SystemVcall)
+            create_dyno_hooks_test(x64 /*SYSV_ABI*/ x64SystemVcall "0 1 2 3 4 5 6 7 8")
         else ()
-            create_dyno_hooks_test(x86 DYNO_CDECL x86GccCdecl)
-            create_dyno_hooks_test(x86 DYNO_THISCALL x86GccThiscall 6) # Only generate test6.hpp
-        endif()
-    endif()
+            create_dyno_hooks_test(x86 DYNO_CDECL x86GccCdecl "0 1 2 3 4 5 6 7 8")
+            create_dyno_hooks_test(x86 DYNO_THISCALL x86GccThiscall "6 8")
+        endif ()
+    endif ()
 
     set(DYNOHOOK_TEST_ENTRIES "${DYNOHOOK_TEST_ENTRIES}\n\treturn 0;\n}")
 
@@ -144,8 +128,8 @@ if (DYNOHOOK_BUILD_TESTS)
     add_executable(${TEST_NAME} "${CMAKE_CURRENT_BINARY_DIR}/tests/main.cpp" ${DYNOHOOK_TEST_HDR_FILES})
     if (MSVC)
         set_property(TARGET ${TEST_NAME} APPEND_STRING PROPERTY LINK_FLAGS " /INCREMENTAL:NO")
-    endif()
+    endif ()
     include_directories(src/)
     target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME})
     target_precompile_headers(${TEST_NAME} PRIVATE ${DYNOHOOK_PCH_FILE})
-endif()
+endif ()
