@@ -28,13 +28,20 @@ Hook* HookManager::hook(void* pClass, size_t index, const ConvFunc& convention) 
     if (hook)
         return hook;
 
+    Finder finder = [&](void* func) {
+        auto it = m_vthooks.find(func);
+        if (it != m_vthooks.end())
+            return it->second;
+        return m_vthooks.emplace(func, std::make_shared<VTHook>(func, convention)).first->second;
+    };
+
     for (auto& table : m_vtables) {
         if (*table == pClass)
-            return table->hook(index, convention);
+            return table->hook(finder, index);
     }
 
     auto vtable = std::make_unique<VTable>(pClass);
-    hook = vtable->hook(index, convention);
+    hook = vtable->hook(finder, index);
     if (hook) m_vtables.push_back(std::move(vtable));
     return hook;
 }
@@ -104,6 +111,7 @@ Hook* HookManager::find(void* pClass, size_t index) const {
 void HookManager::unhookAll() {
     m_detours.clear();
     m_vtables.clear();
+    m_vthooks.clear();
 }
 
 void HookManager::unhookAll(void* pClass) {
@@ -115,6 +123,17 @@ void HookManager::unhookAll(void* pClass) {
         if (*table == pClass) {
             m_vtables.erase(m_vtables.begin() + i);
             return;
+        }
+    }
+}
+
+void HookManager::clearCache() {
+    auto it = m_vthooks.cbegin();
+    while (it != m_vthooks.cend()) {
+        if (it->second.use_count() == 1) {
+            it = m_vthooks.erase(it);
+        } else {
+            ++it;
         }
     }
 }

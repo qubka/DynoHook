@@ -5,6 +5,7 @@
 #include <map>
 #include <utility>
 #include <string>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <cstring>

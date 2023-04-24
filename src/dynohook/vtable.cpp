@@ -28,7 +28,7 @@ size_t VTable::GetVFuncCount(void** vtable) {
     return count;
 }
 
-Hook* VTable::hook(size_t index, const ConvFunc& convention) {
+Hook* VTable::hook(const Finder& finder, size_t index) {
     auto it = m_hooked.find(index);
     if (it != m_hooked.end())
         return it->second.get();
@@ -38,7 +38,7 @@ Hook* VTable::hook(size_t index, const ConvFunc& convention) {
         return nullptr;
     }
 
-    VTHook* hook = m_hooked.emplace(index, std::make_unique<VTHook>(m_origVtable[index], convention)).first->second.get();
+    VTHook* hook = m_hooked.emplace(index, finder(m_origVtable[index])).first->second.get();
     m_newVtable[index] = hook->getBridge();
     return hook;
 }

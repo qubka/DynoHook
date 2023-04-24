@@ -114,8 +114,8 @@ namespace dyno {
         void writeRestoreRegisters(Assembler& a, HookType hookType) const;
         void writeSaveScratchRegisters(Assembler& a) const;
         void writeRestoreScratchRegisters(Assembler& a) const;
-        void writeRegToMem(Assembler& a, const Register& reg, HookType hookType = HookType::Pre) const;
-        void writeMemToReg(Assembler& a, const Register& reg, HookType hookType = HookType::Pre) const;
+        DYNO_FORCE_INLINE void writeRegToMem(Assembler& a, const Register& reg, HookType hookType = HookType::Pre) const;
+        DYNO_FORCE_INLINE void writeMemToReg(Assembler& a, const Register& reg, HookType hookType = HookType::Pre) const;
 
 #ifdef DYNO_PLATFORM_MSVC
 #pragma optimize ("", off)

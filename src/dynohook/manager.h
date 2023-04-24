@@ -6,6 +6,7 @@
 #include "detour.h"
 
 namespace dyno {
+
     class HookManager {
     private:
         HookManager() = default;
@@ -75,6 +76,11 @@ namespace dyno {
         void unhookAll(void* pClass);
 
         /**
+         * @brief Unhooks all previously virtual hooked functions.
+         */
+        void clearCache();
+
+        /**
          * @return Returns a pointer to a static HookManager object.
          */
         static HookManager& Get();
@@ -82,6 +88,7 @@ namespace dyno {
     public:
         std::vector<std::unique_ptr<Detour>> m_detours;
         std::vector<std::unique_ptr<VTable>> m_vtables;
+        std::map<void*, std::shared_ptr<VTHook>> m_vthooks;
         std::mutex mutex;
     };
 }

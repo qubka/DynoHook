@@ -3,13 +3,16 @@
 #include "vthook.h"
 
 namespace dyno {
+
+    typedef std::function<std::shared_ptr<VTHook>(void*)> Finder;
+
     class VTable {
     public:
         VTable(void* pClass);
         ~VTable();
         NONCOPYABLE(VTable);
 
-        Hook* hook(size_t index, const ConvFunc& convention);
+        Hook* hook(const Finder& finder, size_t index);
         bool unhook(size_t index);
 
         Hook* find(size_t index) const;
@@ -29,6 +32,6 @@ namespace dyno {
         size_t m_vFuncCount;
         std::unique_ptr<void*[]> m_newVtable;
 
-        std::map<size_t, std::unique_ptr<VTHook>> m_hooked;
+        std::map<size_t, std::shared_ptr<VTHook>> m_hooked;
     };
 }
