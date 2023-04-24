@@ -46,24 +46,24 @@ namespace dyno {
         /**
          * @brief Adds a hook handler to the hook.
          * @param hookType The hook type.
-         * @param func The hook handler that should be added.
+         * @param handler The hook handler that should be added.
          */
-        void addCallback(HookType hookType, HookHandler* func);
+        void addCallback(HookType hookType, HookHandler* handler);
 
         /**
          * @brief Removes a hook handler to the hook.
          * @param hookType The hook type.
-         * @param func The hook handler that should be removed.
+         * @param handler The hook handler that should be removed.
          */
-        void removeCallback(HookType hookType, HookHandler* func);
+        void removeCallback(HookType hookType, HookHandler* handler);
 
         /**
          * @brief Checks if a hook handler is already added.
          * @param hookType The hook type.
-         * @param func The hook handler that should be checked.
+         * @param handler The hook handler that should be checked.
          * @return
          */
-        bool isCallbackRegistered(HookType hookType, HookHandler* func) const;
+        bool isCallbackRegistered(HookType hookType, HookHandler* handler) const;
 
         /**
          * @brief Checks if there are any hook handlers added to this hook.
@@ -138,7 +138,7 @@ namespace dyno {
         // address of the bridge
         void* m_bridge;
 
-        // new return address
+        // address of new return
         void* m_newRetAddr;
 
         // interface if the calling convention

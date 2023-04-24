@@ -4,7 +4,7 @@
 
 namespace dyno {
 
-    typedef std::function<std::shared_ptr<VTHook>(void*)> Finder;
+    typedef std::function<std::shared_ptr<VTHook>(void*)> HookSupplier;
 
     class VTable {
     public:
@@ -12,7 +12,7 @@ namespace dyno {
         ~VTable();
         NONCOPYABLE(VTable);
 
-        Hook* hook(const Finder& finder, size_t index);
+        Hook* hook(const HookSupplier& supplier, size_t index);
         bool unhook(size_t index);
 
         Hook* find(size_t index) const;

@@ -25,13 +25,15 @@ std::vector<RegisterType> Registers::s_Scratch = {
     R11,
 #endif
     XMM0,
-    /*XMM1,
+    XMM1,
     XMM2,
     XMM3,
     XMM4,
     XMM5,
+#ifndef DYNO_PLATFORM_WINDOWS
     XMM6,
-    XMM7,*/
+    XMM7,
+#endif
 // TODO: Do we need to save all sse registers ?
 #elif DYNO_ARCH_X86 == 32
     EAX,

@@ -28,7 +28,7 @@ Hook* HookManager::hook(void* pClass, size_t index, const ConvFunc& convention) 
     if (hook)
         return hook;
 
-    Finder finder = [&](void* func) {
+    HookSupplier supplier = [&](void* func) {
         auto it = m_vthooks.find(func);
         if (it != m_vthooks.end())
             return it->second;
@@ -37,11 +37,11 @@ Hook* HookManager::hook(void* pClass, size_t index, const ConvFunc& convention) 
 
     for (auto& table : m_vtables) {
         if (*table == pClass)
-            return table->hook(finder, index);
+            return table->hook(supplier, index);
     }
 
     auto vtable = std::make_unique<VTable>(pClass);
-    hook = vtable->hook(finder, index);
+    hook = vtable->hook(supplier, index);
     if (hook) m_vtables.push_back(std::move(vtable));
     return hook;
 }
