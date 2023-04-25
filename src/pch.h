@@ -7,7 +7,6 @@
 #include <string>
 #include <functional>
 #include <memory>
-#include <mutex>
 #include <cstring>
 #include <cassert>
 

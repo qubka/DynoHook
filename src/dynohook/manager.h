@@ -89,6 +89,5 @@ namespace dyno {
         std::vector<std::unique_ptr<Detour>> m_detours;
         std::vector<std::unique_ptr<VTable>> m_vtables;
         std::map<void*, std::shared_ptr<VTHook>> m_vthooks;
-        std::mutex mutex;
     };
 }

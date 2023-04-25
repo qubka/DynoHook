@@ -9,8 +9,6 @@ Hook* HookManager::hook(void* pFunc, const ConvFunc& convention) {
     if (!pFunc)
         return nullptr;
 
-    std::lock_guard<std::mutex> lock(mutex);
-
     Hook* hook = find(pFunc);
     if (hook)
         return hook;
@@ -21,8 +19,6 @@ Hook* HookManager::hook(void* pFunc, const ConvFunc& convention) {
 Hook* HookManager::hook(void* pClass, size_t index, const ConvFunc& convention) {
     if (!pClass)
         return nullptr;
-
-    std::lock_guard<std::mutex> lock(mutex);
 
     Hook* hook = find(pClass, index);
     if (hook)
@@ -50,8 +46,6 @@ bool HookManager::unhook(void* pFunc) {
     if (!pFunc)
         return false;
 
-    std::lock_guard<std::mutex> lock(mutex);
-
     for (size_t i = 0; i < m_detours.size(); ++i) {
         auto& detour = m_detours[i];
         if (*detour == pFunc) {
@@ -66,8 +60,6 @@ bool HookManager::unhook(void* pFunc) {
 bool HookManager::unhook(void* pClass, size_t index) {
     if (!pClass)
         return false;
-
-    std::lock_guard<std::mutex> lock(mutex);
 
     for (size_t i = 0; i < m_vtables.size(); ++i) {
         auto& table = m_vtables[i];
