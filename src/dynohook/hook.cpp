@@ -360,7 +360,6 @@ void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
 #endif // DYNO_ARCH_X86
 }
 
-
 #if DYNO_ARCH_X86 == 64
 
 void Hook::writeSaveScratchRegisters(Assembler& a) const {
