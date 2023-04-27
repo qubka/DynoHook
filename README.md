@@ -181,7 +181,6 @@ void main() {
 	manager.unhookAll();
 }
 ```
-```
 ### Virtual functions
 ```c++
 int g_MyFuncCallCount = 0;
