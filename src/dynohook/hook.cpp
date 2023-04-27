@@ -209,14 +209,14 @@ void Hook::writeModifyReturnAddress(Assembler& a) const {
     a.mov(rdx, qword_ptr(rsp));
     a.mov(rcx, this);
     a.sub(rsp, 40);
-    a.call((void*&) setReturnAddress);
+    a.call((void*&) setReturnAddress); // +8 = 48 (aligned by 16 bytes)
     a.add(rsp, 40);
 #else // __systemV__
     a.mov(rdx, rsp);
     a.mov(rsi, qword_ptr(rsp));
     a.mov(rdi, this);
     a.sub(rsp, 24);
-    a.call((void*&) setReturnAddress);
+    a.call((void*&) setReturnAddress); // +8 = 32 (aligned by 16 bytes)
     a.add(rsp, 24);
 #endif
 #elif DYNO_ARCH_X86 == 32
@@ -226,7 +226,7 @@ void Hook::writeModifyReturnAddress(Assembler& a) const {
     a.push(esp);
     a.push(eax);
     a.push(this);
-    a.call((void*&) setReturnAddress);
+    a.call((void*&) setReturnAddress); // +4 = 16 (aligned by 16 bytes)
     a.add(esp, 12);
 #endif // DYNO_ARCH_X86
 
@@ -283,22 +283,27 @@ bool Hook::createPostCallback() const {
     a.mov(rdx, rsp);
     a.mov(rcx, this);
     a.sub(rsp, 40);
-    a.call((void*&) getReturnAddress);
+    a.call((void*&) getReturnAddress); // +8 = 48 (aligned by 16 bytes)
     a.add(rsp, 40);
 #else // __systemV__
     a.mov(rsi, rsp);
     a.mov(rdi, this);
     a.sub(rsp, 24);
-    a.call((void*&) getReturnAddress);
+    a.call((void*&) getReturnAddress); // +8 = 32 (aligned by 16 bytes)
     a.add(rsp, 24);
 #endif
     // save the original return address
     a.push(rax);
 #elif DYNO_ARCH_X86 == 32
-    a.push(esp);
+    // store stack pointer in eax
+    a.mov(eax, esp);
+
+    // subtract 4 bytes to preserve 16-byte stack alignment for Linux
+    a.sub(esp, 4);
+    a.push(eax);
     a.push(this);
-    a.call((void*&) getReturnAddress);
-    a.add(esp, 8);
+    a.call((void*&) getReturnAddress); // +4 = 16 (aligned by 16 bytes)
+    a.add(esp, 12);
 
     // save the original return address
     a.push(eax);
@@ -341,21 +346,21 @@ void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
     a.mov(rdx, hookType);
     a.mov(rcx, this);
     a.sub(rsp, 40);
-    a.call((void*&) hookHandler);
+    a.call((void*&) hookHandler); // +8 = 48 (aligned by 16 bytes)
     a.add(rsp, 40);
 #else // __systemV__
     a.mov(rsi, hookType);
     a.mov(rdi, this);
     a.sub(rsp, 24);
-    a.call((void*&) hookHandler);
+    a.call((void*&) hookHandler); // +8 = 32 (aligned by 16 bytes)
     a.add(rsp, 24);
 #endif
 #elif DYNO_ARCH_X86 == 32
-    // subtract 4 bytes to preserve 16-Byte stack alignment for Linux
+    // subtract 4 bytes to preserve 16-byte stack alignment for Linux
     a.sub(esp, 4);
     a.push(hookType);
     a.push(this);
-    a.call((void*&) hookHandler);
+    a.call((void*&) hookHandler); // +4 = 16 (aligned by 16 bytes)
     a.add(esp, 12);
 #endif // DYNO_ARCH_X86
 }
