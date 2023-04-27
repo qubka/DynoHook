@@ -181,6 +181,100 @@ void main() {
 	manager.unhookAll();
 }
 ```
+```
+### Virtual functions
+```c++
+int g_MyFuncCallCount = 0;
+int g_PreMyFuncCallCount = 0;
+int g_PostMyFuncCallCount = 0;
+
+using namespace dyno;
+
+class MyClass;
+MyClass* g_pMyClass = nullptr;
+
+class MyClass {
+public:
+    MyClass() : m_iData{0} {}
+
+    virtual DYNO_NOINLINE int DYNOHOOK_TEST_CONV myFunc(int x, int y) {
+        g_MyFuncCallCount++;
+        assert(this == g_pMyClass);
+        assert(x == 3);
+        assert(y == 10);
+
+        int result = x + y;
+        assert(result == 13);
+
+        m_iData++;
+
+        return result;
+    }
+private:
+    int m_iData;
+};
+
+ReturnAction PreMyFunc(HookType hookType, Hook& hook) {
+    g_PreMyFuncCallCount++;
+    MyClass* pMyClass = hook.getArgument<MyClass *>(0);
+    assert(pMyClass == g_pMyClass);
+
+    int x = hook.getArgument<int>(1);
+    assert(x == 3);
+
+    int y = hook.getArgument<int>(2);
+    assert(y == 10);
+
+    return ReturnAction::Ignored;
+}
+
+ReturnAction PostMyFunc(HookType hookType, Hook& hook) {
+    g_PostMyFuncCallCount++;
+    MyClass* pMyClass = hook.getArgument<MyClass *>(0);
+    assert(pMyClass == g_pMyClass);
+
+    int x = hook.getArgument<int>(1);
+    assert(x == 3);
+
+    int y = hook.getArgument<int>(2);
+    assert(y == 10);
+
+    int return_value = hook.getReturnValue<int>();
+    assert(return_value == 13);
+
+    hook.setReturnValue<int>(1337);
+
+    return ReturnAction::Ignored;
+}
+
+void test() {
+    HookManager& manager = HookManager::Get();
+
+    typedef int(__fastcall *MyFunc)(void*, int, int);
+
+    MyClass a;
+    g_pMyClass = &a;
+
+    // hook the function
+    Hook* hook = manager.hook(&a, 0, [] { return new x64MsFastcall({DataType::Pointer, DataType::Int, DataType::Int}, DataType::Int); });
+
+    // add the callbacks
+    hook->addCallback(HookType::Pre, (HookHandler*) &PreMyFunc);
+    hook->addCallback(HookType::Post, (HookHandler*) &PostMyFunc);
+
+    // call the function
+    void** vtable = *(void***)&a;
+    MyFunc myFunc = (MyFunc)(vtable[0]);
+    int ret = myFunc(&a, 3, 10);
+
+    assert(g_MyFuncCallCount == 1);
+    assert(g_PreMyFuncCallCount == 1);
+    assert(g_PostMyFuncCallCount == 1);
+    assert(ret == 1337);
+
+    manager.unhookAll();
+}
+```
 
 ## Build
 ```
