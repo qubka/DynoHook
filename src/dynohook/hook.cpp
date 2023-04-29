@@ -124,14 +124,14 @@ void* Hook::getReturnAddress(void* stackPtr) {
     }
 
     std::vector<void*>& v = it->second;
-    void* pRetAddr = v.back();
+    void* retAddr = v.back();
     v.pop_back();
 
     // clear the stack address from the cache now that we ran the last post hook.
     if (v.empty())
         m_retAddr.erase(it);
 
-    return pRetAddr;
+    return retAddr;
 }
 
 void Hook::setReturnAddress(void* retAddr, void* stackPtr) {
