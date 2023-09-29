@@ -4,3 +4,6 @@
 [submodule "src/external/zydis"]
 	path = src/external/zydis
 	url = https://github.com/zyantific/zydis.git
+[submodule "src/external/asmtk"]
+	path = src/external/asmtk
+	url = https://github.com/asmjit/asmtk.git

@@ -2,13 +2,13 @@ cmake_minimum_required(VERSION 3.9 FATAL_ERROR)
 set(PROJECT_NAME dynohook)
 project(${PROJECT_NAME})
 
-set(DYNOHOOK_BUILD_TESTS ON)
+set(DYNOHOOK_BUILD_TESTS OFF)
 set(DYNOHOOK_BUILD_64 ON)
 
 # Force all compilers to use the correct C and C++ standard versions.
 # Needed to allow for CheckCXXSourceCompiles to work correctly.
-set(CMAKE_REQUIRED_FLAGS "-std=c++17 -std=c11")
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_REQUIRED_FLAGS "-std=c++20 -std=c11")
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 if (MSVC)
@@ -33,7 +33,8 @@ set(ASMJIT_TEST OFF)
 set(ASMJIT_EMBED OFF)
 set(ASMJIT_STATIC ON)
 set(ASMJIT_SANITIZE OFF)
-add_subdirectory(src/external/asmjit)
+#add_subdirectory(src/external/asmjit)
+add_subdirectory(src/external/asmtk)
 
 # Zydis
 set(ZYDIS_BUILD_SHARED_LIB OFF)
@@ -50,9 +51,10 @@ file(GLOB_RECURSE DYNOHOOK_SRC_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "src/d
 file(GLOB_RECURSE DYNOHOOK_HDR_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "src/dynohook/*.h")
 set(DYNOHOOK_PCH_FILE "src/pch.h")
 
-add_library(${PROJECT_NAME} ${DYNOHOOK_SRC_FILES} ${DYNOHOOK_HDR_FILES})
+add_executable(${PROJECT_NAME} ${DYNOHOOK_SRC_FILES} ${DYNOHOOK_HDR_FILES})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE asmjit)
+target_link_libraries(${PROJECT_NAME} PRIVATE asmtk)
 target_link_libraries(${PROJECT_NAME} PRIVATE Zydis)
 target_precompile_headers(${PROJECT_NAME} PRIVATE ${DYNOHOOK_PCH_FILE})
 
@@ -76,7 +78,7 @@ endif ()
 
 if (DYNOHOOK_BUILD_TESTS)
     set(DYNOHOOK_TEST_CONTENTS "")
-    set(DYNOHOOK_TEST_HDR_FILES "")
+    set(DYNOHOOK_TEST_HDR_FILES "" src/dynohook/main.cpp)
     set(DYNOHOOK_TEST_ENTRIES "\nint main() {")
 
     macro (create_dyno_hooks_test mode call obj list)
