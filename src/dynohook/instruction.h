@@ -1,11 +1,9 @@
 #pragma once
 
 #include "enums.h"
-#include "mem_accessor.h"
-
-#include <Zydis/Generated/EnumRegister.h>
 
 namespace dyno {
+    class MemAccessor;
     class Instruction {
     public:
         union Displacement {
@@ -19,7 +17,8 @@ namespace dyno {
             Immediate,
         };
 
-        Instruction(uint64_t address,
+        Instruction(const MemAccessor* accessor,
+                    uint64_t address,
                     Displacement displacement,
                     uint8_t displacementOffset,
                     bool isRelative,
@@ -27,26 +26,8 @@ namespace dyno {
                     std::vector<uint8_t>&& bytes,
                     std::string&& mnemonic,
                     std::string&& opStr,
-                    Mode mode) :
-                m_address{address},
-                m_displacement{displacement},
-                m_dispOffset{displacementOffset},
-                m_dispSize{0},
-                m_isRelative{isRelative},
-                m_isIndirect{isIndirect},
-                m_hasDisplacement{false},
-                m_hasImmediate{false},
-                m_immediate{0},
-                m_immediateSize{0},
-                m_register{ZydisRegister::ZYDIS_REGISTER_NONE},
-
-                m_bytes{std::move(bytes)},
-                m_mnemonic{std::move(mnemonic)},
-                m_opStr{std::move(opStr)},
-
-                m_uid{m_counter++},
-                m_mode{mode} {
-        }
+                    Mode mode
+                );
 
         uint64_t getAbsoluteDestination() const {
             return m_displacement.Absolute;
@@ -59,39 +40,9 @@ namespace dyno {
         /**Get the address of where the instruction points if it's a branching instruction
         * @Notes: Handles eip/rip & immediate branches correctly
         * **/
-        uint64_t getDestination() const {
-            uint64_t dest = isDisplacementRelative() ? getRelativeDestination() : getAbsoluteDestination();
+        uint64_t getDestination() const;
 
-            // ff 25 00 00 00 00 goes from jmp qword ptr [rip + 0] to jmp word ptr [rip + 0] on x64 -> x86
-            if (m_isIndirect) {
-                size_t read = 0;
-                if (m_mode == Mode::x64) {
-                    // *(uint64_t*)dest;
-                    m_accessor.safe_mem_read(dest, (uint64_t)&dest, sizeof(uint64_t), read);
-                } else {
-                    // *(uint32_t*)dest;
-                    m_accessor.safe_mem_read(dest, (uint64_t)&dest, sizeof(uint32_t), read);
-                }
-            }
-            return dest;
-        }
-
-        void setDestination(uint64_t dest) {
-            if (!hasDisplacement())
-                return;
-
-            if (isDisplacementRelative()) {
-                auto newRelativeDisp = calculateRelativeDisplacement<int64_t>(
-                        getAddress(),
-                        dest,
-                        (uint8_t)size()
-                );
-
-                setRelativeDisplacement(newRelativeDisp);
-                return;
-            }
-            setAbsoluteDisplacement(dest);
-        }
+        void setDestination(uint64_t dest);
 
         /**Get the address of the instruction in memory**/
         uint64_t getAddress() const {
@@ -183,34 +134,9 @@ namespace dyno {
             return m_bytes.size();
         }
 
-        void setRelativeDisplacement(const int64_t displacement) {
-            /**Update our class' book-keeping of this stuff and then modify the byte array.
-             * This doesn't actually write the changes to the executable code, it writes to our
-             * copy of the bytes**/
-            m_displacement.Relative = displacement;
-            m_isRelative = true;
-            m_hasDisplacement = true;
+        void setRelativeDisplacement(int64_t displacement);
 
-            assert((size_t)m_dispOffset + m_dispSize <= m_bytes.size() && m_dispSize <= sizeof(m_displacement.Relative));
-            std::memcpy(&m_bytes[getDisplacementOffset()], &m_displacement.Relative, m_dispSize);
-        }
-
-        void setAbsoluteDisplacement(uint64_t displacement) {
-            /**Update our class' book-keeping of this stuff and then modify the byte array.
-            * This doesn't actually write the changes to the executeable code, it writes to our
-            * copy of the bytes**/
-            m_displacement.Absolute = displacement;
-            m_isRelative = false;
-            m_hasDisplacement = true;
-
-            const auto dispSz = (uint32_t)(size() - getDisplacementOffset());
-            if (((uint32_t)getDisplacementOffset()) + dispSz > m_bytes.size() || dispSz > sizeof(m_displacement.Absolute)) {
-                return;
-            }
-
-            assert(((uint32_t)getDisplacementOffset()) + dispSz <= m_bytes.size() && dispSz <= sizeof(m_displacement.Absolute));
-            std::memcpy(&m_bytes[getDisplacementOffset()], &m_displacement.Absolute, dispSz);
-        }
+        void setAbsoluteDisplacement(uint64_t displacement);
 
         uint32_t getUID() const {
             return m_uid;
@@ -248,16 +174,16 @@ namespace dyno {
             m_immediateSize = size;
         }
 
-        void setRegister(ZydisRegister reg){
+        void setRegister(int reg) {
             m_register = reg;
         }
 
-        ZydisRegister getRegister() const {
+        int getRegister() const {
             return m_register;
         }
 
         bool hasRegister() const {
-            return m_register != ZYDIS_REGISTER_NONE;
+            return m_register != 0;
         }
 
         void addOperandType(OperandType type){
@@ -268,21 +194,12 @@ namespace dyno {
             return m_operands;
         }
 
-        bool startsWithDisplacement() const {
-            if(getOperandTypes().empty()){
-                return false;
-            }
+        bool startsWithDisplacement() const;
 
-            return getOperandTypes().front() == Instruction::OperandType::Displacement;
-        }
-
-        // This is kind of lazy, should probably make be a non-static member for each instance
-        static void overrideMemAccessor(MemAccessor accessor) {
-            m_accessor = accessor;
-        }
-		
     private:
-        ZydisRegister m_register;        // Register operand when displacement is present
+        const MemAccessor* m_accessor;
+
+        int m_register;                  // Register operand when displacement is present
         bool          m_isIndirect;      // Does this instruction get its destination via an indirect mem read (ff 25 ... jmp [jmp_dest]) (only filled for jmps / calls)
         bool          m_isCalling;       // Does this instruction is of a CALL type.
         bool		  m_isBranching;     // Does this instruction jmp/call or otherwise change control flow
@@ -306,8 +223,7 @@ namespace dyno {
 
         uint32_t m_uid;
 
-		inline static uint32_t m_counter = 0;
-        inline static MemAccessor m_accessor;
+		inline static uint32_t s_counter = 0;
     };
     static_assert(std::is_nothrow_move_constructible<Instruction>::value, "dyno::Instruction should be noexcept move constructable");
 
@@ -316,6 +232,7 @@ namespace dyno {
     inline bool operator==(const Instruction& lhs, const Instruction& rhs) {
         return lhs.getUID() == rhs.getUID();
     }
+
     inline std::ostream& operator<<(std::ostream& os, const Instruction& obj) {
         std::stringstream byteStream;
         for (std::size_t i = 0; i < obj.size(); i++)
@@ -354,97 +271,4 @@ namespace dyno {
     }
 
     inline std::ostream& operator<<(std::ostream& os, const std::vector<Instruction>& v) { return printInsts(os, v); }
-
-    /**Write a 25 byte absolute jump. This is preferred since it doesn't require an indirect memory holder.
-     * We first sub rsp by 128 bytes to avoid the red-zone stack space. This is specific to unix only afaik.**/
-    inline insts_t makex64PreferredJump(uint64_t address, uint64_t destination) {
-        Instruction::Displacement zeroDisp = { 0 };
-        uint64_t                       curInstAddress = address;
-
-        std::vector<uint8_t> raxBytes = { 0x50 };
-        Instruction pushRax{curInstAddress,
-                            zeroDisp,
-                            0,
-                            false,
-                            false,
-                            std::move(raxBytes),
-                            "push",
-                            "rax", Mode::x64};
-        curInstAddress += pushRax.size();
-
-        std::stringstream ss;
-        ss << std::hex << destination;
-
-        std::vector<uint8_t> movRaxBytes;
-        movRaxBytes.resize(10);
-        movRaxBytes[0] = 0x48;
-        movRaxBytes[1] = 0xB8;
-        memcpy(&movRaxBytes[2], &destination, 8);
-
-        Instruction movRax{curInstAddress, zeroDisp, 0, false, false,
-                           std::move(movRaxBytes), "mov", "rax, " + ss.str(), Mode::x64};
-        curInstAddress += movRax.size();
-
-        std::vector<uint8_t> xchgBytes = { 0x48, 0x87, 0x04, 0x24 };
-        Instruction xchgRspRax{curInstAddress, zeroDisp, 0, false, false,
-                               std::move(xchgBytes), "xchg", "QWORD PTR [rsp],rax", Mode::x64};
-        curInstAddress += xchgRspRax.size();
-
-        std::vector<uint8_t> retBytes = { 0xC3 };
-        Instruction ret{curInstAddress, zeroDisp, 0, false, false,
-                        std::move(retBytes, "ret", "", Mode::x64};
-
-        return { pushRax, movRax, xchgRspRax, ret };
-    }
-
-    /**Write an indirect style 6byte jump. Address is where the jmp instruction will be located, and
-     * destHolder should point to the memory location that *CONTAINS* the address to be jumped to.
-     * Destination should be the value that is written into destHolder, and be the address of where
-     * the jmp should land.**/
-    inline insts_t makex64MinimumJump(uint64_t address, uint64_t destination, uint64_t destHolder) {
-        Instruction::Displacement disp{ 0 };
-        disp.Relative = Instruction::calculateRelativeDisplacement<int32_t>(address, destHolder, 6);
-
-        std::vector<uint8_t> destBytes;
-        destBytes.resize(8);
-        memcpy(destBytes.data(), &destination, 8);
-        Instruction specialDest{ destHolder, disp, 0, false, false, std::move(destBytes), "dest holder", "", Mode::x64 };
-
-        std::vector<uint8_t> bytes;
-        bytes.resize(6);
-        bytes[0] = 0xFF;
-        bytes[1] = 0x25;
-        memcpy(&bytes[2], &disp.Relative, 4);
-
-        std::stringstream ss;
-        ss << std::hex << "[" << destHolder << "] ->" << destination;
-
-        return { Instruction{address, disp, 2, true, true, std::move(bytes), "jmp", ss.str(), Mode::x64},  specialDest };
-    }
-
-    inline insts_t makex86Jmp(uint64_t address, uint64_t destination) {
-        Instruction::Displacement disp{ 0 };
-        disp.Relative = Instruction::calculateRelativeDisplacement<int32_t>(address, destination, 5);
-
-        std::vector<uint8_t> bytes(5);
-        bytes[0] = 0xE9;
-        memcpy(&bytes[1], &disp.Relative, 4);
-
-        return { Instruction{address, disp, 1, true, false, std::move(bytes), "jmp", int_to_hex(destination), Mode::x86} };
-    }
-
-    inline insts_t makeAgnosticJmp(uint64_t address, uint64_t destination) {
-#if DYNO_ARCH_X86 == 32
-            return makex86Jmp(address, destination);
-#elif DYNO_ARCH_X86 == 64
-            return makex64PreferredJump(address, destination);
-#endif
-    }
-
-    inline insts_t makex64DestHolder(uint64_t destination, uint64_t destHolder) {
-        std::vector<uint8_t> destBytes;
-        destBytes.resize(8);
-        memcpy(destBytes.data(), &destination, 8);
-        return insts_t{ Instruction {destHolder, Instruction::Displacement{0}, 0, false, false, std::move(destBytes), "dest holder", "", Mode::x64} };
-    }
 }

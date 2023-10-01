@@ -2,8 +2,8 @@
 
 using namespace dyno;
 
-Register Registers::s_None(NONE, SIZE_INVALID);
-std::vector<RegisterType> Registers::s_Scratch = {
+Register Registers::s_none{NONE, SIZE_INVALID};
+std::vector<RegisterType> Registers::s_scratch = {
 #if DYNO_ARCH_X86 == 64
 #ifdef DYNO_PLATFORM_WINDOWS
     RAX,
@@ -42,7 +42,7 @@ std::vector<RegisterType> Registers::s_Scratch = {
 #endif // DYNO_ARCH_X86
 };
 
-Register::Register(RegisterType type, RegisterSize size, uint8_t alignment) : m_type(type), m_size(size), m_alignment(alignment) {
+Register::Register(RegisterType type, RegisterSize size, uint8_t alignment) : m_type{type}, m_size{size}, m_alignment{alignment} {
     if (m_size == 0)
         m_address = nullptr;
     else if (m_alignment > 0)
@@ -91,155 +91,155 @@ Register::Register(Register&& other) noexcept {
     other.m_address = nullptr;
 }
 
-std::array<RegisterInfo, REG_COUNT> s_RegisterTable = {{
-    {"NONE", SIZE_INVALID, 0 },
+const static std::array<RegisterInfo, REG_COUNT> reg_table = {{
+    {"NONE", SIZE_INVALID, 0},
 
     // ========================================================================
     // >> 8-bit General purpose registers
     // ========================================================================
-    {"AL", SIZE_BYTE, 0 },
-    {"CL", SIZE_BYTE, 0 },
-    {"DL", SIZE_BYTE, 0 },
-    {"BL", SIZE_BYTE, 0 },
+    {"AL", SIZE_BYTE, 0},
+    {"CL", SIZE_BYTE, 0},
+    {"DL", SIZE_BYTE, 0},
+    {"BL", SIZE_BYTE, 0},
 
 #if DYNO_ARCH_X86 == 64
-    {"SPL", SIZE_BYTE, 0 },
-    {"BPL", SIZE_BYTE, 0 },
-    {"SIL", SIZE_BYTE, 0 },
-    {"DIL", SIZE_BYTE, 0 },
-    {"R8B", SIZE_BYTE, 0 },
-    {"R9B", SIZE_BYTE, 0 },
-    {"R10B", SIZE_BYTE, 0 },
-    {"R11B", SIZE_BYTE, 0 },
-    {"R12B", SIZE_BYTE, 0 },
-    {"R13B", SIZE_BYTE, 0 },
-    {"R14B", SIZE_BYTE, 0 },
-    {"R15B", SIZE_BYTE, 0 },
+    {"SPL", SIZE_BYTE, 0},
+    {"BPL", SIZE_BYTE, 0},
+    {"SIL", SIZE_BYTE, 0},
+    {"DIL", SIZE_BYTE, 0},
+    {"R8B", SIZE_BYTE, 0},
+    {"R9B", SIZE_BYTE, 0},
+    {"R10B", SIZE_BYTE, 0},
+    {"R11B", SIZE_BYTE, 0},
+    {"R12B", SIZE_BYTE, 0},
+    {"R13B", SIZE_BYTE, 0},
+    {"R14B", SIZE_BYTE, 0},
+    {"R15B", SIZE_BYTE, 0},
 #endif // DYNO_ARCH_X86
 
-    {"AH", SIZE_BYTE, 0 },
-    {"CH", SIZE_BYTE, 0 },
-    {"DH", SIZE_BYTE, 0 },
-    {"BH", SIZE_BYTE, 0 },
+    {"AH", SIZE_BYTE, 0},
+    {"CH", SIZE_BYTE, 0},
+    {"DH", SIZE_BYTE, 0},
+    {"BH", SIZE_BYTE, 0},
 
     // ========================================================================
     // >> 16-bit General purpose registers
     // ========================================================================
-    {"AX", SIZE_WORD, 0 },
-    {"CX", SIZE_WORD, 0 },
-    {"DX", SIZE_WORD, 0 },
-    {"BX", SIZE_WORD, 0 },
-    {"SP", SIZE_WORD, 0 },
-    {"BP", SIZE_WORD, 0 },
-    {"SI", SIZE_WORD, 0 },
-    {"DI", SIZE_WORD, 0 },
+    {"AX", SIZE_WORD, 0},
+    {"CX", SIZE_WORD, 0},
+    {"DX", SIZE_WORD, 0},
+    {"BX", SIZE_WORD, 0},
+    {"SP", SIZE_WORD, 0},
+    {"BP", SIZE_WORD, 0},
+    {"SI", SIZE_WORD, 0},
+    {"DI", SIZE_WORD, 0},
 
 #if DYNO_ARCH_X86 == 64
-    {"R8W", SIZE_WORD, 0 },
-    {"R9W", SIZE_WORD, 0 },
-    {"R10W", SIZE_WORD, 0 },
-    {"R11W", SIZE_WORD, 0 },
-    {"R12W", SIZE_WORD, 0 },
-    {"R13W", SIZE_WORD, 0 },
-    {"R14W", SIZE_WORD, 0 },
-    {"R15W", SIZE_WORD, 0 },
+    {"R8W", SIZE_WORD, 0},
+    {"R9W", SIZE_WORD, 0},
+    {"R10W", SIZE_WORD, 0},
+    {"R11W", SIZE_WORD, 0},
+    {"R12W", SIZE_WORD, 0},
+    {"R13W", SIZE_WORD, 0},
+    {"R14W", SIZE_WORD, 0},
+    {"R15W", SIZE_WORD, 0},
 #endif // DYNO_ARCH_X86
 
     // ========================================================================
     // >> 32-bit General purpose registers
     // ========================================================================
-    {"EAX", SIZE_DWORD, 0 },
-    {"ECX", SIZE_DWORD, 0 },
-    {"EDX", SIZE_DWORD, 0 },
-    {"EBX", SIZE_DWORD, 0 },
-    {"ESP", SIZE_DWORD, 0 },
-    {"EBP", SIZE_DWORD, 0 },
-    {"ESI", SIZE_DWORD, 0 },
-    {"EDI", SIZE_DWORD, 0 },
+    {"EAX", SIZE_DWORD, 0},
+    {"ECX", SIZE_DWORD, 0},
+    {"EDX", SIZE_DWORD, 0},
+    {"EBX", SIZE_DWORD, 0},
+    {"ESP", SIZE_DWORD, 0},
+    {"EBP", SIZE_DWORD, 0},
+    {"ESI", SIZE_DWORD, 0},
+    {"EDI", SIZE_DWORD, 0},
 
 #if DYNO_ARCH_X86 == 64
-    {"R8D", SIZE_DWORD, 0 },
-    {"R9D", SIZE_DWORD, 0 },
-    {"R10D", SIZE_DWORD, 0 },
-    {"R11D", SIZE_DWORD, 0 },
-    {"R12D", SIZE_DWORD, 0 },
-    {"R13D", SIZE_DWORD, 0 },
-    {"R14D", SIZE_DWORD, 0 },
-    {"R15D", SIZE_DWORD, 0 },
+    {"R8D", SIZE_DWORD, 0},
+    {"R9D", SIZE_DWORD, 0},
+    {"R10D", SIZE_DWORD, 0},
+    {"R11D", SIZE_DWORD, 0},
+    {"R12D", SIZE_DWORD, 0},
+    {"R13D", SIZE_DWORD, 0},
+    {"R14D", SIZE_DWORD, 0},
+    {"R15D", SIZE_DWORD, 0},
 #endif // DYNO_ARCH_X86
 
     // ========================================================================
     // >> 64-bit General purpose registers
     // ========================================================================
 #if DYNO_ARCH_X86 == 64
-    {"RAX", SIZE_QWORD, 0 },
-    {"RCX", SIZE_QWORD, 0 },
-    {"RDX", SIZE_QWORD, 0 },
-    {"RBX", SIZE_QWORD, 0 },
-    {"RSP", SIZE_QWORD, 0 },
-    {"RBP", SIZE_QWORD, 0 },
-    {"RSI", SIZE_QWORD, 0 },
-    {"RDI", SIZE_QWORD, 0 },
+    {"RAX", SIZE_QWORD, 0},
+    {"RCX", SIZE_QWORD, 0},
+    {"RDX", SIZE_QWORD, 0},
+    {"RBX", SIZE_QWORD, 0},
+    {"RSP", SIZE_QWORD, 0},
+    {"RBP", SIZE_QWORD, 0},
+    {"RSI", SIZE_QWORD, 0},
+    {"RDI", SIZE_QWORD, 0},
 
-    {"R8", SIZE_QWORD, 0 },
-    {"R9", SIZE_QWORD, 0 },
-    {"R10", SIZE_QWORD, 0 },
-    {"R11", SIZE_QWORD, 0 },
-    {"R12", SIZE_QWORD, 0 },
-    {"R13", SIZE_QWORD, 0 },
-    {"R14", SIZE_QWORD, 0 },
-    {"R15", SIZE_QWORD, 0 },
+    {"R8", SIZE_QWORD, 0},
+    {"R9", SIZE_QWORD, 0},
+    {"R10", SIZE_QWORD, 0},
+    {"R11", SIZE_QWORD, 0},
+    {"R12", SIZE_QWORD, 0},
+    {"R13", SIZE_QWORD, 0},
+    {"R14", SIZE_QWORD, 0},
+    {"R15", SIZE_QWORD, 0},
 #endif // DYNO_ARCH_X86
 
     // ========================================================================
     // >> 64-bit MM (MMX) registers
     // ========================================================================
-    {"MM0", SIZE_QWORD, 0 },
-    {"MM1", SIZE_QWORD, 0 },
-    {"MM2", SIZE_QWORD, 0 },
-    {"MM3", SIZE_QWORD, 0 },
-    {"MM4", SIZE_QWORD, 0 },
-    {"MM5", SIZE_QWORD, 0 },
-    {"MM6", SIZE_QWORD, 0 },
-    {"MM7", SIZE_QWORD, 0 },
+    {"MM0", SIZE_QWORD, 0},
+    {"MM1", SIZE_QWORD, 0},
+    {"MM2", SIZE_QWORD, 0},
+    {"MM3", SIZE_QWORD, 0},
+    {"MM4", SIZE_QWORD, 0},
+    {"MM5", SIZE_QWORD, 0},
+    {"MM6", SIZE_QWORD, 0},
+    {"MM7", SIZE_QWORD, 0},
 
     // ========================================================================
     // >> 128-bit XMM registers
     // ========================================================================
-    {"XMM0", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM1", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM2", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM3", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM4", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM5", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM6", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM7", SIZE_XMMWORD, SIZE_XMMWORD },
+    {"XMM0", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM1", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM2", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM3", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM4", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM5", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM6", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM7", SIZE_XMMWORD, SIZE_XMMWORD},
 #if DYNO_ARCH_X86 == 64
-    {"XMM8", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM9", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM10", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM11", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM12", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM13", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM14", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM15", SIZE_XMMWORD, SIZE_XMMWORD },
+    {"XMM8", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM9", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM10", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM11", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM12", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM13", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM14", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM15", SIZE_XMMWORD, SIZE_XMMWORD},
 #ifdef DYNO_PLATFORM_AVX512
-    {"XMM16", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM17", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM18", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM19", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM20", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM21", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM22", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM23", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM24", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM25", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM26", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM27", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM28", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM29", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM30", SIZE_XMMWORD, SIZE_XMMWORD },
-    {"XMM31", SIZE_XMMWORD, SIZE_XMMWORD },
+    {"XMM16", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM17", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM18", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM19", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM20", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM21", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM22", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM23", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM24", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM25", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM26", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM27", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM28", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM29", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM30", SIZE_XMMWORD, SIZE_XMMWORD},
+    {"XMM31", SIZE_XMMWORD, SIZE_XMMWORD},
 #endif // DYNO_PLATFORM_AVX512
 #endif // DYNO_ARCH_X86
 
@@ -247,39 +247,39 @@ std::array<RegisterInfo, REG_COUNT> s_RegisterTable = {{
     // >> 256-bit YMM registers
     // ========================================================================
 #if DYNO_ARCH_X86 == 64
-    {"YMM0", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM1", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM2", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM3", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM4", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM5", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM6", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM7", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM8", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM9", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM10", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM11", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM12", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM13", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM14", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM15", SIZE_YMMWORD, SIZE_YMMWORD },
+    {"YMM0", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM1", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM2", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM3", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM4", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM5", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM6", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM7", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM8", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM9", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM10", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM11", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM12", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM13", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM14", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM15", SIZE_YMMWORD, SIZE_YMMWORD},
 #ifdef DYNO_PLATFORM_AVX512
-    {"YMM16", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM17", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM18", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM19", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM20", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM21", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM22", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM23", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM24", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM25", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM26", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM27", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM28", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM29", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM30", SIZE_YMMWORD, SIZE_YMMWORD },
-    {"YMM31", SIZE_YMMWORD, SIZE_YMMWORD },
+    {"YMM16", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM17", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM18", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM19", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM20", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM21", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM22", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM23", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM24", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM25", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM26", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM27", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM28", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM29", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM30", SIZE_YMMWORD, SIZE_YMMWORD},
+    {"YMM31", SIZE_YMMWORD, SIZE_YMMWORD},
 #endif // DYNO_PLATFORM_AVX512
 #endif // DYNO_ARCH_X86
 
@@ -287,61 +287,61 @@ std::array<RegisterInfo, REG_COUNT> s_RegisterTable = {{
     // >> 512-bit ZMM registers
     // ========================================================================
 #ifdef DYNO_PLATFORM_AVX512
-    {"ZMM0", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM1", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM2", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM3", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM4", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM5", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM6", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM7", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM8", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM9", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM10", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM11", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM12", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM13", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM14", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM15", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM16", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM17", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM18", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM19", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM20", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM21", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM22", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM23", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM24", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM25", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM26", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM27", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM28", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM29", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM30", SIZE_ZMMWORD, SIZE_ZMMWORD },
-    {"ZMM31", SIZE_ZMMWORD, SIZE_ZMMWORD },
+    {"ZMM0", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM1", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM2", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM3", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM4", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM5", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM6", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM7", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM8", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM9", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM10", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM11", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM12", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM13", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM14", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM15", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM16", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM17", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM18", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM19", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM20", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM21", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM22", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM23", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM24", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM25", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM26", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM27", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM28", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM29", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM30", SIZE_ZMMWORD, SIZE_ZMMWORD},
+    {"ZMM31", SIZE_ZMMWORD, SIZE_ZMMWORD},
 #endif // DYNO_PLATFORM_AVX512
 
     // ========================================================================
     // >> 16-bit Segment registers
     // ========================================================================
-    {"CS", SIZE_WORD, 0 },
-    {"SS", SIZE_WORD, 0 },
-    {"DS", SIZE_WORD, 0 },
-    {"ES", SIZE_WORD, 0 },
-    {"FS", SIZE_WORD, 0 },
-    {"GS", SIZE_WORD, 0 },
+    {"CS", SIZE_WORD, 0},
+    {"SS", SIZE_WORD, 0},
+    {"DS", SIZE_WORD, 0},
+    {"ES", SIZE_WORD, 0},
+    {"FS", SIZE_WORD, 0},
+    {"GS", SIZE_WORD, 0},
 
     // ========================================================================
     // >> 80-bit FPU registers
     // ========================================================================
 #if DYNO_ARCH_X86 == 32
-    {"ST0", SIZE_TWORD, 0 },
-    {"ST1", SIZE_TWORD, 0 },
-    {"ST3", SIZE_TWORD, 0 },
-    {"ST4", SIZE_TWORD, 0 },
-    {"ST5", SIZE_TWORD, 0 },
-    {"ST6", SIZE_TWORD, 0 },
-    {"ST7", SIZE_TWORD, 0 },
+    {"ST0", SIZE_TWORD, 0},
+    {"ST1", SIZE_TWORD, 0},
+    {"ST3", SIZE_TWORD, 0},
+    {"ST4", SIZE_TWORD, 0},
+    {"ST5", SIZE_TWORD, 0},
+    {"ST6", SIZE_TWORD, 0},
+    {"ST7", SIZE_TWORD, 0},
 #endif // DYNO_ARCH_X86
 }};
 
@@ -349,7 +349,7 @@ Registers::Registers(const std::vector<RegisterType>& registers) {
     m_registers.reserve(registers.size());
 
     for (RegisterType type : registers) {
-        const auto& [name, size, alignment] = s_RegisterTable.at(type);
+        const auto& [name, size, alignment] = reg_table.at(type);
         m_registers.emplace_back(type, size, alignment);
     }
 }
@@ -371,11 +371,11 @@ const Register& Registers::at(RegisterType regType, bool reverse) const {
                 return reg;
         }
 
-    return s_None;
+    return s_none;
 }
 
 const RegisterInfo& RegisterTypeInfo(RegisterType regType){
-    return s_RegisterTable.at(regType);
+    return reg_table.at(regType);
 }
 
 size_t dyno::RegisterTypeToSSEIndex(RegisterType regType) {

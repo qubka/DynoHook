@@ -354,14 +354,14 @@ namespace dyno {
         }
 
         static const std::vector<RegisterType>& ScratchList() {
-            return s_Scratch;
+            return s_scratch;
         }
 
     private:
         std::vector<Register> m_registers;
 
-        static Register s_None;
-        static std::vector<RegisterType> s_Scratch;
+        static Register s_none;
+        static std::vector<RegisterType> s_scratch;
     };
 
 }

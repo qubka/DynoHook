@@ -7,11 +7,11 @@ using namespace asmjit;
 using namespace asmjit::x86;
 
 Hook::Hook(const ConvFunc& convention) :
-    m_bridge(nullptr),
-    m_newRetAddr(nullptr),
-    m_callingConvention(convention()),
-    m_registers(m_callingConvention->getRegisters()),
-    m_scratchRegisters(Registers::ScratchList()) {
+    m_bridge{nullptr},
+    m_newRetAddr{nullptr},
+    m_callingConvention{convention()},
+    m_registers{m_callingConvention->getRegisters()},
+    m_scratchRegisters{Registers::ScratchList()} {
 }
 
 void Hook::addCallback(HookType hookType, HookHandler* handler) {
@@ -146,7 +146,7 @@ bool Hook::createBridge() const {
     code.init(Environment::host(), CpuInfo::host().features());
 
     // emitters can emit code to CodeHolder
-    Assembler a(&code);
+    Assembler a{&code};
     Label override = a.newLabel();
 
     // write a redirect to the post-hook code
@@ -253,7 +253,7 @@ bool Hook::createPostCallback() const {
     code.init(Environment::host(), CpuInfo::host().features());
 
     // emitters can emit code to CodeHolder
-    Assembler a(&code);
+    Assembler a{&code};
 
     // gets pop size + return address
     size_t popSize = m_callingConvention->getPopSize() + sizeof(void*);

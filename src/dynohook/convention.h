@@ -31,77 +31,11 @@ namespace dyno {
         RegisterType reg;
         uint16_t size;
 
-        DataObject(DataType type, RegisterType reg = NONE, uint16_t size = 0) : type(type), reg(reg), size(size) {}
+        DataObject(DataType type, RegisterType reg = NONE, uint16_t size = 0) : type{type}, reg{reg}, size{size} {}
 
         bool isFlt() const { return type == DataType::Float || type == DataType::Double; }
         bool isVec() const { return type == DataType::M128 || type == DataType::M256 || type == DataType::M512; }
     };
-
-    /**
-     * Returns the size after applying alignment.
-     * @param size The size that should be aligned.
-     * @param alignment The alignment that should be used.
-     * @return
-     */
-    inline size_t Align(size_t size, size_t alignment) {
-        size_t unaligned = size % alignment;
-        if (unaligned == 0)
-            return size;
-
-        return size + (alignment - unaligned);
-    }
-
-    /**
-     * @brief Returns the size of a data type after applying alignment.
-     * @param type The data type you would like to get the size of.
-     * @param alignment The alignment that should be used.
-     * @return
-     */
-    inline size_t GetDataTypeSize(DataType type, size_t alignment) {
-        switch (type) {
-            case DataType::Void:
-                return 0;
-            case DataType::Bool:
-                return Align(sizeof(bool), alignment);
-            case DataType::Char:
-                return Align(sizeof(char), alignment);
-            case DataType::UChar:
-                return Align(sizeof(unsigned char), alignment);
-            case DataType::Short:
-                return Align(sizeof(short), alignment);
-            case DataType::UShort:
-                return Align(sizeof(unsigned short), alignment);
-            case DataType::Int:
-                return Align(sizeof(int), alignment);
-            case DataType::UInt:
-                return Align(sizeof(unsigned int), alignment);
-            case DataType::Long:
-                return Align(sizeof(long), alignment);
-            case DataType::ULong:
-                return Align(sizeof(unsigned long), alignment);
-            case DataType::LongLong:
-                return Align(sizeof(long long), alignment);
-            case DataType::ULongLong:
-                return Align(sizeof(unsigned long long), alignment);
-            case DataType::Float:
-                return Align(sizeof(float), alignment);
-            case DataType::Double:
-                return Align(sizeof(double), alignment);
-            case DataType::Pointer:
-                return Align(sizeof(void*), alignment);
-            case DataType::String:
-                return Align(sizeof(char*), alignment);
-            case DataType::M128:
-                return Align(sizeof(float) * 4, alignment);
-            case DataType::M256:
-                return Align(sizeof(float) * 8, alignment);
-            case DataType::M512:
-                return Align(sizeof(float) * 16, alignment);
-            default:
-                puts("[Warning] - Convention - Unknown data type.");
-        }
-        return 0;
-    }
 
     /**
      * @brief This is the base class for every calling convention.
@@ -241,4 +175,70 @@ namespace dyno {
         // save call arguments in case the function reuses the space and overwrites the values for the post hook.
         std::vector<std::unique_ptr<uint8_t[]>> m_savedCallArguments;
     };
+
+    /**
+     * Returns the size after applying alignment.
+     * @param size The size that should be aligned.
+     * @param alignment The alignment that should be used.
+     * @return
+     */
+    inline size_t Align(size_t size, size_t alignment) {
+        size_t unaligned = size % alignment;
+        if (unaligned == 0)
+            return size;
+
+        return size + (alignment - unaligned);
+    }
+
+    /**
+     * @brief Returns the size of a data type after applying alignment.
+     * @param type The data type you would like to get the size of.
+     * @param alignment The alignment that should be used.
+     * @return
+     */
+    inline size_t getDataTypeSize(DataType type, size_t alignment) {
+        switch (type) {
+            case DataType::Void:
+                return 0;
+            case DataType::Bool:
+                return Align(sizeof(bool), alignment);
+            case DataType::Char:
+                return Align(sizeof(char), alignment);
+            case DataType::UChar:
+                return Align(sizeof(unsigned char), alignment);
+            case DataType::Short:
+                return Align(sizeof(short), alignment);
+            case DataType::UShort:
+                return Align(sizeof(unsigned short), alignment);
+            case DataType::Int:
+                return Align(sizeof(int), alignment);
+            case DataType::UInt:
+                return Align(sizeof(unsigned int), alignment);
+            case DataType::Long:
+                return Align(sizeof(long), alignment);
+            case DataType::ULong:
+                return Align(sizeof(unsigned long), alignment);
+            case DataType::LongLong:
+                return Align(sizeof(long long), alignment);
+            case DataType::ULongLong:
+                return Align(sizeof(unsigned long long), alignment);
+            case DataType::Float:
+                return Align(sizeof(float), alignment);
+            case DataType::Double:
+                return Align(sizeof(double), alignment);
+            case DataType::Pointer:
+                return Align(sizeof(void*), alignment);
+            case DataType::String:
+                return Align(sizeof(char*), alignment);
+            case DataType::M128:
+                return Align(sizeof(float) * 4, alignment);
+            case DataType::M256:
+                return Align(sizeof(float) * 8, alignment);
+            case DataType::M512:
+                return Align(sizeof(float) * 16, alignment);
+            default:
+                puts("[Warning] - Convention - Unknown data type.");
+        }
+        return 0;
+    }
 }

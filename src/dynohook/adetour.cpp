@@ -1,5 +1,7 @@
 #include "adetour.h"
 
+#include <cmath>
+
 using namespace dyno;
 
 uint8_t ADetour::getMaxDepth() const {
@@ -50,12 +52,12 @@ std::optional<insts_t> ADetour::calcNearestSz(
 
 bool ADetour::followJmp(insts_t& functionInsts, uint8_t curDepth) { // NOLINT(misc-no-recursion)
     if (functionInsts.empty()) {
-        LOG("Couldn't decompile instructions at followed jmp");
+        LOG_PRINT("Couldn't decompile instructions at followed jmp");
         return false;
     }
 
     if (curDepth >= m_maxDepth) {
-        LOG("Prologue jmp resolution hit max depth, prologue too deep");
+        LOG_PRINT("Prologue jmp resolution hit max depth, prologue too deep");
         return false;
     }
 
@@ -64,19 +66,17 @@ bool ADetour::followJmp(insts_t& functionInsts, uint8_t curDepth) { // NOLINT(mi
         return true;
     }
 
-    if (!m_isFollowCallOnFnAddress)
-    {
-        LOG("setting: Do NOT follow CALL on fnAddress");
-        if (functionInsts.front().isCalling())
-        {
-            LOG("First assembly instruction is CALL");
+    if (!m_isFollowCallOnFnAddress) {
+        LOG_PRINT("setting: Do NOT follow CALL on fnAddress");
+        if (functionInsts.front().isCalling()) {
+            LOG_PRINT("First assembly instruction is CALL");
             return true;
         }
     }
 
     // might be a mem type like jmp rax, not supported
     if (!functionInsts.front().hasDisplacement()) {
-        LOG("Branching instruction without displacement encountered");
+        LOG_PRINT("Branching instruction without displacement encountered");
         return false;
     }
 
@@ -97,7 +97,8 @@ bool ADetour::expandProlSelfJmps(insts_t& prol, const insts_t& func, uint64_t& m
             continue;
 
         insts_t srcs = branchMap.at(inst.getAddress());
-        for (const auto& src: srcs) {
+
+        for (const auto& src : srcs) {
             const uint64_t srcEndAddr = src.getAddress() + src.size();
             if (srcEndAddr > maxAddr)
                 maxAddr = srcEndAddr;
@@ -177,7 +178,7 @@ void ADetour::buildRelocationList(
 
 bool ADetour::unhook() {
     if (!m_hooked) {
-        LOG("Detour unhook failed: no hook present");
+        LOG_PRINT("Detour unhook failed: no hook present");
         return false;
     }
 
@@ -203,7 +204,7 @@ bool ADetour::rehook() {
 
     // Nop the space between jmp and end of prologue
     if (m_hookSize < m_nopProlOffset) {
-        LOG("hook size must not be larger than nop prologue offset");
+        LOG_PRINT("hook size must not be larger than nop prologue offset");
         return false;
     }
 
@@ -221,11 +222,11 @@ insts_t ADetour::make_nops(uint64_t address, uint16_t size) const {
     static const uint8_t max_nop_size = 9;
 
     const auto make_nop_inst = [&](std::vector<uint8_t>&& bytes) {
-        return Instruction{address, {0}, 0, false, false, std::move(bytes), "nop", "", getArchType()};
+        return Instruction{this, address, {0}, 0, false, false, std::move(bytes), "nop", "", getArchType()};
     };
 
     // lambda updates the address for each created instruction
-    const auto make_nop = [&](const uint8_t nop_size) {
+    const auto make_nop = [&](uint8_t nop_size) {
         assert(nop_size <= max_nop_size);
 
         // https://stackoverflow.com/questions/25545470/long-multi-byte-nops-commonly-understood-macros-or-other-notation

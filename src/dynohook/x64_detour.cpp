@@ -1,4 +1,5 @@
 #include "x64_detour.h"
+#include "instruction.h"
 
 #include <asmtk/asmtk.h>
 #include <Zydis/Register.h>
@@ -9,7 +10,8 @@ using namespace dyno;
 using namespace asmjit;
 
 x64Detour::x64Detour(uint64_t fnAddress, uint64_t fnCallback, uint64_t* userTrampVar) :
-    ADetour{fnAddress, fnCallback, userTrampVar, getArchType()}, m_allocator{8, 100} {}
+    ADetour{fnAddress, fnCallback, userTrampVar, getArchType()}, m_allocator{8, 100} {
+}
 
 x64Detour::~x64Detour() {
     if (m_valloc2_region) {
@@ -123,10 +125,10 @@ std::optional<uint64_t> x64Detour::findNearestCodeCave(uint64_t address) {
                 if (auto found = (uint64_t) findPattern_rev((uint64_t) data.get(), read, pattern)) {
                     return search + (found + offset - (uint64_t) data.get());
                 }
-                return {};
+                return std::nullopt;
             };
 
-            for (const char* pat: PATTERNS_OFF1) {
+            for (const char* pat : PATTERNS_OFF1) {
                 if (getPatternSize(pat) - 1 < SIZE)
                     continue;
 
@@ -135,7 +137,7 @@ std::optional<uint64_t> x64Detour::findNearestCodeCave(uint64_t address) {
                 }
             }
 
-            for (const char* pat: PATTERNS_OFF3) {
+            for (const char* pat : PATTERNS_OFF3) {
                 if (getPatternSize(pat) - 3 < SIZE)
                     continue;
 
@@ -162,10 +164,10 @@ std::optional<uint64_t> x64Detour::findNearestCodeCave(uint64_t address) {
                 if (auto found = (uint64_t) findPattern((uint64_t) data.get(), read, pattern)) {
                     return search + (found + offset - (uint64_t) data.get());
                 }
-                return {};
+                return std::nullopt;
             };
 
-            for (const char* pat: PATTERNS_OFF1) {
+            for (const char* pat : PATTERNS_OFF1) {
                 if (getPatternSize(pat) - 1 < SIZE) {
                     continue;
                 }
@@ -175,7 +177,7 @@ std::optional<uint64_t> x64Detour::findNearestCodeCave(uint64_t address) {
                 }
             }
 
-            for (const char* pat: PATTERNS_OFF3) {
+            for (const char* pat : PATTERNS_OFF3) {
                 if (getPatternSize(pat) - 3 < SIZE) {
                     continue;
                 }
@@ -186,7 +188,7 @@ std::optional<uint64_t> x64Detour::findNearestCodeCave(uint64_t address) {
             }
         }
     }
-    return {};
+    return std::nullopt;
 }
 
 bool x64Detour::make_inplace_trampoline(
@@ -203,7 +205,7 @@ bool x64Detour::make_inplace_trampoline(
     auto error = m_asmjit_rt.add(&trampoline_address, &code);
 
     if (error) {
-        LOG("Failed to generate in-place trampoline: "s + asmjit::DebugUtils::errorAsString(error));
+        LOG_PRINT("Failed to generate in-place trampoline: "s + asmjit::DebugUtils::errorAsString(error));
         return false;
     }
 
@@ -227,13 +229,13 @@ bool x64Detour::allocate_jump_to_callback() {
         // each block is m_blocksize (8) at the time of writing. Do not write more than this.
         auto region = (uint64_t) m_allocator.allocate(min, max);
         if (!region) {
-            LOG("VirtualAlloc2 failed to find a region near function");
+            LOG_PRINT("VirtualAlloc2 failed to find a region near function");
         } else if (region < min || region >= max) {
             // Workaround for WINE bug, VirtualAlloc2 does not return region in the correct range (always?)
             // see: https://github.com/stevemk14ebr/PolyHook_2_0/pull/168
             m_allocator.deallocate(region);
             region = 0;
-            LOG("VirtualAlloc2 failed allocate within requested range");
+            LOG_PRINT("VirtualAlloc2 failed allocate within requested range");
             // intentionally try other schemes.
         } else {
             m_valloc2_region = region;
@@ -274,7 +276,7 @@ bool x64Detour::allocate_jump_to_callback() {
             return true;
         }
 
-        LOG("No code caves found near function");
+        LOG_PRINT("No code caves found near function");
     }
 
     // This short in-place scheme works almost like the default in-place scheme, except that it doesn't
@@ -292,28 +294,28 @@ bool x64Detour::allocate_jump_to_callback() {
         }
     }
 
-    LOG("None of the allowed hooking schemes have succeeded");
+    LOG_PRINT("None of the allowed hooking schemes have succeeded");
 
     if (m_hookInsts.empty()) {
-        LOG("Invalid state: hook instructions are empty");
+        LOG_PRINT("Invalid state: hook instructions are empty");
     }
 
     return false;
 }
 
 bool x64Detour::hook() {
-    LOG("m_fnAddress: " + int_to_hex(m_fnAddress) + "\n");
+    LOG_PRINT("m_fnAddress: " + int_to_hex(m_fnAddress) + "\n");
 
     insts_t insts = m_disasm.disassemble(m_fnAddress, m_fnAddress, m_fnAddress + 100, *this);
-    LOG("Original function:\n" + instsToStr(insts) + "\n");
+    LOG_PRINT("Original function:\n" + instsToStr(insts) + "\n");
 
     if (insts.empty()) {
-        LOG("Disassembler unable to decode any valid instructions");
+        LOG_PRINT("Disassembler unable to decode any valid instructions");
         return false;
     }
 
     if (!followJmp(insts)) {
-        LOG("Prologue jmp resolution failed");
+        LOG_PRINT("Prologue jmp resolution failed");
         return false;
     }
 
@@ -327,7 +329,7 @@ bool x64Detour::hook() {
     {
         std::stringstream ss;
         ss << printDetourScheme(m_chosenScheme);
-        LOG("Chosen detour scheme: " + ss.str() + "\n");
+        LOG_PRINT("Chosen detour scheme: " + ss.str() + "\n");
     }
 
     // min size of patches that may split instructions
@@ -342,7 +344,7 @@ bool x64Detour::hook() {
     // find the prologue section we will overwrite with jmp + zero or more nops
     auto prologueOpt = calcNearestSz(insts, minProlSz, roundProlSz);
     if (!prologueOpt) {
-        LOG("Function too small to hook safely!");
+        LOG_PRINT("Function too small to hook safely!");
         return false;
     }
 
@@ -350,38 +352,39 @@ bool x64Detour::hook() {
     auto prologue = *prologueOpt;
 
     if (!expandProlSelfJmps(prologue, insts, minProlSz, roundProlSz)) {
-        LOG("Function needs a prologue jmp table but it's too small to insert one");
+        LOG_PRINT("Function needs a prologue jmp table but it's too small to insert one");
         return false;
     }
 
     m_originalInsts = prologue;
 
-    LOG("Prologue to overwrite:\n" + instsToStr(prologue) + "\n");
+    LOG_PRINT("Prologue to overwrite:\n" + instsToStr(prologue) + "\n");
 
     // copy all the prologue stuff to trampoline
     insts_t jmpTblOpt;
     if (!makeTrampoline(prologue, jmpTblOpt)) {
         return false;
     }
-    LOG("m_trampoline: " + int_to_hex(m_trampoline) + "\n");
-    LOG("m_trampolineSz: " + int_to_hex(m_trampolineSz) + "\n");
+
+    LOG_PRINT("m_trampoline: " + int_to_hex(m_trampoline) + "\n");
+    LOG_PRINT("m_trampolineSz: " + int_to_hex(m_trampolineSz) + "\n");
 
     auto tramp_instructions = m_disasm.disassemble(m_trampoline, m_trampoline, m_trampoline + m_trampolineSz, *this);
-    LOG("Trampoline:\n" + instsToStr(tramp_instructions) + "\n");
+    LOG_PRINT("Trampoline:\n" + instsToStr(tramp_instructions) + "\n");
     if (!jmpTblOpt.empty()) {
-        LOG("Trampoline Jmp Tbl:\n" + instsToStr(jmpTblOpt) + "\n");
+        LOG_PRINT("Trampoline Jmp Tbl:\n" + instsToStr(jmpTblOpt) + "\n");
     }
 
     *m_userTrampVar = m_trampoline;
     m_hookSize = (uint32_t) roundProlSz;
     m_nopProlOffset = (uint16_t) minProlSz;
 
-    LOG("Hook instructions: \n" + instsToStr(m_hookInsts) + "\n");
+    LOG_PRINT("Hook instructions: \n" + instsToStr(m_hookInsts) + "\n");
     MemProtector prot{m_fnAddress, m_hookSize, ProtFlag::RWX, *this};
     ZydisDisassembler::writeEncoding(m_hookInsts, *this);
 
-    LOG("Hook size: " + std::to_string(m_hookSize) + "\n");
-    LOG("Prologue offset: " + std::to_string(m_nopProlOffset) + "\n");
+    LOG_PRINT("Hook size: " + std::to_string(m_hookSize) + "\n");
+    LOG_PRINT("Prologue offset: " + std::to_string(m_nopProlOffset) + "\n");
 
     // Nop the space between jmp and end of prologue
     assert(m_hookSize >= m_nopProlOffset);
@@ -469,7 +472,7 @@ std::optional<TranslationResult> translate_instruction(const Instruction& instru
 
     if (instruction.hasImmediate()) {// 2nd operand is immediate
         const auto inst_contains = [&](const std::string& needle) {
-            return string_contains(instruction.getFullName(), needle);
+            return instruction.getFullName().find(needle) != std::string::npos;
         };
 
         // We need to pick a register that matches the pointer size.
@@ -481,8 +484,8 @@ std::optional<TranslationResult> translate_instruction(const Instruction& instru
             inst_contains("byte") ? "al" : "";
 
         if (scratch_register_string.empty()) {
-            LOG("Failed to detect pointer size: " + instruction.getFullName());
-            return {};
+            LOG_PRINT("Failed to detect pointer size: " + instruction.getFullName());
+            return std::nullopt;
         }
 
         const auto imm_size = instruction.getImmediateSize();
@@ -493,14 +496,14 @@ std::optional<TranslationResult> translate_instruction(const Instruction& instru
             imm_size == 1 ? int_to_hex((uint8_t) instruction.getImmediate()) : "";
 
         if (immediate_string.empty()) {
-            LOG("Unexpected size of immediate: " + std::to_string(imm_size));
-            return {};
+            LOG_PRINT("Unexpected size of immediate: " + std::to_string(imm_size));
+            return std::nullopt;
         }
 
         address_register_string = "r15";
         second_operand_string = immediate_string;
     } else if (instruction.hasRegister()) {// 2nd operand is register
-        const auto reg = instruction.getRegister();
+        const auto reg = (ZydisRegister) instruction.getRegister();
         const auto regClass = ZydisRegisterGetClass(reg);
         const std::string reg_string = ZydisRegisterGetString(reg);
 
@@ -512,31 +515,31 @@ std::optional<TranslationResult> translate_instruction(const Instruction& instru
             scratch_register = class_to_reg.at(regClass);
         } else {
             // Unexpected register
-            LOG("Unexpected register: " + reg_string);
-            return {};
+            LOG_PRINT("Unexpected register: " + reg_string);
+            return std::nullopt;
         }
 
         scratch_register_string = ZydisRegisterGetString(scratch_register);
 
         if (!scratch_to_64.count(scratch_register_string)) {
-            LOG("Unexpected scratch register: " + scratch_register_string);
-            return {};
+            LOG_PRINT("Unexpected scratch register: " + scratch_register_string);
+            return std::nullopt;
         }
 
-        address_register_string = string_contains(reg_string, "r15") ? "r14" : "r15";
+        address_register_string = reg_string.find("r15") != std::string::npos ? "r14" : "r15";
         second_operand_string = reg_string;
     } else {
-        LOG("No translation support for such instruction");
-        return {};
+        LOG_PRINT("No translation support for such instruction");
+        return std::nullopt;
     }
 
-    const auto operand1 = instruction.startsWithDisplacement() ? scratch_register_string : second_operand_string;
-    const auto operand2 = instruction.startsWithDisplacement() ? second_operand_string : scratch_register_string;
+    const auto& operand1 = instruction.startsWithDisplacement() ? scratch_register_string : second_operand_string;
+    const auto& operand2 = instruction.startsWithDisplacement() ? second_operand_string : scratch_register_string;
 
     TranslationResult result;
     result.instruction = mnemonic + " " + operand1 + ", " + operand2;
-    result.scratch_register = scratch_register_string;
-    result.address_register = address_register_string;
+    result.scratch_register = std::move(scratch_register_string);
+    result.address_register = std::move(address_register_string);
 
     return {result};
 }
@@ -546,6 +549,7 @@ std::optional<TranslationResult> translate_instruction(const Instruction& instru
  */
 std::vector<std::string> generateAbsoluteJump(uint64_t destination, uint16_t stack_clean_size) {
     std::vector<std::string> instructions;
+    instructions.reserve(4);
 
     // Save rax
     instructions.emplace_back("push rax");
@@ -575,15 +579,16 @@ std::optional<uint64_t> x64Detour::generateTranslationRoutine(const Instruction&
 
     const auto result = translate_instruction(instruction);
     if (!result) {
-        return {};
+        return std::nullopt;
     }
 
-    auto [translated_instruction, scratch_register, address_register] = *result;
+    const auto& [translated_instruction, scratch_register, address_register] = *result;
 
     const auto& scratch_register_64 = scratch_to_64.at(scratch_register);
 
     // Stores vector of instruction strings that comprise translation routine
     std::vector<std::string> translation;
+    translation.reserve(9);
 
     // Avoid spoiling the shadow space
     translation.emplace_back("lea rsp, [rsp - 0x80]");
@@ -625,35 +630,35 @@ std::optional<uint64_t> x64Detour::generateTranslationRoutine(const Instruction&
     std::copy(translation.begin(), translation.end(), std::ostream_iterator<std::string>(translation_stream, "\n"));
     const auto translation_string = translation_stream.str();
 
-    LOG("Translation:\n" + translation_string + "\n");
+    LOG_PRINT("Translation:\n" + translation_string + "\n");
 
     // Parse the instructions via AsmTK
     if (auto error = parser.parse(translation_string.c_str())) {
-        LOG("AsmTK error: "s + DebugUtils::errorAsString(error));
-        return {};
+        LOG_PRINT("AsmTK error: "s + DebugUtils::errorAsString(error));
+        return std::nullopt;
     }
 
     // Generate the binary code via AsmJit
     uint64_t translation_address = 0;
     if (auto error = m_asmjit_rt.add(&translation_address, &code)) {
-        LOG("AsmJit error: "s + DebugUtils::errorAsString(error));
-        return {};
+        LOG_PRINT("AsmJit error: "s + DebugUtils::errorAsString(error));
+        return std::nullopt;
     }
 
-    LOG("Translation address: " + int_to_hex(translation_address) + "\n");
+    LOG_PRINT("Translation address: " + int_to_hex(translation_address) + "\n");
 
-    return {translation_address};
+    return {translation_address };
 }
 
 /**
  * Makes an instruction with stored absolute address, but sets the instruction as relative
  * to fit into the existing entry-table logic
  */
-Instruction makeRelJmpWithAbsDest(uint64_t address, uint64_t abs_destination) {
-    Instruction::Displacement disp{};
+Instruction x64Detour::makeRelJmpWithAbsDest(uint64_t address, uint64_t abs_destination) {
+    Instruction::Displacement disp{0};
     disp.Absolute = abs_destination;
-    Instruction instruction{
-        address, disp, 1, true, false, {0xE9, 0, 0, 0, 0}, "jmp", int_to_hex(abs_destination), Mode::x64
+    Instruction instruction {
+        this, address, disp, 1, true, false, { 0xE9, 0, 0, 0, 0 }, "jmp", int_to_hex(abs_destination), Mode::x64
     };
     instruction.setDisplacementSize(4);
     instruction.setHasDisplacement(true);
@@ -700,16 +705,16 @@ bool x64Detour::makeTrampoline(insts_t& prologue, insts_t& outJmpTable) {
 
     buildRelocationList(prologue, prolSz, delta, instsNeedingEntry, instsNeedingReloc, instsNeedingTranslation);
     if(!instsNeedingEntry.empty()) {
-        LOG("Instructions needing entry:\n" + instsToStr(instsNeedingEntry) + "\n");
+        LOG_PRINT("Instructions needing entry:\n" + instsToStr(instsNeedingEntry) + "\n");
     }
     if(!instsNeedingReloc.empty()) {
-        LOG("Instructions needing relocation:\n" + instsToStr(instsNeedingReloc) + "\n");
+        LOG_PRINT("Instructions needing relocation:\n" + instsToStr(instsNeedingReloc) + "\n");
     }
     if(!instsNeedingTranslation.empty()) {
-        LOG("Instructions needing translation:\n" + instsToStr(instsNeedingTranslation) + "\n");
+        LOG_PRINT("Instructions needing translation:\n" + instsToStr(instsNeedingTranslation) + "\n");
     }
 
-    LOG("Trampoline address: " + int_to_hex(m_trampoline));
+    LOG_PRINT("Trampoline address: " + int_to_hex(m_trampoline));
 
     for (auto& instruction: instsNeedingTranslation) {
         const auto inst_offset = instruction.getAddress() - prolStart;
@@ -755,7 +760,7 @@ bool x64Detour::makeTrampoline(insts_t& prologue, insts_t& outJmpTable) {
     const uint64_t jmpHolderCurAddr = (trampoline_end - destHldrSz) & ~0x7;
     const auto jmpToProl = makex64MinimumJump(jmpToProlAddr, prolStart + prolSz, jmpHolderCurAddr);
 
-    LOG("Jmp To Prol:\n" + instsToStr(jmpToProl) + "\n");
+    LOG_PRINT("Jmp To Prol:\n" + instsToStr(jmpToProl) + "\n");
     ZydisDisassembler::writeEncoding(jmpToProl, *this);
 
     // each jmp tbl entries holder is one slot down from the previous (lambda holds state)
@@ -765,7 +770,7 @@ bool x64Detour::makeTrampoline(insts_t& prologue, insts_t& outJmpTable) {
 
         // move inst to trampoline and point instruction to entry
         const bool isIndirectCall = inst.isCalling() && inst.isIndirect();
-        const bool isAbsJmp = vector_contains(instsNeedingAbsJmps, inst);
+        const bool isAbsJmp = std::find(instsNeedingAbsJmps.begin(), instsNeedingAbsJmps.end(), inst) != instsNeedingAbsJmps.end();
         auto oldDest = isAbsJmp ? inst.getAbsoluteDestination() : inst.getDestination();
         inst.setAddress(inst.getAddress() + delta);
         inst.setDestination(isIndirectCall ? captureAddress : a);

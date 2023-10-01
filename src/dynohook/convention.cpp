@@ -3,11 +3,11 @@
 using namespace dyno;
 
 CallingConvention::CallingConvention(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
-    m_arguments(std::move(arguments)),
-    m_return(returnType),
-    m_alignment(alignment),
-    m_stackSize(0),
-    m_registerSize(0) {
+    m_arguments{std::move(arguments)},
+    m_return{returnType},
+    m_alignment{alignment},
+    m_stackSize{0},
+    m_registerSize{0} {
 }
 
 void CallingConvention::init() {
@@ -16,7 +16,7 @@ void CallingConvention::init() {
 
     for (auto& [type, reg, size] : m_arguments) {
         if (!size)
-            size = GetDataTypeSize(type, m_alignment);
+            size = getDataTypeSize(type, m_alignment);
 
         if (reg == NONE)
             m_stackSize += size;
@@ -25,7 +25,7 @@ void CallingConvention::init() {
     }
 
     if (!m_return.size)
-        m_return.size = GetDataTypeSize(m_return.type, m_alignment);
+        m_return.size = getDataTypeSize(m_return.type, m_alignment);
 }
 
 void CallingConvention::saveReturnValue(const Registers& registers) {

@@ -5,7 +5,7 @@
 using namespace dyno;
 
 x86MsStdcall::x86MsStdcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
-        x86MsCdecl(std::move(arguments), returnType, alignment) {
+        x86MsCdecl{std::move(arguments), returnType, alignment} {
     init();
 }
 

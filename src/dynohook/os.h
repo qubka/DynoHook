@@ -9,7 +9,18 @@
 #ifndef NOMINMAX
   #define NOMINMAX
 #endif
+#define NTDDI_VERSION NTDDI_WIN10_RS4
 #include <windows.h>
+
+// From winerror.h, as this error isn't found in some SDKs:
+//
+// MessageId: ERROR_DYNAMIC_CODE_BLOCKED
+//
+// MessageText:
+//
+// The operation was blocked as the process prohibits dynamic code generation.
+//
+#define ERROR_DYNAMIC_CODE_BLOCKED       1655L
 
 #elif DYNO_PLATFORM_LINUX
 

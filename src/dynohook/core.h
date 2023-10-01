@@ -2,17 +2,7 @@
 
 #include <iostream>
 
-void LOG()
-{
-    std::cout << std::endl;
-}
-
-template<typename T, typename... Args>
-void LOG(const T& val, Args&&... args)
-{
-    std::cout << val;
-    LOG(args...);
-}
+#define LOG_PRINT(x) std::cout << (x) << std::endl;
 
 #define NONCOPYABLE(x) x(const x&) = delete; \
                        x(x&&) = delete; \
@@ -36,15 +26,6 @@ namespace dyno {
                << (uint64_t) i; // We cast to the highest possible int because uint8_t will be printed as char
 
         return stream.str();
-    }
-
-    template< typename T >
-    inline bool vector_contains(std::vector<T> vec, T element) {
-        return std::find(vec.begin(), vec.end(), element) != vec.end();
-    }
-
-    inline bool string_contains(const std::string& str, const std::string& sub_str) {
-        return str.find(sub_str) != std::string::npos;
     }
 
     //http://stackoverflow.com/questions/4840410/how-to-align-a-pointer-in-c
@@ -71,13 +52,13 @@ namespace dyno {
 
     //Credit to Dogmatt on unknowncheats.me for IsValidPtr
     // and https://docs.microsoft.com/en-us/windows-hardware/drivers/gettingstarted/virtual-address-spaces
-    #ifdef _WIN64
+    #if DYNO_PLATFORM_WINDOWS
     #define _PTR_MAX_VALUE ((void*)0x000F000000000000)
     #else
     #define _PTR_MAX_VALUE ((void*)0xFFF00000)
     #endif
 
-    inline bool IsValidPtr(void* p) { return (p >= (void*)0x10000) && (p < _PTR_MAX_VALUE) && p != nullptr; }
+    inline bool isValidPtr(void* p) { return (p >= (void*)0x10000) && (p < _PTR_MAX_VALUE) && p != nullptr; }
 
     inline bool isMatch(const char* addr, const char* pat, const char* msk) {
         size_t n = 0;
@@ -89,9 +70,9 @@ namespace dyno {
         return false;
     }
 
-#define INRANGE(x,a,b)		(x >= a && x <= b)
-#define getBits( x )		(INRANGE(x,'0','9') ? (x - '0') : ((x&(~0x20)) - 'A' + 0xa))
-#define getByte( x )		(getBits(x[0]) << 4 | getBits(x[1]))
+#define INRANGE(x,a,b)	(x >= a && x <= b)
+#define getBits(x)		(INRANGE(x,'0','9') ? (x - '0') : ((x&(~0x20)) - 'A' + 0xa))
+#define getByte(x)		(getBits(x[0]) << 4 | getBits(x[1]))
 
     constexpr uint8_t FINDPATTERN_SCRATCH_SIZE = 64;
 
@@ -111,7 +92,7 @@ namespace dyno {
     uint64_t calc_2gb_below(uint64_t address);
     uint64_t calc_2gb_above(uint64_t address);
 
-    inline constexpr std::string repeat_n(std::string_view s, size_t n, std::string_view delim = "") {
+    inline std::string repeat_n(std::string_view s, size_t n, std::string_view delim = "") {
         std::string out;
         for (size_t i = 0; i < n; i++) {
             out += s;

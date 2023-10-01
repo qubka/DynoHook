@@ -61,9 +61,10 @@ namespace dyno {
 		uint16_t m_trampolineSz = 0;
 		insts_t m_originalInsts;
 
-		/*Save the instructions used for the hook so that we can re-write in rehook()
-		Note: There's a nop range we store too so that it doesn't need to be re-calculated
-		*/
+		/*
+		 * Save the instructions used for the hook so that we can re-write in rehook()
+		 * Note: There's a nop range we store too so that it doesn't need to be re-calculated
+		 */
 		insts_t m_hookInsts;
 		uint16_t m_nopProlOffset{ 0 };
 		uint16_t m_nopSize{ 0 };

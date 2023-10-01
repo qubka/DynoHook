@@ -1,7 +1,7 @@
 #include "core.h"
 #include "os.h"
 
-using namespace dyno;
+namespace dyno {
 
 uint64_t findPattern(uint64_t rangeStart, size_t len, const char* pattern) {
     unsigned char pattern_scratch[FINDPATTERN_SCRATCH_SIZE] = { 0 };
@@ -36,7 +36,7 @@ uint64_t findPattern(uint64_t rangeStart, size_t len, const char* pattern) {
     return NULL;
 }
 
-uint64_t PgetPatternSize(const char* pattern) {
+uint64_t getPatternSize(const char* pattern) {
     const size_t l = strlen(pattern);
 
     // c = 2 * b + (b - 1) . 2 chars per byte + b - 1 spaces between
@@ -185,8 +185,7 @@ uint64_t boundAllocLegacy(uint64_t start, uint64_t end, uint64_t size) {
 	if (res == (uint64_t)MAP_FAILED)
 		return 0;
 
-	if (res < start || res >= end)
-	{
+	if (res < start || res >= end) {
 		boundAllocFree(res, size);
 		return 0;
 	}
@@ -218,7 +217,6 @@ From malloc-internal.h and malloc-alignment.h
 size_t getPageSize() {
 	return static_cast<uint64_t>(sysconf(_SC_PAGESIZE));
 }
-
 #elif DYNO_PLATFORM_APPLE
 
 bool boundedAllocSupported() {
@@ -256,7 +254,7 @@ void boundAllocFree(uint64_t address, uint64_t size) {
 }
 
 size_t getAllocationAlignment() {
-	return MemAccessor::getPageSize();
+	return getPageSize();
 }
 
 size_t getPageSize() {
@@ -264,3 +262,4 @@ size_t getPageSize() {
 }
 
 #endif
+}

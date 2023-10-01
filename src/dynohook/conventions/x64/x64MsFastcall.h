@@ -27,7 +27,7 @@
 namespace dyno {
     class x64MsFastcall : public CallingConvention {
     public:
-        x64MsFastcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = 8);
+        x64MsFastcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = SIZE_QWORD);
         ~x64MsFastcall() override = default;
 
         std::vector<RegisterType> getRegisters() override;

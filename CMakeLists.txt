@@ -15,7 +15,7 @@ if (MSVC)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /INCREMENTAL:NO")
 else ()
     #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra -Werror -Wconversion")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+    #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 endif ()
 
 if (DYNOHOOK_BUILD_32)
@@ -33,6 +33,9 @@ set(ASMJIT_TEST OFF)
 set(ASMJIT_EMBED OFF)
 set(ASMJIT_STATIC ON)
 set(ASMJIT_SANITIZE OFF)
+set(ASMTK_TEST OFF)
+set(ASMTK_EMBED OFF)
+set(ASMTK_STATIC ON)
 #add_subdirectory(src/external/asmjit)
 add_subdirectory(src/external/asmtk)
 
@@ -53,9 +56,10 @@ set(DYNOHOOK_PCH_FILE "src/pch.h")
 
 add_executable(${PROJECT_NAME} ${DYNOHOOK_SRC_FILES} ${DYNOHOOK_HDR_FILES})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE asmjit)
+#target_link_libraries(${PROJECT_NAME} PRIVATE asmjit)
 target_link_libraries(${PROJECT_NAME} PRIVATE asmtk)
 target_link_libraries(${PROJECT_NAME} PRIVATE Zydis)
+target_include_directories(${PROJECT_NAME} PUBLIC "src")
 target_precompile_headers(${PROJECT_NAME} PRIVATE ${DYNOHOOK_PCH_FILE})
 
 if (DYNOHOOK_BUILD_32)
@@ -75,63 +79,3 @@ else ()
 endif ()
 
 #######################
-
-if (DYNOHOOK_BUILD_TESTS)
-    set(DYNOHOOK_TEST_CONTENTS "")
-    set(DYNOHOOK_TEST_HDR_FILES "" src/dynohook/main.cpp)
-    set(DYNOHOOK_TEST_ENTRIES "\nint main() {")
-
-    macro (create_dyno_hooks_test mode call obj list)
-        # Generate required tests
-        string(REPLACE " " ";" INDEX_LIST ${list})
-        foreach (i ${INDEX_LIST})
-            # Append generated file to header list
-            set(FILE "test${obj}${i}.h")
-            list(APPEND DYNOHOOK_TEST_HDR_FILES "${CMAKE_CURRENT_BINARY_DIR}/tests/${FILE}")
-
-            # Pass data into configuration file
-            set(DYNOHOOK_TEST_CONV "${call}")
-            set(DYNOHOOK_TEST_OBJECT "${obj}")
-            set(DYNOHOOK_TEST_HEADER "${mode}/${obj}")
-            set(DYNOHOOK_TEST_NAME "${obj}${i}")
-            set(DYNOHOOK_TEST_NAMESPACE "test${DYNOHOOK_TEST_NAME}")
-            set(DYNOHOOK_TEST_ENTRIES "${DYNOHOOK_TEST_ENTRIES}\n\t${DYNOHOOK_TEST_NAMESPACE}::test();")
-            set(DYNOHOOK_TEST_CONTENTS "${DYNOHOOK_TEST_CONTENTS}\n#include \"${FILE}\"")
-
-            # Generate test file
-            configure_file("tests/test${i}.hpp.in" "tests/${FILE}" @ONLY)
-        endforeach ()
-    endmacro ()
-
-    if (WIN32)
-
-        if (${DYNOHOOK_ARCH} MATCHES "amd64")
-            create_dyno_hooks_test(x64 /*MS_ABI*/ x64MsFastcall "0 1 2 3 4 5 6 7 8")
-        else ()
-            create_dyno_hooks_test(x86 DYNO_CDECL x86MsCdecl "0 1 2 3 4 5 6 7 8")
-            create_dyno_hooks_test(x86 DYNO_STDCALL x86MsStdcall "0 1 2 3 4 5 6 7 8")
-            create_dyno_hooks_test(x86 DYNO_FASTCALL x86MsFastcall "0 1 2 3 4 5 6 7 8")
-            create_dyno_hooks_test(x86 DYNO_THISCALL x86MsThiscall "6 8")
-        endif ()
-    else ()
-        if (${DYNOHOOK_ARCH} MATCHES "amd64")
-            create_dyno_hooks_test(x64 /*SYSV_ABI*/ x64SystemVcall "0 1 2 3 4 5 6 7 8")
-        else ()
-            create_dyno_hooks_test(x86 DYNO_CDECL x86GccCdecl "0 1 2 3 4 5 6 7 8")
-            create_dyno_hooks_test(x86 DYNO_THISCALL x86GccThiscall "6 8")
-        endif ()
-    endif ()
-
-    set(DYNOHOOK_TEST_ENTRIES "${DYNOHOOK_TEST_ENTRIES}\n\treturn 0;\n}")
-
-    configure_file("tests/main.cpp.in" "tests/main.cpp" @ONLY)
-
-    set(TEST_NAME dynohook_test)
-    add_executable(${TEST_NAME} "${CMAKE_CURRENT_BINARY_DIR}/tests/main.cpp" ${DYNOHOOK_TEST_HDR_FILES})
-    if (MSVC)
-        set_property(TARGET ${TEST_NAME} APPEND_STRING PROPERTY LINK_FLAGS " /INCREMENTAL:NO")
-    endif ()
-    include_directories(src/)
-    target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME})
-    target_precompile_headers(${TEST_NAME} PRIVATE ${DYNOHOOK_PCH_FILE})
-endif ()

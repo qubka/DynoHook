@@ -9,13 +9,11 @@ ZydisDisassembler::ZydisDisassembler(Mode mode) : m_decoder{new ZydisDecoder}, m
 	if (ZYAN_FAILED(ZydisDecoderInit(m_decoder,
 									 (mode == Mode::x64) ? ZYDIS_MACHINE_MODE_LONG_64 : ZYDIS_MACHINE_MODE_LONG_COMPAT_32,
 									 (mode == Mode::x64) ? ZYDIS_STACK_WIDTH_64 : ZYDIS_STACK_WIDTH_32))) {
-		throw std::exception("Failed to initialize zydis decoder");
-		return;
+		throw std::runtime_error("Failed to initialize zydis decoder");
 	}
 
 	if (ZYAN_FAILED(ZydisFormatterInit(m_formatter, ZYDIS_FORMATTER_STYLE_INTEL))) {
-		throw std::exception("Failed to initialize zydis formatter");
-		return;
+		throw std::runtime_error("Failed to initialize zydis formatter");
 	}
 
 	ZydisFormatterSetProperty(m_formatter, ZYDIS_FORMATTER_PROP_FORCE_SEGMENT, ZYAN_TRUE);
@@ -60,10 +58,10 @@ insts_t ZydisDisassembler::disassemble(
 	uint64_t offset = 0;
 	bool endHit = false;
 
-    uint8_t* buffer = (buf.get() + offset);
+    uint8_t* buffer;
 
-	while (ZYAN_SUCCESS(ZydisDecoderDecodeFull(m_decoder, (char*) buffer, (ZyanUSize) (read - offset), &insInfo, decoded_operands))) {
-        Instruction::Displacement displacement = {};
+	while (ZYAN_SUCCESS(ZydisDecoderDecodeFull(m_decoder, (char*) (buffer = (buf.get() + offset)), (ZyanUSize) (read - offset), &insInfo, decoded_operands))) {
+        Instruction::Displacement displacement{0};
 		displacement.Absolute = 0;
 
 		uint64_t address = start + offset;
@@ -73,7 +71,8 @@ insts_t ZydisDisassembler::disassemble(
 			break;
         }
 
-		Instruction inst{address,
+		Instruction inst{&accessor,
+                         address,
 						 displacement,
 						 0,
 						 false,
@@ -120,7 +119,7 @@ bool ZydisDisassembler::getOpStr(ZydisDecodedInstruction* pInstruction, const Zy
 	return false;
 }
 
-void ZydisDisassembler::setDisplacementFields(Instruction& inst, const ZydisDecodedInstruction* zydisInst, const ZydisDecodedOperand* operands) const {
+void ZydisDisassembler::setDisplacementFields(Instruction& inst, const ZydisDecodedInstruction* zydisInst, const ZydisDecodedOperand* operands) {
 	inst.setBranching(zydisInst->meta.branch_type != ZYDIS_BRANCH_TYPE_NONE);
 	inst.setCalling(zydisInst->mnemonic == ZydisMnemonic::ZYDIS_MNEMONIC_CALL);
 
@@ -188,3 +187,82 @@ void ZydisDisassembler::setDisplacementFields(Instruction& inst, const ZydisDeco
 		}
 	}
 }
+
+void ZydisDisassembler::addToBranchMap(insts_t& insVec, const Instruction& inst) {
+    if (inst.isBranching()) {
+        // search back, check if new instruction points to older ones (one to one)
+        auto destInst = std::find_if(insVec.begin(), insVec.end(), [&](const Instruction& oldIns) {
+            return oldIns.getAddress() == inst.getDestination();
+        });
+
+        if (destInst != insVec.end()) {
+            updateBranchMap(destInst->getAddress(), inst);
+        }
+    }
+
+    // search forward, check if old instructions now point to new one (many to one possible)
+    for (const Instruction& oldInst : insVec) {
+        if (oldInst.isBranching() && oldInst.hasDisplacement() && oldInst.getDestination() == inst.getAddress()) {
+            updateBranchMap(inst.getAddress(), oldInst);
+        }
+    }
+}
+
+bool ZydisDisassembler::isFuncEnd(const Instruction& instruction, bool firstFunc) {
+    // TODO: more?
+    /*
+    * 0xABABABAB : Used by Microsoft's HeapAlloc() to mark "no man's land" guard bytes after allocated heap memory
+    * 0xABADCAFE : A startup to this value to initialize all free memory to catch errant pointers
+    * 0xBAADF00D : Used by Microsoft's LocalAlloc(LMEM_FIXED) to mark uninitialised allocated heap memory
+    * 0xBADCAB1E : Error Code returned to the Microsoft eVC debugger when connection is severed to the debugger
+    * 0xBEEFCACE : Used by Microsoft .NET as a magic number in resource files
+    * 0xCCCCCCCC : Used by Microsoft's C++ debugging runtime library to mark uninitialised stack memory
+    * 0xCDCDCDCD : Used by Microsoft's C++ debugging runtime library to mark uninitialised heap memory
+    * 0xDDDDDDDD : Used by Microsoft's C++ debugging heap to mark freed heap memory
+    * 0xDEADDEAD : A Microsoft Windows STOP Error code used when the user manually initiates the crash.
+    * 0xFDFDFDFD : Used by Microsoft's C++ debugging heap to mark "no man's land" guard bytes before and after allocated heap memory
+    * 0xFEEEFEEE : Used by Microsoft's HeapFree() to mark freed heap memory
+    */
+    auto& mnemonic = instruction.getMnemonic();
+    auto& bytes = instruction.getBytes();
+    return (instruction.size() == 1 && bytes[0] == 0xCC) ||
+           (instruction.size() >= 2 && bytes[0] == 0xf3 && bytes[1] == 0xc3) ||
+           (mnemonic == "jmp" && !firstFunc) || // Jump to tranlslation
+           mnemonic == "ret" || mnemonic.find("iret") == 0;
+}
+
+bool ZydisDisassembler::isConditionalJump(const Instruction& instruction) {
+    // http://unixwiz.net/techtips/x86-jumps.html
+    if (instruction.size() < 1)
+        return false;
+
+    auto& bytes = instruction.getBytes();
+    if (bytes[0] == 0x0F && instruction.size() > 1) {
+        if (bytes[1] >= 0x80 && bytes[1] <= 0x8F)
+            return true;
+    }
+
+    if (bytes[0] >= 0x70 && bytes[0] <= 0x7F)
+        return true;
+
+    if (bytes[0] == 0xE3)
+        return true;
+
+    return false;
+}
+
+typename branch_map_t::mapped_type& ZydisDisassembler::updateBranchMap(uint64_t key, const Instruction& new_val) {
+    auto it = m_branchMap.find(key);
+    if (it != m_branchMap.end()) {
+        it->second.push_back(new_val);
+    } else {
+        branch_map_t::mapped_type s;
+        s.push_back(new_val);
+        m_branchMap.emplace(key, s);
+        return m_branchMap.at(key);
+    }
+    return it->second;
+}
+
+
+

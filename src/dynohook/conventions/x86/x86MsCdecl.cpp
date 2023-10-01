@@ -5,7 +5,7 @@
 using namespace dyno;
 
 x86MsCdecl::x86MsCdecl(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
-        CallingConvention(std::move(arguments), returnType, alignment) {
+        CallingConvention{std::move(arguments), returnType, alignment} {
     bool nonScalar = m_return.isFlt();
 
     // integer return values up to 32 bits in size are stored in EAX while values up to 64 bit are stored in EAX and EDX.

@@ -5,7 +5,7 @@
 //
 #pragma once
 
-//#include "mem_accessor.h"
+#include "mem_accessor.h"
 
 typedef void* ALLOC_HANDLE;
 

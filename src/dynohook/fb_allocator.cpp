@@ -141,7 +141,7 @@ FBAllocator::FBAllocator(uint64_t min, uint64_t max, uint8_t blockSize, uint8_t 
 	m_dataPool{0},
 	m_maxBlocks{blockCount},
 	m_usedBlocks{0},
-	m_blockSize{blockSize};
+	m_blockSize{blockSize},
 	m_alloc2Supported{boundedAllocSupported()} {
 }
 
