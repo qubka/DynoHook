@@ -58,7 +58,7 @@ namespace dyno {
          * @brief This should return a list of RegisterType values. These registers will be saved for later access.
          * @return
          */
-        virtual std::vector<RegisterType> getRegisters() = 0;
+        virtual regs_t getRegisters() = 0;
 
         /**
          * Returns a pointer to the memory at the stack.
@@ -170,9 +170,9 @@ namespace dyno {
         size_t m_stackSize;
         size_t m_registerSize;
 
-        // save the return in case we call the original function and want to override the return again.
+        // Save the return in case we call the original function and want to override the return again.
         std::vector<std::unique_ptr<uint8_t[]>> m_savedReturnBuffers;
-        // save call arguments in case the function reuses the space and overwrites the values for the post hook.
+        // Save call arguments in case the function reuses the space and overwrites the values for the post hook.
         std::vector<std::unique_ptr<uint8_t[]>> m_savedCallArguments;
     };
 

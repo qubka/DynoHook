@@ -338,9 +338,11 @@ namespace dyno {
         uint8_t m_alignment;
     };
 
+    typedef std::vector<RegisterType> regs_t;
+
     class Registers {
     public:
-        Registers(const std::vector<RegisterType>& registers);
+        Registers(const regs_t& registers);
         ~Registers() = default;
         NONCOPYABLE(Registers);
 
@@ -353,7 +355,7 @@ namespace dyno {
             return m_registers.size();
         }
 
-        static const std::vector<RegisterType>& ScratchList() {
+        static const regs_t& ScratchList() {
             return s_scratch;
         }
 
@@ -361,7 +363,7 @@ namespace dyno {
         std::vector<Register> m_registers;
 
         static Register s_none;
-        static std::vector<RegisterType> s_scratch;
+        static regs_t s_scratch;
     };
 
 }

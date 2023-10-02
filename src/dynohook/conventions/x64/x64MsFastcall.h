@@ -30,7 +30,7 @@ namespace dyno {
         x64MsFastcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = SIZE_QWORD);
         ~x64MsFastcall() override = default;
 
-        std::vector<RegisterType> getRegisters() override;
+        regs_t getRegisters() override;
         void** getStackArgumentPtr(const Registers &registers) override;
 
         void* getArgumentPtr(size_t index, const Registers& registers) override;

@@ -27,8 +27,8 @@ x86MsCdecl::~x86MsCdecl() {
         free(m_returnBuffer);
 }
 
-std::vector<RegisterType> x86MsCdecl::getRegisters() {
-    std::vector<RegisterType> registers;
+regs_t x86MsCdecl::getRegisters() {
+    regs_t registers;
 
     registers.push_back(ESP);
 

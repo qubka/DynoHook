@@ -46,8 +46,8 @@ x64SystemVcall::~x64SystemVcall() {
         free(m_returnBuffer);
 }
 
-std::vector<RegisterType> x64SystemVcall::getRegisters() {
-    std::vector<RegisterType> registers;
+regs_t x64SystemVcall::getRegisters() {
+    regs_t registers;
 
     registers.push_back(RSP);
 

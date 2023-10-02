@@ -3,7 +3,7 @@
 using namespace dyno;
 
 Register Registers::s_none{NONE, SIZE_INVALID};
-std::vector<RegisterType> Registers::s_scratch = {
+regs_t Registers::s_scratch = {
 #if DYNO_ARCH_X86 == 64
 #ifdef DYNO_PLATFORM_WINDOWS
     RAX,
@@ -345,7 +345,7 @@ const static std::array<RegisterInfo, REG_COUNT> reg_table = {{
 #endif // DYNO_ARCH_X86
 }};
 
-Registers::Registers(const std::vector<RegisterType>& registers) {
+Registers::Registers(const regs_t& registers) {
     m_registers.reserve(registers.size());
 
     for (RegisterType type : registers) {
@@ -374,7 +374,7 @@ const Register& Registers::at(RegisterType regType, bool reverse) const {
     return s_none;
 }
 
-const RegisterInfo& RegisterTypeInfo(RegisterType regType){
+const RegisterInfo& RegisterTypeInfo(RegisterType regType) {
     return reg_table.at(regType);
 }
 
