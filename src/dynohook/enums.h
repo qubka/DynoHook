@@ -1,15 +1,6 @@
 #pragma once
 
 namespace dyno {
-	enum class HookType : uint8_t {
-		Detour,
-		VEHHOOK,
-		VTableSwap,
-		IAT,
-		EAT,
-		UNKNOWN
-	};
-	
 	/**
 	 * Used by detours class only. This doesn't live in instruction because it
 	 * only makes sense for specific jump instructions (perhaps re-factor instruction

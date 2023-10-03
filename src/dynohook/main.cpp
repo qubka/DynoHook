@@ -1,37 +1,70 @@
 #include "x64_detour.h"
+#include "dynohook/conventions/x64/x64MsFastcall.h"
 
 #include <iostream>
 
-int Callback(int x, int y) {
-    std::cout << "Callback" << std::endl;
-    std::cout << "Callback" << std::endl;
-    std::cout << "Callback" << std::endl;
-    std::cout << "Callback" << std::endl;
-    std::cout << "Callback" << std::endl;
+int g_MyFuncCallCount = 0;
+int g_PreMyFuncCallCount = 0;
+int g_PostMyFuncCallCount = 0;
 
-    return 12;
+using namespace dyno;
+
+DYNO_NOINLINE int MyFunc(int x, int y) {
+    g_MyFuncCallCount++;
+    assert(x == 3);
+    assert(y == 10);
+
+    int result = x + y;
+    assert(result == 13);
+
+    return result;
 }
 
-int MyFunc(int x, int y) {
-    std::cout << "MyFunc" << std::endl;
-    return x + y;
+ReturnAction PreMyFunc(HookType hookType, Hook& hook) {
+    g_PreMyFuncCallCount++;
+    int x = hook.getArgument<int>(0);
+    assert(x == 3);
+
+    int y = hook.getArgument<int>(1);
+    assert(y == 10);
+
+    return ReturnAction::Ignored;
 }
+
+ReturnAction PostMyFunc(HookType hookType, Hook& hook) {
+    g_PostMyFuncCallCount++;
+    int x = hook.getArgument<int>(0);
+    assert(x == 3);
+
+    int y = hook.getArgument<int>(1);
+    assert(y == 10);
+
+    int return_value = hook.getReturnValue<int>();
+    assert(return_value == 13);
+
+    hook.setReturnValue<int>(1337);
+
+    return ReturnAction::Ignored;
+}
+
 
 int main(int argc, char* argv[]) {
-    std::cout << "MyFunc" << std::endl;
-
-    //MyFunc(1, 3);
-
-    uint64_t holder;
-
     auto yy = &MyFunc;
 
-    dyno::x64Detour detour{(uint64_t)&MyFunc, (uint64_t)&Callback, &holder};
+    dyno::x64Detour detour{(uintptr_t)&MyFunc, [] { return new x64MsFastcall({DataType::Int, DataType::Int}, DataType::Int); }};
     detour.hook();
 
-    auto a = MyFunc(1, 3);
+    // add the callbacks
+    detour.addCallback(HookType::Pre, (HookHandler*) &PreMyFunc);
+    detour.addCallback(HookType::Post, (HookHandler*) &PostMyFunc);
 
-    std::cout << a << std::endl;
+    // call the function
+    int ret = MyFunc(3, 10);
+
+    assert(g_MyFuncCallCount == 1);
+    assert(g_PreMyFuncCallCount == 1);
+    assert(g_PostMyFuncCallCount == 1);
+    assert(ret == 1337);
 
     return 0;
 }

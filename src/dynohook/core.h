@@ -13,23 +13,23 @@
                          std::vector<t>::iterator end() { return o.end(); } \
                          std::vector<t>::reverse_iterator rbegin() { return o.rbegin(); } \
                          std::vector<t>::reverse_iterator rend() { return o.rend(); } \
-                         [[nodiscard]] std::vector<t>::const_iterator begin() const { return o.begin(); } \
-                         [[nodiscard]] std::vector<t>::const_iterator end() const { return o.end(); } \
-                         [[nodiscard]] std::vector<t>::const_reverse_iterator rbegin() const { return o.rbegin(); } \
-                         [[nodiscard]] std::vector<t>::const_reverse_iterator rend() const { return o.rend(); }     \
+                         std::vector<t>::const_iterator begin() const { return o.begin(); } \
+                         std::vector<t>::const_iterator end() const { return o.end(); } \
+                         std::vector<t>::const_reverse_iterator rbegin() const { return o.rbegin(); } \
+                         std::vector<t>::const_reverse_iterator rend() const { return o.rend(); }     \
 
 namespace dyno {
     template< typename T >
     std::string int_to_hex(T i) {
         std::stringstream stream;
         stream << "0x" << std::setfill('0') << std::setw(sizeof(T) * 2) << std::hex
-               << (uint64_t) i; // We cast to the highest possible int because uint8_t will be printed as char
+               << (uintptr_t) i; // We cast to the highest possible int because uint8_t will be printed as char
 
         return stream.str();
     }
 
     //http://stackoverflow.com/questions/4840410/how-to-align-a-pointer-in-c
-    static inline uint64_t AlignUpwards(uint64_t stack, size_t align) {
+    static inline uintptr_t AlignUpwards(uintptr_t stack, size_t align) {
         assert(align > 0 && (align & (align - 1)) == 0); /* Power of 2 */
         assert(stack != 0);
 
@@ -40,7 +40,7 @@ namespace dyno {
         return addr;
     }
 
-    static inline uint64_t AlignDownwards(uint64_t stack, size_t align) {
+    static inline uintptr_t AlignDownwards(uintptr_t stack, size_t align) {
         assert(align > 0 && (align & (align - 1)) == 0); /* Power of 2 */
         assert(stack != 0);
 
@@ -56,7 +56,7 @@ namespace dyno {
     #define _PTR_MAX_VALUE ((void*)0x000F000000000000)
     #else
     #define _PTR_MAX_VALUE ((void*)0xFFF00000)
-    #endif
+    #endif // DYNO_PLATFORM_WINDOWS
 
     inline bool isValidPtr(void* p) { return (p >= (void*)0x10000) && (p < _PTR_MAX_VALUE) && p != nullptr; }
 
@@ -78,19 +78,21 @@ namespace dyno {
 
     // https://github.com/learn-more/findpattern-bench/blob/master/patterns/learn_more.h
     // must use space between bytes and ?? for wildcards. Do not add 0x prefix
-    uint64_t findPattern(uint64_t rangeStart, size_t len, const char* pattern);
-    uint64_t findPattern_rev(uint64_t rangeStart, size_t len, const char* pattern);
-    uint64_t getPatternSize(const char* pattern);
+    uintptr_t findPattern(uintptr_t rangeStart, size_t len, const char* pattern);
+    uintptr_t findPattern_rev(uintptr_t rangeStart, size_t len, const char* pattern);
+    uintptr_t getPatternSize(const char* pattern);
 
     bool boundedAllocSupported();
-    uint64_t boundAlloc(uint64_t min, uint64_t max, uint64_t size);
-    uint64_t boundAllocLegacy(uint64_t min, uint64_t max, uint64_t size);
-    void     boundAllocFree(uint64_t address, uint64_t size);
+    uintptr_t boundAlloc(uintptr_t min, uintptr_t max, size_t size);
+    uintptr_t boundAllocLegacy(uintptr_t min, uintptr_t max, size_t size);
+    void     boundAllocFree(uintptr_t address, size_t size);
     size_t getAllocationAlignment();
     size_t getPageSize();
 
+#if DYNO_ARCH_X86 == 64
     uint64_t calc_2gb_below(uint64_t address);
     uint64_t calc_2gb_above(uint64_t address);
+#endif // DYNO_ARCH_X86
 
     inline std::string repeat_n(std::string_view s, size_t n, std::string_view delim = "") {
         std::string out;

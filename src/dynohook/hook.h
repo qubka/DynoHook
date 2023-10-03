@@ -2,18 +2,23 @@
 
 #include "registers.h"
 #include "convention.h"
+#include "mem_accessor.h"
 
-namespace asmjit { inline namespace _abi_1_10 {
-        namespace x86 {
-            class Assembler;
-        }
-    }
-}
+#include <asmjit/asmjit.h>
 
 namespace dyno {
     enum class HookType : bool {
         Pre,  // callback will be executed before the original function
         Post  // callback will be executed after the original function
+    };
+
+    enum class HookMode : uint8_t {
+        Detour,
+        VEHHOOK,
+        VTableSwap,
+        IAT,
+        EAT,
+        UNKNOWN
     };
 
     enum class ReturnAction : uint8_t {
@@ -32,14 +37,14 @@ namespace dyno {
 	 *
 	 * This hooking method requires knowledge of parameters and calling convention of the target function.
 	 */
-    class Hook {
+    class Hook : public MemAccessor {
     public:
         /**
          * @brief Creates a new function hook.
          * @param func The address of the function to hook.
          * @param convention The calling convention of <func>.
          */
-        Hook(const ConvFunc& convention);
+        explicit Hook(const ConvFunc& convention);
         virtual ~Hook() = default;
         NONCOPYABLE(Hook);
 
@@ -95,20 +100,39 @@ namespace dyno {
             m_callingConvention->onReturnPtrChanged(m_registers, returnPtr);
         }
 
-        void* getBridge() const {
-            return m_bridge;
+        ////
+
+        virtual bool hook() = 0;
+        virtual bool unhook() = 0;
+        virtual bool rehook() {
+            return true;
         }
 
-        virtual void* getOriginal() const = 0;
+        virtual uintptr_t getAddress() const = 0;
+
+        virtual bool setHooked(bool state) {
+            if (m_hooked == state)
+                return true;
+
+            return state ? hook() : unhook();
+        }
+
+        virtual bool isHooked() {
+            return m_hooked;
+        }
+
+        virtual HookMode getMode() const = 0;
+
+        ////
 
     protected:
-        bool createBridge() const;
-        bool createPostCallback() const;
+        bool createBridge();
+        bool createPostCallback();
 
     private:
         typedef asmjit::x86::Assembler Assembler;
 
-        void writeModifyReturnAddress(Assembler& a) const;
+        void writeModifyReturnAddress(Assembler& a);
         void writeCallHandler(Assembler& a, HookType hookType) const;
         void writeSaveRegisters(Assembler& a, HookType hookType) const;
         void writeRestoreRegisters(Assembler& a, HookType hookType) const;
@@ -135,11 +159,13 @@ namespace dyno {
 #endif
 
     protected:
+        asmjit::JitRuntime m_asmjit_rt;
+
         // address of the bridge
-        void* m_bridge;
+        uintptr_t m_fnBridge; // TODO: move to void* oor uintptr
 
         // address of new return
-        void* m_newRetAddr;
+        uintptr_t m_newRetAddr;
 
         // interface if the calling convention
         std::unique_ptr<CallingConvention> m_callingConvention;
@@ -156,5 +182,8 @@ namespace dyno {
 
         // callbacks list
         std::map<HookType, std::vector<HookHandler*>> m_handlers;
+
+        //
+        bool m_hooked{ false };
     };
 }

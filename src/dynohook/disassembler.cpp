@@ -33,15 +33,15 @@ ZydisDisassembler::~ZydisDisassembler() {
 }
 
 insts_t ZydisDisassembler::disassemble(
-    uint64_t firstInstruction,
-    uint64_t start,
-    uint64_t end,
+    uintptr_t firstInstruction,
+    uintptr_t start,
+    uintptr_t end,
     const MemAccessor& accessor
 ) {
 	insts_t insVec;
 //	m_branchMap.clear();
 
-	uint64_t size = end - start;
+    uintptr_t size = end - start;
 	assert(size > 0);
 	if (size <= 0) {
 		return insVec;
@@ -49,13 +49,13 @@ insts_t ZydisDisassembler::disassemble(
 
 	// copy potentially remote memory to local buffer
 	size_t read = 0;
-	auto buf = std::make_unique<uint8_t[]>((uint32_t)size);
-	if (!accessor.safe_mem_read(firstInstruction, (uint64_t)buf.get(), size, read)) {
+	auto buf = std::make_unique<uint8_t[]>(size);
+	if (!accessor.safe_mem_read(firstInstruction, (uintptr_t)buf.get(), size, read)) {
 		return insVec;
 	}
 	ZydisDecodedOperand decoded_operands[ZYDIS_MAX_OPERAND_COUNT];
 	ZydisDecodedInstruction insInfo;
-	uint64_t offset = 0;
+    uintptr_t offset = 0;
 	bool endHit = false;
 
     uint8_t* buffer;
@@ -64,7 +64,7 @@ insts_t ZydisDisassembler::disassemble(
         Instruction::Displacement displacement{0};
 		displacement.Absolute = 0;
 
-		uint64_t address = start + offset;
+        uintptr_t address = start + offset;
 
 		std::string opStr;
 		if (!getOpStr(&insInfo, decoded_operands, address, &opStr)) {
@@ -108,9 +108,9 @@ insts_t ZydisDisassembler::disassemble(
 	return insVec;
 }
 
-bool ZydisDisassembler::getOpStr(ZydisDecodedInstruction* pInstruction, const ZydisDecodedOperand* decoded_operands, uint64_t addr, std::string* pOpStrOut) {
+bool ZydisDisassembler::getOpStr(ZydisDecodedInstruction* pInstruction, const ZydisDecodedOperand* decoded_operands, uintptr_t addr, std::string* pOpStrOut) {
 	char buffer[256];
-	if (ZYAN_SUCCESS(ZydisFormatterFormatInstruction(m_formatter, pInstruction, decoded_operands, pInstruction->operand_count, buffer, sizeof(buffer), addr, ZYAN_NULL))) {
+	if (ZYAN_SUCCESS(ZydisFormatterFormatInstruction(m_formatter, pInstruction, decoded_operands, pInstruction->operand_count, buffer, sizeof(buffer), (ZyanU64)addr, ZYAN_NULL))) {
 		// remove mnemonic + space (op str is just the right hand side)
 		std::string wholeInstStr{buffer};
 		*pOpStrOut = wholeInstStr.erase(0, wholeInstStr.find(' ') + 1);
@@ -251,7 +251,7 @@ bool ZydisDisassembler::isConditionalJump(const Instruction& instruction) {
     return false;
 }
 
-typename branch_map_t::mapped_type& ZydisDisassembler::updateBranchMap(uint64_t key, const Instruction& new_val) {
+typename branch_map_t::mapped_type& ZydisDisassembler::updateBranchMap(uintptr_t key, const Instruction& new_val) {
     auto it = m_branchMap.find(key);
     if (it != m_branchMap.end()) {
         it->second.push_back(new_val);

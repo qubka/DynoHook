@@ -6,7 +6,7 @@ using namespace dyno;
 RangeAllocator::RangeAllocator(uint8_t blockSize, uint8_t blockCount) : m_maxBlocks{blockCount}, m_blockSize{blockSize} {
 }
 
-std::shared_ptr<FBAllocator> RangeAllocator::findOrInsertAllocator(uint64_t min, uint64_t max) {
+std::shared_ptr<FBAllocator> RangeAllocator::findOrInsertAllocator(uintptr_t min, uintptr_t max) {
 	for (auto& allocator : m_allocators) {
 		if (allocator->inRange(min) && allocator->inRange(max - 1))
 			return allocator;
@@ -20,7 +20,7 @@ std::shared_ptr<FBAllocator> RangeAllocator::findOrInsertAllocator(uint64_t min,
 	return allocator;
 }
 
-char* RangeAllocator::allocate(uint64_t min, uint64_t max) {
+char* RangeAllocator::allocate(uintptr_t min, uintptr_t max) {
 #if DYNO_ARCH_X86 == 32
 	if (max > 0x7FFFFFFF) {
 		max = 0x7FFFFFFF; // allocator apis fail in 32bit above this range
@@ -33,11 +33,11 @@ char* RangeAllocator::allocate(uint64_t min, uint64_t max) {
 		return nullptr;
 
 	char* addr = allocator->allocate();
-	m_allocMap[(uint64_t)addr] = allocator;
+	m_allocMap[(uintptr_t)addr] = allocator;
 	return addr;
 }
 
-void RangeAllocator::deallocate(uint64_t addr) {
+void RangeAllocator::deallocate(uintptr_t addr) {
 	std::lock_guard<std::mutex> m_lock{m_mutex};
 	if (auto it = m_allocMap.find(addr); it != m_allocMap.end()) {
 		auto allocator = it->second;

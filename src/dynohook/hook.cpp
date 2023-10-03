@@ -1,14 +1,14 @@
 #include "hook.h"
 
-#include <asmjit/asmjit.h>
+using namespace std::string_literals;
 
 using namespace dyno;
 using namespace asmjit;
 using namespace asmjit::x86;
 
 Hook::Hook(const ConvFunc& convention) :
-    m_bridge{nullptr},
-    m_newRetAddr{nullptr},
+    m_fnBridge{NULL},
+    m_newRetAddr{NULL},
     m_callingConvention{convention()},
     m_registers{m_callingConvention->getRegisters()},
     m_scratchRegisters{Registers::ScratchList()} {
@@ -138,7 +138,9 @@ void Hook::setReturnAddress(void* retAddr, void* stackPtr) {
     m_retAddr[stackPtr].push_back(retAddr);
 }
 
-bool Hook::createBridge() const {
+bool Hook::createBridge() {
+    assert(m_fnBridge == NULL);
+
     // holds code and relocation information during code generation
     CodeHolder code;
 
@@ -163,7 +165,9 @@ bool Hook::createBridge() const {
     a.je(override);
 
     // jump to the trampoline/original
-    a.jmp(getOriginal());
+    uintptr_t address = getAddress();
+    assert(address && "Function address cannot be null");
+    a.jmp(address);
 
     // this code will be executed if a pre-hook returns true
     a.bind(override);
@@ -176,24 +180,17 @@ bool Hook::createBridge() const {
     else
         a.ret();
 
-    // generate code
-    code.flatten();
-    code.resolveUnresolvedLinks();
-
-    // now relocate the code to the address provided by the memory allocator
-    code.relocateToBase((uint64_t) m_bridge);
-
-    // this will copy code from all sections to our memory
-    Error err = code.copyFlattenedData(m_bridge, code.codeSize(), CopySectionFlags::kPadSectionBuffer);
-    if (err) {
-        puts(DebugUtils::errorAsString(err));
+    // Generate code
+    auto error = m_asmjit_rt.add(&m_fnBridge, &code);
+    if (error) {
+        LOG_PRINT("AsmJit error: "s + DebugUtils::errorAsString(error));
         return false;
     }
 
     return true;
 }
 
-void Hook::writeModifyReturnAddress(Assembler& a) const {
+void Hook::writeModifyReturnAddress(Assembler& a) {
     /// https://en.wikipedia.org/wiki/X86_calling_conventions
 
     // save scratch registers that are used by setReturnAddress
@@ -245,7 +242,9 @@ void Hook::writeModifyReturnAddress(Assembler& a) const {
 #endif // DYNO_ARCH_X86
 }
 
-bool Hook::createPostCallback() const {
+bool Hook::createPostCallback() {
+    assert(m_newRetAddr == NULL);
+
     // holds code and relocation information during code generation
     CodeHolder code;
 
@@ -317,17 +316,10 @@ bool Hook::createPostCallback() const {
     // don't corrupt the stack.
     a.ret(popSize);
 
-    // generate code
-    code.flatten();
-    code.resolveUnresolvedLinks();
-
-    // now relocate the code to the address provided by the memory allocator
-    code.relocateToBase((uint64_t) m_newRetAddr);
-
-    // this will copy code from all sections to our memory
-    Error err = code.copyFlattenedData(m_newRetAddr, code.codeSize(), CopySectionFlags::kPadSectionBuffer);
-    if (err) {
-        puts(DebugUtils::errorAsString(err));
+    // Generate code
+    auto error = m_asmjit_rt.add(&m_newRetAddr, &code);
+    if (error) {
+        LOG_PRINT("AsmJit error: "s + DebugUtils::errorAsString(error));
         return false;
     }
 
@@ -437,7 +429,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
      * where 8, 16, 32 and 64 refer to the size of the data. The address-size attribute of the instruction determines the size of the offset, either 16, 32 or 64 bits.
      * Supported only by RAX, EAX, AX, AL registers.
      */
-    uint64_t addr = reg.getAddress<uint64_t>();
+    uintptr_t addr = reg.getAddress<uintptr_t>();
     switch (reg) {
         // ========================================================================
         // >> 8-bit General purpose registers
@@ -674,7 +666,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
      * where 8, 16, 32 and 64 refer to the size of the data. The address-size attribute of the instruction determines the size of the offset, either 16, 32 or 64 bits.
      * Supported only by RAX, EAX, AX, AL registers.
      */
-    uint64_t addr = reg.getAddress<uint64_t>();
+    uintptr_t addr = reg.getAddress<uintptr_t>();
     switch (reg) {
         // ========================================================================
         // >> 8-bit General purpose registers
@@ -932,7 +924,7 @@ void Hook::writeRestoreRegisters(Assembler& a, HookType hookType) const {
 }
 
 void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) const {
-    uint64_t addr = reg.getAddress<uint64_t>();
+    uintptr_t addr = reg.getAddress<uintptr_t>();
     switch (reg) {
         // ========================================================================
         // >> 8-bit General purpose registers
@@ -1032,7 +1024,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
 }
 
 void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) const {
-    uint64_t addr = reg.getAddress<uint64_t>();
+    uintptr_t addr = reg.getAddress<uintptr_t>();
     switch (reg) {
         // ========================================================================
         // >> 8-bit General purpose registers

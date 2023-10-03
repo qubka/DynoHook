@@ -7,8 +7,8 @@ namespace dyno {
     class Instruction {
     public:
         union Displacement {
-            int64_t  Relative;
-            uint64_t Absolute;
+            intptr_t  Relative;
+            uintptr_t Absolute;
         };
 
         enum class OperandType : uint8_t {
@@ -18,7 +18,7 @@ namespace dyno {
         };
 
         Instruction(const MemAccessor* accessor,
-                    uint64_t address,
+                    uintptr_t address,
                     Displacement displacement,
                     uint8_t displacementOffset,
                     bool isRelative,
@@ -29,29 +29,29 @@ namespace dyno {
                     Mode mode
                 );
 
-        uint64_t getAbsoluteDestination() const {
+        uintptr_t getAbsoluteDestination() const {
             return m_displacement.Absolute;
         }
 
-        uint64_t getRelativeDestination() const {
+        uintptr_t getRelativeDestination() const {
             return m_address + m_displacement.Relative + size();
         }
 
         /**Get the address of where the instruction points if it's a branching instruction
         * @Notes: Handles eip/rip & immediate branches correctly
         * **/
-        uint64_t getDestination() const;
+        uintptr_t getDestination() const;
 
-        void setDestination(uint64_t dest);
+        void setDestination(uintptr_t dest);
 
         /**Get the address of the instruction in memory**/
-        uint64_t getAddress() const {
+        uintptr_t getAddress() const {
             return m_address;
         }
 
         /**Set a new address of the instruction in memory
         @Notes: Doesn't move the instruction, marks it for move on writeEncoding and relocates if appropriate**/
-        void setAddress(uint64_t address) {
+        void setAddress(uintptr_t address) {
             m_address = address;
         }
 
@@ -134,16 +134,16 @@ namespace dyno {
             return m_bytes.size();
         }
 
-        void setRelativeDisplacement(int64_t displacement);
+        void setRelativeDisplacement(intptr_t displacement);
 
-        void setAbsoluteDisplacement(uint64_t displacement);
+        void setAbsoluteDisplacement(uintptr_t displacement);
 
         uint32_t getUID() const {
             return m_uid;
         }
 
         template<typename T>
-        static T calculateRelativeDisplacement(uint64_t from, uint64_t to, uint8_t insSize) {
+        static T calculateRelativeDisplacement(uintptr_t from, uintptr_t to, uint8_t insSize) {
             if (to < from)
                 return (T)(0 - (from - to) - insSize);
             return (T)(to - (from + insSize));
@@ -153,7 +153,7 @@ namespace dyno {
             m_isIndirect = isIndirect;
         }
 
-        void setImmediate(uint64_t immediate){
+        void setImmediate(uintptr_t immediate){
             m_hasImmediate = true;
             m_immediate = immediate;
         }
@@ -162,7 +162,7 @@ namespace dyno {
             return m_hasImmediate;
         }
 
-        uint64_t getImmediate() const {
+        uintptr_t getImmediate() const {
             return m_immediate;
         }
 
@@ -199,7 +199,7 @@ namespace dyno {
     private:
         const MemAccessor* m_accessor;
 
-        int m_register;                  // Register operand when displacement is present
+        int           m_register;        // Register operand when displacement is present
         bool          m_isIndirect;      // Does this instruction get its destination via an indirect mem read (ff 25 ... jmp [jmp_dest]) (only filled for jmps / calls)
         bool          m_isCalling;       // Does this instruction is of a CALL type.
         bool		  m_isBranching;     // Does this instruction jmp/call or otherwise change control flow
@@ -208,8 +208,8 @@ namespace dyno {
         bool          m_hasImmediate;    // Does this instruction have the immediate field filled?
         Displacement  m_displacement;    // Where an instruction points too (valid for jmp + call types, and RIP relative MEM types)
 
-        uint64_t      m_address;         // Address the instruction is at
-        uint64_t      m_immediate;       // Immediate op
+        uintptr_t     m_address;         // Address the instruction is at
+        uintptr_t     m_immediate;       // Immediate op
         uint8_t       m_immediateSize;   // Immediate size, in bytes
         uint8_t       m_dispOffset;      // Offset into the byte array where displacement is encoded
         uint8_t       m_dispSize;        // Size of the displacement, in bytes
@@ -264,11 +264,10 @@ namespace dyno {
 
     template <typename T>
     inline std::ostream& printInsts(std::ostream& out, const T& container) {
-        for (auto ii = container.cbegin(); ii != container.cend(); ++ii) {
+        for (auto ii = container.cbegin(); ii != container.cend(); ++ii)
             out << *ii << std::endl;
-        }
         return out;
     }
 
-    inline std::ostream& operator<<(std::ostream& os, const std::vector<Instruction>& v) { return printInsts(os, v); }
+    inline std::ostream& operator<<(std::ostream& os, const insts_t& v) { return printInsts(os, v); }
 }

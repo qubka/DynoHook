@@ -5,7 +5,7 @@ using namespace dyno;
 
 Instruction::Instruction(
     const MemAccessor* accessor,
-    uint64_t address,
+    uintptr_t address,
     Displacement displacement,
     uint8_t displacementOffset,
     bool isRelative,
@@ -37,12 +37,12 @@ Instruction::Instruction(
     m_mode{mode} {
 }
 
-void Instruction::setDestination(uint64_t dest) {
+void Instruction::setDestination(uintptr_t dest) {
     if (!hasDisplacement())
         return;
 
     if (isDisplacementRelative()) {
-        auto newRelativeDisp = calculateRelativeDisplacement<int64_t>(
+        auto newRelativeDisp = calculateRelativeDisplacement<intptr_t>(
             getAddress(),
             dest,
             (uint8_t)size()
@@ -54,24 +54,24 @@ void Instruction::setDestination(uint64_t dest) {
     setAbsoluteDisplacement(dest);
 }
 
-uint64_t Instruction::getDestination() const {
-    uint64_t dest = isDisplacementRelative() ? getRelativeDestination() : getAbsoluteDestination();
+uintptr_t Instruction::getDestination() const {
+    uintptr_t dest = isDisplacementRelative() ? getRelativeDestination() : getAbsoluteDestination();
 
     // ff 25 00 00 00 00 goes from jmp qword ptr [rip + 0] to jmp word ptr [rip + 0] on x64 -> x86
     if (m_isIndirect) {
         size_t read = 0;
         if (m_mode == Mode::x64) {
             // *(uint64_t*)dest;
-            m_accessor->safe_mem_read(dest, (uint64_t)&dest, sizeof(uint64_t), read);
+            m_accessor->safe_mem_read(dest, (uintptr_t)&dest, sizeof(uint64_t), read);
         } else {
             // *(uint32_t*)dest;
-            m_accessor->safe_mem_read(dest, (uint64_t)&dest, sizeof(uint32_t), read);
+            m_accessor->safe_mem_read(dest, (uintptr_t)&dest, sizeof(uint32_t), read);
         }
     }
     return dest;
 }
 
-void Instruction::setAbsoluteDisplacement(uint64_t displacement) {
+void Instruction::setAbsoluteDisplacement(uintptr_t displacement) {
     /**Update our class' book-keeping of this stuff and then modify the byte array.
     * This doesn't actually write the changes to the executeable code, it writes to our
     * copy of the bytes**/
@@ -88,7 +88,7 @@ void Instruction::setAbsoluteDisplacement(uint64_t displacement) {
     std::memcpy(&m_bytes[getDisplacementOffset()], &m_displacement.Absolute, dispSz);
 }
 
-void Instruction::setRelativeDisplacement(int64_t displacement) {
+void Instruction::setRelativeDisplacement(intptr_t displacement) {
     /**Update our class' book-keeping of this stuff and then modify the byte array.
      * This doesn't actually write the changes to the executable code, it writes to our
      * copy of the bytes**/

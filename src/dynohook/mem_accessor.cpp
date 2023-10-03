@@ -6,17 +6,17 @@ using namespace dyno;
 
 #if DYNO_PLATFORM_WINDOWS
 
-bool MemAccessor::mem_copy(uint64_t dest, uint64_t src, uint64_t size) const {
+bool MemAccessor::mem_copy(uintptr_t dest, uintptr_t src, size_t size) const {
 	std::memcpy((char*)dest, (char*)src, (SIZE_T)size);
 	return true;
 }
 
-bool MemAccessor::safe_mem_write(uint64_t dest, uint64_t src, uint64_t size, size_t& written) const noexcept {
+bool MemAccessor::safe_mem_write(uintptr_t dest, uintptr_t src, size_t size, size_t& written) const noexcept {
 	written = 0;
 	return WriteProcessMemory(GetCurrentProcess(), (char*)dest, (char*)src, (SIZE_T)size, (PSIZE_T)&written);
 }
 
-bool MemAccessor::safe_mem_read(uint64_t src, uint64_t dest, uint64_t size, size_t& read) const noexcept {
+bool MemAccessor::safe_mem_read(uintptr_t src, uintptr_t dest, size_t size, size_t& read) const noexcept {
 	HANDLE process = GetCurrentProcess();
 	read = 0;
 
@@ -27,7 +27,7 @@ bool MemAccessor::safe_mem_read(uint64_t src, uint64_t dest, uint64_t size, size
 	if (GetLastError() == ERROR_PARTIAL_COPY) {
 		MEMORY_BASIC_INFORMATION info;
 		if (VirtualQueryEx(process, (char*)src, &info, sizeof(info)) != 0) {
-			uint64_t end = (uint64_t)info.BaseAddress + info.RegionSize;
+            uintptr_t end = (uintptr_t)info.BaseAddress + info.RegionSize;
 			if (src + size > end)
 				return ReadProcessMemory(process, (char*)src, (char*)dest, (SIZE_T)(end - src), (PSIZE_T)&read) && read > 0;
 		}
@@ -35,7 +35,7 @@ bool MemAccessor::safe_mem_read(uint64_t src, uint64_t dest, uint64_t size, size
 	return false;
 }
 
-ProtFlag MemAccessor::mem_protect(uint64_t dest, uint64_t size, ProtFlag prot, bool& status) const {
+ProtFlag MemAccessor::mem_protect(uintptr_t dest, size_t size, ProtFlag prot, bool& status) const {
 	DWORD orig;
 	status = VirtualProtect((char*)dest, (SIZE_T)size, TranslateProtection(prot), &orig) != 0;
 	return TranslateProtection((int)orig);
@@ -44,12 +44,12 @@ ProtFlag MemAccessor::mem_protect(uint64_t dest, uint64_t size, ProtFlag prot, b
 #elif DYNO_PLATFORM_LINUX
 
 struct region_t {
-	uint64_t start;
-	uint64_t end;
+	uintptr_t start;
+	uintptr_t end;
 	ProtFlag prot;
 };
 
-static region_t get_region_from_addr(uint64_t addr) {
+static region_t get_region_from_addr(uintptr_t addr) {
 	region_t res{};
 
 	std::ifstream f("/proc/self/maps");
@@ -57,8 +57,8 @@ static region_t get_region_from_addr(uint64_t addr) {
 	while (std::getline(f, s)) {
 		if (!s.empty() && s.find("vdso") == std::string::npos && s.find("vsyscall") == std::string::npos) {
 			char* strend = &s[0];
-			uint64_t start = strtoul(strend  , &strend, 16);
-			uint64_t end   = strtoul(strend+1, &strend, 16);
+			uintptr_t start = strtoul(strend  , &strend, 16);
+			uintptr_t end   = strtoul(strend+1, &strend, 16);
 			if (start != 0 && end != 0 && start <= addr && addr < end) {
 				res.start = start;
 				res.end = end;
@@ -83,19 +83,19 @@ static region_t get_region_from_addr(uint64_t addr) {
 	return res;
 }
 
-bool MemAccessor::mem_copy(uint64_t dest, uint64_t src, uint64_t size) const {
+bool MemAccessor::mem_copy(uintptr_t dest, uintptr_t src, size_t size) const {
 	std::memcpy((char*)dest, (char*)src, (size_t)size);
 	return true;
 }
 
-bool MemAccessor::safe_mem_write(uint64_t dest, uint64_t src, uint64_t size, size_t& written) const noexcept {
+bool MemAccessor::safe_mem_write(uintptr_t dest, uintptr_t src, size_t size, size_t& written) const noexcept {
 	region_t region_infos = get_region_from_addr(src);
 	
 	// Make sure that the region we query is writable
 	if(!(region_infos.prot & ProtFlag::W))
 		return false;
 	
-	size = std::min<uint64_t>(region_infos.end - src, size);
+	size = std::min<uintptr_t>(region_infos.end - src, size);
 	
 	std::memcpy((void*)dest, (void*)src, (size_t)size);
 	written = size;
@@ -103,14 +103,14 @@ bool MemAccessor::safe_mem_write(uint64_t dest, uint64_t src, uint64_t size, siz
 	return true;
 }
 
-bool MemAccessor::safe_mem_read(uint64_t src, uint64_t dest, uint64_t size, size_t& read) const noexcept {
+bool MemAccessor::safe_mem_read(uintptr_t src, uintptr_t dest, size_t size, size_t& read) const noexcept {
 	region_t region_infos = get_region_from_addr(src);
 	
 	// Make sure that the region we query is readable
 	if(!(region_infos.prot & ProtFlag::R))
 		return false;
 
-	size = std::min<uint64_t>(region_infos.end - src, size);
+	size = std::min<uintptr_t>(region_infos.end - src, size);
 
 	std::memcpy((void*)dest, (void*)src, (size_t)size);
 	read = size;
@@ -118,22 +118,22 @@ bool MemAccessor::safe_mem_read(uint64_t src, uint64_t dest, uint64_t size, size
 	return true;
 }
 
-ProtFlag MemAccessor::mem_protect(uint64_t dest, uint64_t size, ProtFlag prot, bool& status) const {
+ProtFlag MemAccessor::mem_protect(uintptr_t dest, size_t size, ProtFlag prot, bool& status) const {
 	region_t region_infos = get_region_from_addr(dest);
-	uint64_t aligned_dest = MEMORY_ROUND(dest, getPageSize());
-	uint64_t aligned_size = MEMORY_ROUND_UP(size, getPageSize());
+	uintptr_t aligned_dest = MEMORY_ROUND(dest, getPageSize());
+	uintptr_t aligned_size = MEMORY_ROUND_UP(size, getPageSize());
 	status = mprotect((void*)aligned_dest, aligned_size, TranslateProtection(prot)) == 0;
 	return region_infos.prot;
 }
 
 #elif DYNO_PLATFORM_APPLE
 
-bool MemAccessor::mem_copy(uint64_t dest, uint64_t src, uint64_t size) const {
+bool MemAccessor::mem_copy(uintptr_t dest, uintptr_t src, size_t size) const {
 	std::memcpy((char*)dest, (char*)src, (size_t)size);
 	return true;
 }
 
-bool MemAccessor::safe_mem_write(uint64_t dest, uint64_t src, uint64_t size, size_t& written) const noexcept {
+bool MemAccessor::safe_mem_write(uintptr_t dest, uintptr_t src, size_t size, size_t& written) const noexcept {
 	bool res = std::memcpy((void*)dest, (void*)src, (size_t)size) != nullptr;
 	if (res)
 		written = size;
@@ -143,7 +143,7 @@ bool MemAccessor::safe_mem_write(uint64_t dest, uint64_t src, uint64_t size, siz
 	return res;
 }
 
-bool MemAccessor::safe_mem_read(uint64_t src, uint64_t dest, uint64_t size, size_t& read) const noexcept {
+bool MemAccessor::safe_mem_read(uintptr_t src, uintptr_t dest, size_t size, size_t& read) const noexcept {
 	bool res = std::memcpy((void*)dest, (void*)src, (size_t)size) != nullptr;
 	if (res)
 		read = size;
@@ -153,7 +153,7 @@ bool MemAccessor::safe_mem_read(uint64_t src, uint64_t dest, uint64_t size, size
 	return res;
 }
 
-ProtFlag MemAccessor::mem_protect(uint64_t dest, uint64_t size, ProtFlag prot, bool& status) const {
+ProtFlag MemAccessor::mem_protect(uintptr_t dest, size_t size, ProtFlag prot, bool& status) const {
 	status = mach_vm_protect(mach_task_self(), (mach_vm_address_t)MEMORY_ROUND(dest, getPageSize()), (mach_vm_size_t)MEMORY_ROUND_UP(size, getPageSize()), FALSE, TranslateProtection(prot)) == KERN_SUCCESS;
 	return ProtFlag::R | ProtFlag::X;
 }
@@ -162,9 +162,9 @@ ProtFlag MemAccessor::mem_protect(uint64_t dest, uint64_t size, ProtFlag prot, b
 
 /**Write a 25 byte absolute jump. This is preferred since it doesn't require an indirect memory holder.
  * We first sub rsp by 128 bytes to avoid the red-zone stack space. This is specific to unix only afaik.**/
-insts_t MemAccessor::makex64PreferredJump(uint64_t address, uint64_t destination) {
+insts_t MemAccessor::makex64PreferredJump(uintptr_t address, uintptr_t destination) {
     Instruction::Displacement zeroDisp{0};
-    uint64_t curInstAddress = address;
+    uintptr_t curInstAddress = address;
 
     std::vector<uint8_t> raxBytes = { 0x50 };
     Instruction pushRax{this,
@@ -206,7 +206,7 @@ insts_t MemAccessor::makex64PreferredJump(uint64_t address, uint64_t destination
  * destHolder should point to the memory location that *CONTAINS* the address to be jumped to.
  * Destination should be the value that is written into destHolder, and be the address of where
  * the jmp should land.**/
-insts_t MemAccessor::makex64MinimumJump(uint64_t address, uint64_t destination, uint64_t destHolder) {
+insts_t MemAccessor::makex64MinimumJump(uintptr_t address, uintptr_t destination, uintptr_t destHolder) {
     Instruction::Displacement disp{0};
     disp.Relative = Instruction::calculateRelativeDisplacement<int32_t>(address, destHolder, 6);
 
@@ -225,7 +225,7 @@ insts_t MemAccessor::makex64MinimumJump(uint64_t address, uint64_t destination, 
     return { Instruction{this, address, disp, 2, true, true, std::move(bytes), "jmp", ss.str(), Mode::x64}, specialDest };
 }
 
-insts_t MemAccessor::makex86Jmp(uint64_t address, uint64_t destination) {
+insts_t MemAccessor::makex86Jmp(uintptr_t address, uintptr_t destination) {
     Instruction::Displacement disp{0};
     disp.Relative = Instruction::calculateRelativeDisplacement<int32_t>(address, destination, 5);
 
@@ -236,7 +236,7 @@ insts_t MemAccessor::makex86Jmp(uint64_t address, uint64_t destination) {
     return { Instruction{this, address, disp, 1, true, false, std::move(bytes), "jmp", int_to_hex(destination), Mode::x86} };
 }
 
-insts_t MemAccessor::makeAgnosticJmp(uint64_t address, uint64_t destination) {
+insts_t MemAccessor::makeAgnosticJmp(uintptr_t address, uintptr_t destination) {
 #if DYNO_ARCH_X86 == 32
     return makex86Jmp(address, destination);
 #elif DYNO_ARCH_X86 == 64
@@ -244,7 +244,7 @@ insts_t MemAccessor::makeAgnosticJmp(uint64_t address, uint64_t destination) {
 #endif
 }
 
-insts_t MemAccessor::makex64DestHolder(uint64_t destination, uint64_t destHolder) {
+insts_t MemAccessor::makex64DestHolder(uintptr_t destination, uintptr_t destHolder) {
     std::vector<uint8_t> destBytes(8);
     std::memcpy(destBytes.data(), &destination, 8);
     return insts_t{ Instruction{this, destHolder, Instruction::Displacement{0}, 0, false, false, std::move(destBytes), "dest holder", "", Mode::x64} };

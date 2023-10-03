@@ -51,15 +51,11 @@ typedef struct {
 		ALLOC_BLOCK_SIZE(_size_), _objects_, NULL, 0, 0, 0, 0, 0 }; \
 	static ALLOC_HANDLE _name_ = &_name_##Obj;
 
-void* ALLOC_Alloc(ALLOC_HANDLE hAlloc, size_t size);
-void* ALLOC_Calloc(ALLOC_HANDLE hAlloc, size_t num, size_t size);
-void ALLOC_Free(ALLOC_HANDLE hAlloc, void* pBlock);
-
 namespace dyno {
 	// wrapper over fb_allocator in C, with heap backing from VirtualAlloc2 to enforce range
-	class FBAllocator {
+	class FBAllocator final {
 	public:
-		FBAllocator(uint64_t min, uint64_t max, uint8_t blockSize, uint8_t blockCount);
+		FBAllocator(uintptr_t min, uintptr_t max, uint8_t blockSize, uint8_t blockCount);
 		~FBAllocator();
 		
 		bool initialize();
@@ -70,21 +66,21 @@ namespace dyno {
 
 		void deallocate(char* mem);
 
-		bool inRange(uint64_t addr);
+		bool inRange(uintptr_t addr) const;
 
-		bool intersectsRange(uint64_t min, uint64_t max);
+		bool intersectsRange(uintptr_t min, uintptr_t max) const;
 
 		// if a range intersections, by what % of the given range is the overlap
-		uint8_t intersectionLoadFactor(uint64_t min, uint64_t max);
+		uint8_t intersectionLoadFactor(uintptr_t min, uintptr_t max) const;
 		
 	private:
 		bool m_alloc2Supported;
 		uint8_t m_usedBlocks;
 		uint8_t m_maxBlocks;
 		uint8_t m_blockSize;
-		uint64_t m_min;
-		uint64_t m_max;
-		uint64_t m_dataPool;
+        uintptr_t m_min;
+        uintptr_t m_max;
+        uintptr_t m_dataPool;
 
 		ALLOC_Allocator* m_allocator;
 		ALLOC_HANDLE m_hAllocator;

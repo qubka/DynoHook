@@ -6,16 +6,16 @@ namespace dyno {
 		~RangeAllocator() = default;
 		NONCOPYABLE(RangeAllocator);
 
-		char* allocate(uint64_t min, uint64_t max);
-		void deallocate(uint64_t addr);
+		char* allocate(uintptr_t min, uintptr_t max);
+		void deallocate(uintptr_t addr);
 		
 	private:
-		std::shared_ptr<FBAllocator> findOrInsertAllocator(uint64_t min, uint64_t max);
+		std::shared_ptr<FBAllocator> findOrInsertAllocator(uintptr_t min, uintptr_t max);
 
 		uint8_t m_maxBlocks;
 		uint8_t m_blockSize;
 		std::mutex m_mutex;
 		std::vector<std::shared_ptr<FBAllocator>> m_allocators;
-		std::unordered_map<uint64_t, std::shared_ptr<FBAllocator>> m_allocMap;
+		std::unordered_map<uintptr_t, std::shared_ptr<FBAllocator>> m_allocMap;
 	};
 }

@@ -1,4 +1,7 @@
 #include "x64_detour.h"
+
+#if DYNO_ARCH_X86 == 64
+
 #include "instruction.h"
 
 #include <asmtk/asmtk.h>
@@ -9,8 +12,8 @@ using namespace std::string_literals;
 using namespace dyno;
 using namespace asmjit;
 
-x64Detour::x64Detour(uint64_t fnAddress, uint64_t fnCallback, uint64_t* userTrampVar) :
-    ADetour{fnAddress, fnCallback, userTrampVar, getArchType()}, m_allocator{8, 100} {
+x64Detour::x64Detour(uintptr_t fnAddress, const ConvFunc& convention) :
+    Detour{fnAddress, convention, getArchType()}, m_allocator{8, 100} {
 }
 
 x64Detour::~x64Detour() {
@@ -49,11 +52,11 @@ const char* x64Detour::printDetourScheme(detour_scheme_t scheme) {
 }
 
 template<uint16_t SIZE>
-std::optional<uint64_t> x64Detour::findNearestCodeCave(uint64_t address) {
+std::optional<uintptr_t> x64Detour::findNearestCodeCave(uintptr_t address) {
     static_assert(SIZE + 1 < FINDPATTERN_SCRATCH_SIZE);
     static_assert(SIZE + 1 < FINDPATTERN_SCRATCH_SIZE);
 
-    const uint64_t chunkSize = 64000;
+    const size_t chunkSize = 64000;
     auto data = std::make_unique<uint8_t[]>(chunkSize);
 
     // RPM so we don't pagefault, careful to check for partial reads
@@ -114,16 +117,16 @@ std::optional<uint64_t> x64Detour::findNearestCodeCave(uint64_t address) {
     // [0xc3 | 0xC2 ? ? ? ? ] & 660f1f840000000000
 
     // Search 2GB below
-    for (uint64_t search = address - chunkSize; (search + chunkSize) >= calc_2gb_below(address); search -= chunkSize) {
+    for (uintptr_t search = address - chunkSize; (search + chunkSize) >= calc_2gb_below(address); search -= chunkSize) {
         size_t read = 0;
-        if (safe_mem_read(search, (uint64_t) data.get(), chunkSize, read)) {
+        if (safe_mem_read(search, (uintptr_t) data.get(), chunkSize, read)) {
             assert(read <= chunkSize);
             if (read == 0 || read < SIZE)
                 continue;
 
-            auto finder = [&](const char* pattern, uint64_t offset) -> std::optional<uint64_t> {
-                if (auto found = (uint64_t) findPattern_rev((uint64_t) data.get(), read, pattern)) {
-                    return search + (found + offset - (uint64_t) data.get());
+            auto finder = [&](const char* pattern, uintptr_t offset) -> std::optional<uintptr_t> {
+                if (auto found = findPattern_rev((uintptr_t) data.get(), read, pattern)) {
+                    return search + (found + offset - (uintptr_t) data.get());
                 }
                 return std::nullopt;
             };
@@ -149,9 +152,9 @@ std::optional<uint64_t> x64Detour::findNearestCodeCave(uint64_t address) {
     }
 
     // Search 2GB above
-    for (uint64_t search = address; (search + chunkSize) < calc_2gb_above(address); search += chunkSize) {
+    for (uintptr_t search = address; (search + chunkSize) < calc_2gb_above(address); search += chunkSize) {
         size_t read = 0;
-        if (safe_mem_read(search, (uint64_t) data.get(), chunkSize, read)) {
+        if (safe_mem_read(search, (uintptr_t) data.get(), chunkSize, read)) {
 //            uint32_t contiguousInt3 = 0;
 //            uint32_t contiguousNop = 0;
 
@@ -160,9 +163,9 @@ std::optional<uint64_t> x64Detour::findNearestCodeCave(uint64_t address) {
                 continue;
             }
 
-            auto finder = [&](const char* pattern, uint64_t offset) -> std::optional<uint64_t> {
-                if (auto found = (uint64_t) findPattern((uint64_t) data.get(), read, pattern)) {
-                    return search + (found + offset - (uint64_t) data.get());
+            auto finder = [&](const char* pattern, uintptr_t offset) -> std::optional<uintptr_t> {
+                if (auto found = findPattern((uintptr_t) data.get(), read, pattern)) {
+                    return search + (found + offset - (uintptr_t) data.get());
                 }
                 return std::nullopt;
             };
@@ -192,7 +195,7 @@ std::optional<uint64_t> x64Detour::findNearestCodeCave(uint64_t address) {
 }
 
 bool x64Detour::make_inplace_trampoline(
-    uint64_t base_address,
+    uintptr_t base_address,
     const std::function<void(asmjit::x86::Assembler&)>& builder
 ) {
     CodeHolder code;
@@ -201,7 +204,7 @@ bool x64Detour::make_inplace_trampoline(
 
     builder(a);
 
-    uint64_t trampoline_address;
+    uintptr_t trampoline_address;
     auto error = m_asmjit_rt.add(&trampoline_address, &code);
 
     if (error) {
@@ -220,14 +223,20 @@ bool x64Detour::make_inplace_trampoline(
     return true;
 }
 
-bool x64Detour::allocate_jump_to_callback() {
+bool x64Detour::allocate_jump_to_bridge() {
+    // Create the bridge function
+    if (!createBridge()) {
+        LOG_PRINT("Failed to create bridge");
+        return false;
+    }
+
     // Insert valloc description
     if (m_detourScheme & detour_scheme_t::VALLOC2 && boundedAllocSupported()) {
-        auto max = (uint64_t) AlignDownwards(calc_2gb_above(m_fnAddress), getPageSize());
-        auto min = (uint64_t) AlignDownwards(calc_2gb_below(m_fnAddress), getPageSize());
+        auto max = AlignDownwards(calc_2gb_above(m_fnAddress), getPageSize());
+        auto min = AlignDownwards(calc_2gb_below(m_fnAddress), getPageSize());
 
         // each block is m_blocksize (8) at the time of writing. Do not write more than this.
-        auto region = (uint64_t) m_allocator.allocate(min, max);
+        auto region = (uintptr_t) m_allocator.allocate(min, max);
         if (!region) {
             LOG_PRINT("VirtualAlloc2 failed to find a region near function");
         } else if (region < min || region >= max) {
@@ -241,7 +250,7 @@ bool x64Detour::allocate_jump_to_callback() {
             m_valloc2_region = region;
 
             MemProtector region_protector{region, 8, ProtFlag::RWX, *this, false};
-            m_hookInsts = makex64MinimumJump(m_fnAddress, m_fnCallback, region);
+            m_hookInsts = makex64MinimumJump(m_fnAddress, m_fnBridge, region);
             m_chosenScheme = detour_scheme_t::VALLOC2;
             return true;
         }
@@ -254,7 +263,7 @@ bool x64Detour::allocate_jump_to_callback() {
         const auto success = make_inplace_trampoline(m_fnAddress, [&](auto& a) {
             a.lea(x86::rsp, x86::ptr(x86::rsp, -0x80));
             a.push(x86::rax);
-            a.mov(x86::rax, m_fnCallback);
+            a.mov(x86::rax, m_fnBridge);
             a.xchg(x86::ptr(x86::rsp), x86::rax);
             a.ret(0x80);
         });
@@ -271,7 +280,7 @@ bool x64Detour::allocate_jump_to_callback() {
         auto cave = findNearestCodeCave<8>(m_fnAddress);
         if (cave) {
             MemProtector cave_protector{*cave, 8, ProtFlag::RWX, *this, false};
-            m_hookInsts = makex64MinimumJump(m_fnAddress, m_fnCallback, *cave);
+            m_hookInsts = makex64MinimumJump(m_fnAddress, m_fnBridge, *cave);
             m_chosenScheme = detour_scheme_t::CODE_CAVE;
             return true;
         }
@@ -283,7 +292,7 @@ bool x64Detour::allocate_jump_to_callback() {
     // try to not spoil shadow space. It doesn't mean that it will necessarily spoil it, though.
     if (m_detourScheme & detour_scheme_t::INPLACE_SHORT) {
         const auto success = make_inplace_trampoline(m_fnAddress, [&](auto& a) {
-            a.mov(x86::rax, m_fnCallback);
+            a.mov(x86::rax, m_fnBridge);
             a.push(x86::rax);
             a.ret();
         });
@@ -322,7 +331,15 @@ bool x64Detour::hook() {
     // update given fn address to resolved one
     m_fnAddress = insts.front().getAddress();
 
-    if (!allocate_jump_to_callback()) {
+    // TODO: Move tram allocation here (temp)
+    // allocate new trampoline before deleting old to increase odds of new mem address
+    auto tmpTrampoline = (uintptr_t) new uint8_t[512];
+    if (m_trampoline != NULL) {
+        delete[] (uint8_t*) m_trampoline;
+    }
+    m_trampoline = tmpTrampoline;
+
+    if (!allocate_jump_to_bridge()) {
         return false;
     }
 
@@ -335,11 +352,11 @@ bool x64Detour::hook() {
     // min size of patches that may split instructions
     // For valloc & code cave, we insert the jump, hence we take only size of the 1st instruction.
     // For detours, we calculate the size of the generated code.
-    uint64_t minProlSz = (m_chosenScheme == VALLOC2 || m_chosenScheme == CODE_CAVE) ? m_hookInsts.begin()->size() :
+    uintptr_t minProlSz = (m_chosenScheme == VALLOC2 || m_chosenScheme == CODE_CAVE) ? m_hookInsts.begin()->size() :
                          m_hookInsts.rbegin()->getAddress() + m_hookInsts.rbegin()->size() -
                          m_hookInsts.begin()->getAddress();
 
-    uint64_t roundProlSz = minProlSz;  // nearest size to min that doesn't split any instructions
+    uintptr_t roundProlSz = minProlSz;  // nearest size to min that doesn't split any instructions
 
     // find the prologue section we will overwrite with jmp + zero or more nops
     auto prologueOpt = calcNearestSz(insts, minProlSz, roundProlSz);
@@ -375,7 +392,6 @@ bool x64Detour::hook() {
         LOG_PRINT("Trampoline Jmp Tbl:\n" + instsToStr(jmpTblOpt) + "\n");
     }
 
-    *m_userTrampVar = m_trampoline;
     m_hookSize = (uint32_t) roundProlSz;
     m_nopProlOffset = (uint16_t) minProlSz;
 
@@ -397,7 +413,7 @@ bool x64Detour::hook() {
 }
 
 bool x64Detour::unhook() {
-    bool status = ADetour::unhook();
+    bool status = Detour::unhook();
     if (m_valloc2_region) {
         m_allocator.deallocate(*m_valloc2_region);
         m_valloc2_region = {};
@@ -547,7 +563,7 @@ std::optional<TranslationResult> translate_instruction(const Instruction& instru
 /**
  * Generates a jump with full 64-bit absolute address without spoiling any registers
  */
-std::vector<std::string> generateAbsoluteJump(uint64_t destination, uint16_t stack_clean_size) {
+std::vector<std::string> generateAbsoluteJump(uintptr_t destination, uint16_t stack_clean_size) {
     std::vector<std::string> instructions;
     instructions.reserve(4);
 
@@ -569,7 +585,7 @@ std::vector<std::string> generateAbsoluteJump(uint64_t destination, uint16_t sta
 /**
  * @returns address of the first instructions of the translation routine
  */
-std::optional<uint64_t> x64Detour::generateTranslationRoutine(const Instruction& instruction, uint64_t resume_address) {
+std::optional<uintptr_t> x64Detour::generateTranslationRoutine(const Instruction& instruction, uintptr_t resume_address) {
     // AsmTK parses strings for AsmJit, which generates the binary code.
     CodeHolder code;
     code.init(m_asmjit_rt.environment());
@@ -639,7 +655,7 @@ std::optional<uint64_t> x64Detour::generateTranslationRoutine(const Instruction&
     }
 
     // Generate the binary code via AsmJit
-    uint64_t translation_address = 0;
+    uintptr_t translation_address = 0;
     if (auto error = m_asmjit_rt.add(&translation_address, &code)) {
         LOG_PRINT("AsmJit error: "s + DebugUtils::errorAsString(error));
         return std::nullopt;
@@ -654,7 +670,7 @@ std::optional<uint64_t> x64Detour::generateTranslationRoutine(const Instruction&
  * Makes an instruction with stored absolute address, but sets the instruction as relative
  * to fit into the existing entry-table logic
  */
-Instruction x64Detour::makeRelJmpWithAbsDest(uint64_t address, uint64_t abs_destination) {
+Instruction x64Detour::makeRelJmpWithAbsDest(uintptr_t address, uintptr_t abs_destination) {
     Instruction::Displacement disp{0};
     disp.Absolute = abs_destination;
     Instruction instruction {
@@ -668,9 +684,9 @@ Instruction x64Detour::makeRelJmpWithAbsDest(uint64_t address, uint64_t abs_dest
 
 bool x64Detour::makeTrampoline(insts_t& prologue, insts_t& outJmpTable) {
     assert(!prologue.empty());
-    assert(m_trampoline == NULL);
+    //assert(m_trampoline == NULL);
 
-    const uint64_t prolStart = prologue.front().getAddress();
+    const uintptr_t prolStart = prologue.front().getAddress();
     const uint16_t prolSz = calcInstsSz(prologue);
     const uint8_t destHldrSz = 8;
 
@@ -684,23 +700,23 @@ bool x64Detour::makeTrampoline(insts_t& prologue, insts_t& outJmpTable) {
     insts_t instsNeedingReloc;
     insts_t instsNeedingTranslation;
     insts_t instsNeedingAbsJmps;
-    int64_t delta;
+    intptr_t delta;
 
     uint8_t neededEntryCount = std::max((uint8_t) instsNeedingEntry.size(), (uint8_t) 5);
 
-    const auto jmp_size = getMinJmpSize() + destHldrSz;
+    const auto jmp_size = getMinJmpSize() + destHldrSz; // 14
     const auto alignment_pad_size = 7; //extra bytes for dest-holders 8 bytes alignment
 
     // prol + jmp back to prol + N * jmpEntries + align pad
     m_trampolineSz = (uint16_t) (prolSz + jmp_size * (1 + neededEntryCount) + alignment_pad_size);
 
     // allocate new trampoline before deleting old to increase odds of new mem address
-    auto tmpTrampoline = (uint64_t) new uint8_t[m_trampolineSz];
+    /*auto tmpTrampoline = (uintptr_t) new uint8_t[m_trampolineSz];
     if (m_trampoline != NULL) {
         delete[] (uint8_t*) m_trampoline;
     }
 
-    m_trampoline = tmpTrampoline;
+    m_trampoline = tmpTrampoline;*/
     delta = m_trampoline - prolStart;
 
     buildRelocationList(prologue, prolSz, delta, instsNeedingEntry, instsNeedingReloc, instsNeedingTranslation);
@@ -719,7 +735,7 @@ bool x64Detour::makeTrampoline(insts_t& prologue, insts_t& outJmpTable) {
     for (auto& instruction: instsNeedingTranslation) {
         const auto inst_offset = instruction.getAddress() - prolStart;
         // Address of the instruction that follows the problematic instruction
-        const uint64_t resume_address = m_trampoline + inst_offset + instruction.size();
+        const uintptr_t resume_address = m_trampoline + inst_offset + instruction.size();
         auto opt_translation_address = generateTranslationRoutine(instruction, resume_address);
         if (!opt_translation_address) {
             return false;
@@ -753,20 +769,20 @@ bool x64Detour::makeTrampoline(insts_t& prologue, insts_t& outJmpTable) {
     MemProtector prot{m_trampoline, m_trampolineSz, ProtFlag::R | ProtFlag::W | ProtFlag::X, *this, false};
 
     // Insert jmp from trampoline -> prologue after overwritten section
-    const uint64_t jmpToProlAddr = m_trampoline + prolSz;
+    const uintptr_t jmpToProlAddr = m_trampoline + prolSz;
 
     const auto trampoline_end = m_trampoline + m_trampolineSz;
     // & ~0x7 for 8 bytes align for performance.
-    const uint64_t jmpHolderCurAddr = (trampoline_end - destHldrSz) & ~0x7;
+    const uintptr_t jmpHolderCurAddr = (trampoline_end - destHldrSz) & ~0x7;
     const auto jmpToProl = makex64MinimumJump(jmpToProlAddr, prolStart + prolSz, jmpHolderCurAddr);
 
     LOG_PRINT("Jmp To Prol:\n" + instsToStr(jmpToProl) + "\n");
     ZydisDisassembler::writeEncoding(jmpToProl, *this);
 
     // each jmp tbl entries holder is one slot down from the previous (lambda holds state)
-    const auto makeJmpFn = [&, captureAddress = jmpHolderCurAddr](uint64_t a, Instruction& inst) mutable {
+    const auto makeJmpFn = [&, captureAddress = jmpHolderCurAddr](uintptr_t a, Instruction& inst) mutable {
         captureAddress -= destHldrSz;
-        assert(captureAddress > (uint64_t) m_trampoline && (captureAddress + destHldrSz) < trampoline_end);
+        assert(captureAddress > (uintptr_t) m_trampoline && (captureAddress + destHldrSz) < trampoline_end);
 
         // move inst to trampoline and point instruction to entry
         const bool isIndirectCall = inst.isCalling() && inst.isIndirect();
@@ -782,8 +798,10 @@ bool x64Detour::makeTrampoline(insts_t& prologue, insts_t& outJmpTable) {
                : makex64MinimumJump(a, oldDest, captureAddress);
     };
 
-    const uint64_t jmpTblStart = jmpToProlAddr + getMinJmpSize();
+    const uintptr_t jmpTblStart = jmpToProlAddr + getMinJmpSize();
     outJmpTable = relocateTrampoline(prologue, jmpTblStart, delta, makeJmpFn, instsNeedingReloc, instsNeedingEntry);
 
     return true;
 }
+
+#endif // DYNO_ARCH_X86

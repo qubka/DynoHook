@@ -1,28 +1,28 @@
-#include "adetour.h"
+#include "detour.h"
 
 #include <cmath>
 
 using namespace dyno;
 
-uint8_t ADetour::getMaxDepth() const {
+uint8_t Detour::getMaxDepth() const {
     return m_maxDepth;
 }
 
-void ADetour::setMaxDepth(uint8_t maxDepth) {
+void Detour::setMaxDepth(uint8_t maxDepth) {
     assert(maxDepth > 0 && "Max depth must be positive");
     m_maxDepth = maxDepth;
 }
 
-void ADetour::setIsFollowCallOnFnAddress(bool value) {
+void Detour::setIsFollowCallOnFnAddress(bool value) {
     m_isFollowCallOnFnAddress = value;
 }
 
-std::optional<insts_t> ADetour::calcNearestSz(
+std::optional<insts_t> Detour::calcNearestSz(
         const insts_t& functionInsts,
-        uint64_t prolOvrwStartOffset,
-        uint64_t& prolOvrwEndOffset
+        uintptr_t prolOvrwStartOffset,
+        uintptr_t& prolOvrwEndOffset
 ) {
-    uint64_t prolLen = 0;
+    uintptr_t prolLen = 0;
     insts_t instructionsInRange;
 
     // count instructions until at least length needed or func end
@@ -50,7 +50,7 @@ std::optional<insts_t> ADetour::calcNearestSz(
     return std::nullopt;
 }
 
-bool ADetour::followJmp(insts_t& functionInsts, uint8_t curDepth) { // NOLINT(misc-no-recursion)
+bool Detour::followJmp(insts_t& functionInsts, uint8_t curDepth) { // NOLINT(misc-no-recursion)
     if (functionInsts.empty()) {
         LOG_PRINT("Couldn't decompile instructions at followed jmp");
         return false;
@@ -80,14 +80,14 @@ bool ADetour::followJmp(insts_t& functionInsts, uint8_t curDepth) { // NOLINT(mi
         return false;
     }
 
-    uint64_t dest = functionInsts.front().getDestination();
+    uintptr_t dest = functionInsts.front().getDestination();
     functionInsts = m_disasm.disassemble(dest, dest, dest + 100, *this);
     return followJmp(functionInsts, curDepth + 1); // recurse
 }
 
-bool ADetour::expandProlSelfJmps(insts_t& prol, const insts_t& func, uint64_t& minProlSz, uint64_t& roundProlSz) {
-    uint64_t maxAddr = 0;
-    const uint64_t prolStart = prol.front().getAddress();
+bool Detour::expandProlSelfJmps(insts_t& prol, const insts_t& func, uintptr_t& minProlSz, uintptr_t& roundProlSz) {
+    uintptr_t maxAddr = 0;
+    const uintptr_t prolStart = prol.front().getAddress();
     const branch_map_t& branchMap = m_disasm.getBranchMap();
     for (size_t i = 0; i < prol.size(); i++) {
         auto inst = prol.at(i);
@@ -99,7 +99,7 @@ bool ADetour::expandProlSelfJmps(insts_t& prol, const insts_t& func, uint64_t& m
         insts_t srcs = branchMap.at(inst.getAddress());
 
         for (const auto& src : srcs) {
-            const uint64_t srcEndAddr = src.getAddress() + src.size();
+            const uintptr_t srcEndAddr = src.getAddress() + src.size();
             if (srcEndAddr > maxAddr)
                 maxAddr = srcEndAddr;
         }
@@ -117,10 +117,10 @@ bool ADetour::expandProlSelfJmps(insts_t& prol, const insts_t& func, uint64_t& m
     return true;
 }
 
-void ADetour::buildRelocationList(
+void Detour::buildRelocationList(
         insts_t& prologue,
-        uint64_t roundProlSz,
-        const int64_t delta,
+        uintptr_t roundProlSz,
+        const intptr_t delta,
         insts_t& instsNeedingEntry,
         insts_t& instsNeedingReloc,
         insts_t& instsNeedingTranslation
@@ -129,7 +129,7 @@ void ADetour::buildRelocationList(
     assert(instsNeedingReloc.empty());
     assert(!prologue.empty());
 
-    const uint64_t prolStart = prologue.front().getAddress();
+    const uintptr_t prolStart = prologue.front().getAddress();
 
     for (auto& inst: prologue) {
         if (!inst.hasDisplacement()) {
@@ -137,8 +137,8 @@ void ADetour::buildRelocationList(
         }
         const auto dispSzBits = (uint8_t) inst.getDispSize() * 8;
         // 2^(bitSz-1) give max val, and -1 because signed ex (int8_t [-128, 127] = [-2^7, 2^7 - 1]
-        const auto maxInstDisp = (uint64_t) (std::pow(2, dispSzBits - 1) - 1.0);
-        const auto absDelta = (uint64_t) std::llabs(delta);
+        const auto maxInstDisp = (uintptr_t) (std::pow(2, dispSzBits - 1) - 1.0);
+        const auto absDelta = (uintptr_t) std::llabs(delta);
 
         // types that change control flow
         if (inst.isBranching() &&
@@ -176,7 +176,7 @@ void ADetour::buildRelocationList(
     }
 }
 
-bool ADetour::unhook() {
+bool Detour::unhook() {
     if (!m_hooked) {
         LOG_PRINT("Detour unhook failed: no hook present");
         return false;
@@ -190,15 +190,11 @@ bool ADetour::unhook() {
         m_trampoline = NULL;
     }
 
-    if (m_userTrampVar != nullptr) {
-        *m_userTrampVar = NULL;
-    }
-
     m_hooked = false;
     return true;
 }
 
-bool ADetour::rehook() {
+bool Detour::rehook() {
     MemProtector prot{m_fnAddress, m_hookSize, ProtFlag::RWX, *this};
     ZydisDisassembler::writeEncoding(m_hookInsts, *this);
 
@@ -214,7 +210,7 @@ bool ADetour::rehook() {
     return true;
 }
 
-insts_t ADetour::make_nops(uint64_t address, uint16_t size) const {
+insts_t Detour::make_nops(uintptr_t address, uint16_t size) const {
     if (size < 1) {
         return {};
     }

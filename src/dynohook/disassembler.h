@@ -11,14 +11,14 @@ extern "C" {
 }
 
 namespace dyno {
-	typedef std::unordered_map<uint64_t, insts_t> branch_map_t;
+	typedef std::unordered_map<uintptr_t, insts_t> branch_map_t;
 
 	class ZydisDisassembler {
 	public:
 		explicit ZydisDisassembler(Mode mode);
 		virtual ~ZydisDisassembler();
 
-		std::vector<Instruction> disassemble(uint64_t firstInstruction, uint64_t start, uint64_t end, const MemAccessor& accessor);
+		insts_t disassemble(uintptr_t firstInstruction, uintptr_t start, uintptr_t end, const MemAccessor& accessor);
 
 		// TODO: Move to accessor
 		static void writeEncoding(const insts_t& instructions, const MemAccessor& accessor) {
@@ -35,7 +35,7 @@ namespace dyno {
 		**/
 		static void writeEncoding(const Instruction& instruction, const MemAccessor& accessor) {
 			assert(instruction.size() <= instruction.getBytes().size());
-			accessor.mem_copy(instruction.getAddress(), (uint64_t)&instruction.getBytes()[0], instruction.size());
+			accessor.mem_copy(instruction.getAddress(), (uintptr_t)&instruction.getBytes()[0], instruction.size());
 		}
 
 		static bool isConditionalJump(const Instruction& instruction);
@@ -58,9 +58,9 @@ namespace dyno {
 		}
 		
 	protected:
-		bool getOpStr(ZydisDecodedInstruction* pInstruction, const ZydisDecodedOperand* decoded_operands, uint64_t addr, std::string* pOpStrOut);
+		bool getOpStr(ZydisDecodedInstruction* pInstruction, const ZydisDecodedOperand* decoded_operands, uintptr_t addr, std::string* pOpStrOut);
 		static void setDisplacementFields(Instruction& inst, const ZydisDecodedInstruction* zydisInst, const ZydisDecodedOperand* operands) ;
-		typename branch_map_t::mapped_type& updateBranchMap(uint64_t key, const Instruction& new_val);
+		typename branch_map_t::mapped_type& updateBranchMap(uintptr_t key, const Instruction& new_val);
 
 		// we use a void pointer here since we don't want forward declare the ZydisDecoder
 		ZydisDecoder* m_decoder;
