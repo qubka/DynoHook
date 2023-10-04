@@ -4,7 +4,6 @@
 #include "mem_accessor.h"
 #include "mem_protector.h"
 #include "instruction.h"
-#include "enums.h"
 #include "hook.h"
 
 namespace dyno {
@@ -128,7 +127,7 @@ namespace dyno {
 					// Move to next entry, some jmp types can emit more than one instruction
 					jmpTblCurAddr += calcInstsSz(entry);
 
-					ZydisDisassembler::writeEncoding(entry, *this);
+					writeEncoding(entry);
 					jmpTblEntries.insert(jmpTblEntries.end(), entry.begin(), entry.end());
 				} else if (std::find(instsNeedingReloc.begin(), instsNeedingReloc.end(), inst) != instsNeedingReloc.end()) {
 					assert(inst.hasDisplacement());
@@ -140,7 +139,7 @@ namespace dyno {
 					inst.setAddress(inst.getAddress() + delta);
 				}
 
-				ZydisDisassembler::writeEncoding(inst, *this);
+				writeEncoding(inst);
 			}
 			return jmpTblEntries;
 		}

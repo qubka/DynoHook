@@ -7,18 +7,18 @@
 #include <asmjit/asmjit.h>
 
 namespace dyno {
-    enum class HookType : bool {
-        Pre,  // callback will be executed before the original function
-        Post  // callback will be executed after the original function
-    };
-
     enum class HookMode : uint8_t {
+        UNKNOWN,
         Detour,
         VEHHOOK,
         VTableSwap,
         IAT,
-        EAT,
-        UNKNOWN
+        EAT
+    };
+
+    enum class CallbackType : bool {
+        Pre,  // callback will be executed before the original function
+        Post  // callback will be executed after the original function
     };
 
     enum class ReturnAction : uint8_t {
@@ -29,8 +29,10 @@ namespace dyno {
     };
 
     class Hook;
-    typedef ReturnAction (*HookHandler)(HookType, Hook&);
+    typedef ReturnAction (*CallbackHandler)(CallbackType, Hook&);
     using ConvFunc = std::function<CallingConvention*()>;
+
+    typedef std::unordered_map<uintptr_t, insts_t> branch_map_t;
 
     /**
 	 * @brief Creates and manages hooks at the beginning of a function.
@@ -45,33 +47,33 @@ namespace dyno {
          * @param convention The calling convention of <func>.
          */
         explicit Hook(const ConvFunc& convention);
-        virtual ~Hook() = default;
-        NONCOPYABLE(Hook);
+        ~Hook() override = default;
+        DYNO_NONCOPYABLE(Hook);
 
         /**
-         * @brief Adds a hook handler to the hook.
-         * @param hookType The hook type.
-         * @param handler The hook handler that should be added.
+         * @brief Adds a callback handler to the hook.
+         * @param type The callback type.
+         * @param handler The callback handler that should be added.
          */
-        void addCallback(HookType hookType, HookHandler* handler);
+        void addCallback(CallbackType type, CallbackHandler* handler);
 
         /**
-         * @brief Removes a hook handler to the hook.
-         * @param hookType The hook type.
-         * @param handler The hook handler that should be removed.
+         * @brief Removes a callback handler to the hook.
+         * @param type The callback type.
+         * @param handler The callback handler that should be removed.
          */
-        void removeCallback(HookType hookType, HookHandler* handler);
+        void removeCallback(CallbackType type, CallbackHandler* handler);
 
         /**
-         * @brief Checks if a hook handler is already added.
-         * @param hookType The hook type.
-         * @param handler The hook handler that should be checked.
+         * @brief Checks if a callback handler is already added.
+         * @param type The callback type.
+         * @param handler The callback handler that should be checked.
          * @return
          */
-        bool isCallbackRegistered(HookType hookType, HookHandler* handler) const;
+        bool isCallbackRegistered(CallbackType type, CallbackHandler* handler) const;
 
         /**
-         * @brief Checks if there are any hook handlers added to this hook.
+         * @brief Checks if there are any callback handlers added to this hook.
          * @return
          */
         bool areCallbacksRegistered() const;
@@ -133,36 +135,25 @@ namespace dyno {
         typedef asmjit::x86::Assembler Assembler;
 
         void writeModifyReturnAddress(Assembler& a);
-        void writeCallHandler(Assembler& a, HookType hookType) const;
-        void writeSaveRegisters(Assembler& a, HookType hookType) const;
-        void writeRestoreRegisters(Assembler& a, HookType hookType) const;
+        void writeCallHandler(Assembler& a, CallbackType type) const;
+        void writeSaveRegisters(Assembler& a, CallbackType type) const;
+        void writeRestoreRegisters(Assembler& a, CallbackType type) const;
         void writeSaveScratchRegisters(Assembler& a) const;
         void writeRestoreScratchRegisters(Assembler& a) const;
-        void writeRegToMem(Assembler& a, const Register& reg, HookType hookType = HookType::Pre) const;
-        void writeMemToReg(Assembler& a, const Register& reg, HookType hookType = HookType::Pre) const;
+        void writeRegToMem(Assembler& a, const Register& reg, CallbackType type = CallbackType::Pre) const;
+        void writeMemToReg(Assembler& a, const Register& reg, CallbackType type = CallbackType::Pre) const;
 
-#ifdef DYNO_PLATFORM_MSVC
-#pragma optimize ("", off)
-#elif DYNO_PLATFORM_GCC_COMPATIBLE
-#pragma OPT push_options
-#pragma OPT optimize ("O0")
-#endif
-
-        DYNO_NOINLINE ReturnAction DYNO_CDECL hookHandler(HookType hookType);
+DYNO_OPTS_OFF
+        DYNO_NOINLINE ReturnAction DYNO_CDECL hookHandler(CallbackType type);
         DYNO_NOINLINE void* DYNO_CDECL getReturnAddress(void* stackPtr);
         DYNO_NOINLINE void DYNO_CDECL setReturnAddress(void* retAddr, void* stackPtr);
-
-#ifdef DYNO_PLATFORM_MSVC
-#pragma optimize ("", on)
-#elif DYNO_PLATFORM_GCC_COMPATIBLE
-#pragma OPT pop_options
-#endif
+DYNO_OPTS_ON
 
     protected:
         asmjit::JitRuntime m_asmjit_rt;
 
         // address of the bridge
-        uintptr_t m_fnBridge; // TODO: move to void* oor uintptr
+        uintptr_t m_fnBridge;
 
         // address of new return
         uintptr_t m_newRetAddr;
@@ -181,7 +172,7 @@ namespace dyno {
         std::map<void*, std::vector<void*>> m_retAddr;
 
         // callbacks list
-        std::map<HookType, std::vector<HookHandler*>> m_handlers;
+        std::map<CallbackType, std::vector<CallbackHandler*>> m_handlers;
 
         //
         bool m_hooked{ false };

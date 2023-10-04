@@ -41,7 +41,7 @@ insts_t ZydisDisassembler::disassemble(
 	insts_t insVec;
 //	m_branchMap.clear();
 
-    uintptr_t size = end - start;
+    size_t size = end - start;
 	assert(size > 0);
 	if (size <= 0) {
 		return insVec;
@@ -55,7 +55,7 @@ insts_t ZydisDisassembler::disassemble(
 	}
 	ZydisDecodedOperand decoded_operands[ZYDIS_MAX_OPERAND_COUNT];
 	ZydisDecodedInstruction insInfo;
-    uintptr_t offset = 0;
+    size_t offset = 0;
 	bool endHit = false;
 
     uint8_t* buffer;

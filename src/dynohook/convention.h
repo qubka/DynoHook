@@ -52,7 +52,7 @@ namespace dyno {
          */
         CallingConvention(std::vector<DataObject> arguments, DataObject returnType, size_t alignment);
         virtual ~CallingConvention() = default;
-        NONCOPYABLE(CallingConvention);
+        DYNO_NONCOPYABLE(CallingConvention);
 
         /**
          * @brief This should return a list of RegisterType values. These registers will be saved for later access.

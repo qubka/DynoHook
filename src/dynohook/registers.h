@@ -275,14 +275,14 @@ namespace dyno {
     };
 
     struct RegisterInfo {
-        std::string_view name;
+        std::string name;
         RegisterSize size;
         uint8_t alignment;
     };
 
-    const RegisterInfo& RegisterTypeInfo(RegisterType regType);
+    const RegisterInfo& RegisterTypeInfo(RegisterType reg);
 
-    size_t RegisterTypeToSSEIndex(RegisterType regType);
+    size_t RegisterTypeToSSEIndex(RegisterType reg);
     RegisterType SSEIndexToRegisterType(size_t index, size_t size = 0);
 
     class Register {
@@ -344,12 +344,12 @@ namespace dyno {
     public:
         Registers(const regs_t& registers);
         ~Registers() = default;
-        NONCOPYABLE(Registers);
+        DYNO_NONCOPYABLE(Registers);
 
-        ITERATABLE(Register, m_registers);
+        DYNO_ITERATABLE(Register, m_registers);
 
-        const Register& operator[](RegisterType regType) const;
-        const Register& at(RegisterType regType, bool reverse = false) const;
+        const Register& operator[](RegisterType reg) const;
+        const Register& at(RegisterType reg, bool reverse = false) const;
 
         size_t size() const {
             return m_registers.size();

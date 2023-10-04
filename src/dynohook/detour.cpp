@@ -183,7 +183,7 @@ bool Detour::unhook() {
     }
 
     MemProtector prot{m_fnAddress, calcInstsSz(m_originalInsts), ProtFlag::R | ProtFlag::W | ProtFlag::X, *this};
-    ZydisDisassembler::writeEncoding(m_originalInsts, *this);
+    writeEncoding(m_originalInsts);
 
     if (m_trampoline != NULL) {
         delete[](uint8_t*) m_trampoline;
@@ -196,7 +196,7 @@ bool Detour::unhook() {
 
 bool Detour::rehook() {
     MemProtector prot{m_fnAddress, m_hookSize, ProtFlag::RWX, *this};
-    ZydisDisassembler::writeEncoding(m_hookInsts, *this);
+    writeEncoding(m_hookInsts);
 
     // Nop the space between jmp and end of prologue
     if (m_hookSize < m_nopProlOffset) {
@@ -205,7 +205,7 @@ bool Detour::rehook() {
     }
 
     const auto nops = make_nops(m_fnAddress + m_nopProlOffset, m_nopSize);
-    ZydisDisassembler::writeEncoding(nops, *this);
+    writeEncoding(nops);
 
     return true;
 }

@@ -14,13 +14,13 @@ Hook::Hook(const ConvFunc& convention) :
     m_scratchRegisters{Registers::ScratchList()} {
 }
 
-void Hook::addCallback(HookType hookType, HookHandler* handler) {
+void Hook::addCallback(CallbackType type, CallbackHandler* handler) {
     if (!handler)
         return;
 
-    std::vector<HookHandler*>& callbacks = m_handlers[hookType];
+    std::vector<CallbackHandler*>& callbacks = m_handlers[type];
 
-    for (const HookHandler* callback : callbacks) {
+    for (const CallbackHandler* callback : callbacks) {
         if (callback == handler)
             return;
     }
@@ -28,15 +28,15 @@ void Hook::addCallback(HookType hookType, HookHandler* handler) {
     callbacks.push_back(handler);
 }
 
-void Hook::removeCallback(HookType hookType, HookHandler* handler) {
+void Hook::removeCallback(CallbackType type, CallbackHandler* handler) {
     if (!handler)
         return;
 
-    auto it = m_handlers.find(hookType);
+    auto it = m_handlers.find(type);
     if (it == m_handlers.end())
         return;
 
-    std::vector<HookHandler*>& callbacks = it->second;
+    std::vector<CallbackHandler*>& callbacks = it->second;
 
     for (size_t i = 0; i < callbacks.size(); ++i) {
         if (callbacks[i] == handler) {
@@ -48,14 +48,14 @@ void Hook::removeCallback(HookType hookType, HookHandler* handler) {
     }
 }
 
-bool Hook::isCallbackRegistered(HookType hookType, HookHandler* handler) const {
-    auto it = m_handlers.find(hookType);
+bool Hook::isCallbackRegistered(CallbackType type, CallbackHandler* handler) const {
+    auto it = m_handlers.find(type);
     if (it == m_handlers.end())
         return false;
 
-    const std::vector<HookHandler*>& callbacks = it->second;
+    const std::vector<CallbackHandler*>& callbacks = it->second;
 
-    for (const HookHandler* callback : callbacks) {
+    for (const CallbackHandler* callback : callbacks) {
         if (callback == handler)
             return true;
     }
@@ -64,19 +64,19 @@ bool Hook::isCallbackRegistered(HookType hookType, HookHandler* handler) const {
 }
 
 bool Hook::areCallbacksRegistered() const {
-    auto it = m_handlers.find(HookType::Pre);
+    auto it = m_handlers.find(CallbackType::Pre);
     if (it != m_handlers.end() && !it->second.empty())
         return true;
 
-    it = m_handlers.find(HookType::Post);
+    it = m_handlers.find(CallbackType::Post);
     if (it != m_handlers.end() && !it->second.empty())
         return true;
 
     return false;
 }
 
-ReturnAction Hook::hookHandler(HookType hookType) {
-    if (hookType == HookType::Post) {
+ReturnAction Hook::hookHandler(CallbackType type) {
+    if (type == CallbackType::Post) {
         ReturnAction lastPreReturnAction = m_lastPreReturnAction.back();
         m_lastPreReturnAction.pop_back();
         if (lastPreReturnAction >= ReturnAction::Override)
@@ -86,26 +86,26 @@ ReturnAction Hook::hookHandler(HookType hookType) {
     }
 
     ReturnAction returnAction = ReturnAction::Ignored;
-    auto it = m_handlers.find(hookType);
+    auto it = m_handlers.find(type);
     if (it == m_handlers.end()) {
         // still save the arguments for the post hook even if there
         // is no pre-handler registered.
-        if (hookType == HookType::Pre) {
+        if (type == CallbackType::Pre) {
             m_lastPreReturnAction.push_back(returnAction);
             m_callingConvention->saveCallArguments(m_registers);
         }
         return returnAction;
     }
 
-    const std::vector<HookHandler*>& callbacks = it->second;
+    const std::vector<CallbackHandler*>& callbacks = it->second;
 
-    for (const HookHandler* callback : callbacks) {
-        ReturnAction result = ((HookHandler) callback)(hookType, *this);
+    for (const CallbackHandler* callback : callbacks) {
+        ReturnAction result = ((CallbackHandler) callback)(type, *this);
         if (result > returnAction)
             returnAction = result;
     }
 
-    if (hookType == HookType::Pre) {
+    if (type == CallbackType::Pre) {
         m_lastPreReturnAction.push_back(returnAction);
         if (returnAction >= ReturnAction::Override)
             m_callingConvention->saveReturnValue(m_registers);
@@ -155,11 +155,11 @@ bool Hook::createBridge() {
     writeModifyReturnAddress(a);
 
     // call the pre-hook handler and jump to label override if true was returned
-    writeCallHandler(a, HookType::Pre);
+    writeCallHandler(a, CallbackType::Pre);
     a.cmp(al, ReturnAction::Supercede);
 
     // restore the previously saved registers, so any changes will be applied
-    writeRestoreRegisters(a, HookType::Pre);
+    writeRestoreRegisters(a, CallbackType::Pre);
 
     // skip trampoline if equal
     a.je(override);
@@ -266,10 +266,10 @@ bool Hook::createPostCallback() {
 #endif // DYNO_ARCH_X86
 
     // call the post-hook handler
-    writeCallHandler(a, HookType::Post);
+    writeCallHandler(a, CallbackType::Post);
 
     // restore the previously saved registers, so any changes will be applied
-    writeRestoreRegisters(a, HookType::Post);
+    writeRestoreRegisters(a, CallbackType::Post);
 
     // save scratch registers that are used by getReturnAddress
     writeSaveScratchRegisters(a);
@@ -326,22 +326,22 @@ bool Hook::createPostCallback() {
     return true;
 }
 
-void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
-    ReturnAction (DYNO_CDECL Hook::*hookHandler)(HookType) = &Hook::hookHandler;
+void Hook::writeCallHandler(Assembler& a, CallbackType type) const {
+    ReturnAction (DYNO_CDECL Hook::*hookHandler)(CallbackType) = &Hook::hookHandler;
 
     // save the registers so that we can access them in our handlers
-    writeSaveRegisters(a, hookType);
+    writeSaveRegisters(a, type);
 
     // call the global hook handler
 #if DYNO_ARCH_X86 == 64
 #ifdef DYNO_PLATFORM_WINDOWS
-    a.mov(rdx, hookType);
+    a.mov(rdx, type);
     a.mov(rcx, this);
     a.sub(rsp, 40);
     a.call((void*&) hookHandler); // +8 = 48 (aligned by 16 bytes)
     a.add(rsp, 40);
 #else // __systemV__
-    a.mov(rsi, hookType);
+    a.mov(rsi, type);
     a.mov(rdi, this);
     a.sub(rsp, 24);
     a.call((void*&) hookHandler); // +8 = 32 (aligned by 16 bytes)
@@ -350,7 +350,7 @@ void Hook::writeCallHandler(Assembler& a, HookType hookType) const {
 #elif DYNO_ARCH_X86 == 32
     // subtract 4 bytes to preserve 16-byte stack alignment for Linux
     a.sub(esp, 4);
-    a.push(hookType);
+    a.push(type);
     a.push(this);
     a.call((void*&) hookHandler); // +4 = 16 (aligned by 16 bytes)
     a.add(esp, 12);
@@ -391,7 +391,7 @@ void Hook::writeRestoreScratchRegisters(Assembler& a) const {
     }
 }
 
-void Hook::writeSaveRegisters(Assembler& a, HookType hookType) const {
+void Hook::writeSaveRegisters(Assembler& a, CallbackType type) const {
     // save rax first, because we use it to save others
 
     for (const auto& reg : m_registers) {
@@ -407,7 +407,7 @@ void Hook::writeSaveRegisters(Assembler& a, HookType hookType) const {
     }
 }
 
-void Hook::writeRestoreRegisters(Assembler& a, HookType hookType) const {
+void Hook::writeRestoreRegisters(Assembler& a, CallbackType type) const {
     // restore rax last, because we use it to restore others
 
     for (const auto& reg : m_registers) {
@@ -423,7 +423,7 @@ void Hook::writeRestoreRegisters(Assembler& a, HookType hookType) const {
     }
 }
 
-void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) const {
+void Hook::writeRegToMem(Assembler& a, const Register& reg, CallbackType type) const {
     /**
      * The moffs8, moffs16, moffs32 and moffs64 operands specify a simple offset relative to the segment base,
      * where 8, 16, 32 and 64 refer to the size of the data. The address-size attribute of the instruction determines the size of the offset, either 16, 32 or 64 bits.
@@ -660,7 +660,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
     }
 }
 
-void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) const {
+void Hook::writeMemToReg(Assembler& a, const Register& reg, CallbackType type) const {
     /**
      * The moffs8, moffs16, moffs32 and moffs64 operands specify a simple offset relative to the segment base,
      * where 8, 16, 32 and 64 refer to the size of the data. The address-size attribute of the instruction determines the size of the offset, either 16, 32 or 64 bits.
@@ -911,19 +911,19 @@ void Hook::writeRestoreScratchRegisters(Assembler& a) const {
     }
 }
 
-void Hook::writeSaveRegisters(Assembler& a, HookType hookType) const {
+void Hook::writeSaveRegisters(Assembler& a, CallbackType type) const {
     for (const auto& reg : m_registers) {
-        writeRegToMem(a, reg, hookType);
+        writeRegToMem(a, reg, type);
     }
 }
 
-void Hook::writeRestoreRegisters(Assembler& a, HookType hookType) const {
+void Hook::writeRestoreRegisters(Assembler& a, CallbackType type) const {
     for (const auto& reg : m_registers) {
-        writeMemToReg(a, reg, hookType);
+        writeMemToReg(a, reg, type);
     }
 }
 
-void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) const {
+void Hook::writeRegToMem(Assembler& a, const Register& reg, CallbackType type) const {
     uintptr_t addr = reg.getAddress<uintptr_t>();
     switch (reg) {
         // ========================================================================
@@ -1003,7 +1003,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
         case ST0:
             // don't mess with the FPU stack in a pre-hook. The float return is returned in st0,
             // so only load it in a post hook to avoid writing back NaN.
-            if (hookType == HookType::Post) {
+            if (type == CallbackType::Post) {
                 switch (m_callingConvention->getReturn().size) {
                     case SIZE_DWORD: a.fstp(dword_ptr(addr)); break;
                     case SIZE_QWORD: a.fstp(qword_ptr(addr)); break;
@@ -1023,7 +1023,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, HookType hookType) c
     }
 }
 
-void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) const {
+void Hook::writeMemToReg(Assembler& a, const Register& reg, CallbackType type) const {
     uintptr_t addr = reg.getAddress<uintptr_t>();
     switch (reg) {
         // ========================================================================
@@ -1101,7 +1101,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, HookType hookType) c
         // >> 80-bit FPU registers
         // ========================================================================
         case ST0:
-            if (hookType == HookType::Post) {
+            if (type == CallbackType::Post) {
                 // replace the top of the FPU stack.
                 // copy st0 to st0 and pop -> just pop the FPU stack.
                 a.fstp(st0);

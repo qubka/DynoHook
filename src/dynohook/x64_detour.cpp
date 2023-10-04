@@ -63,11 +63,13 @@ std::optional<uintptr_t> x64Detour::findNearestCodeCave(uintptr_t address) {
 
     // these patterns are listed in order of most accurate to least accurate with size taken into account
     // simple c3 ret is more accurate than c2 ?? ?? and series of CC or 90 is more accurate than complex multi-byte nop
-    static std::string CC_PATTERN_RET = "c3 " + repeat_n("cc", SIZE, " ");
-    static std::string NOP1_PATTERN_RET = "c3 " + repeat_n("90", SIZE, " ");
 
-    static std::string CC_PATTERN_RETN = "c2 ?? ?? " + repeat_n("cc", SIZE, " ");
-    static std::string NOP1_PATTERN_RETN = "c2 ?? ?? " + repeat_n("90", SIZE, " ");
+    constexpr String CC_PATTERN = repeat_n<SIZE>("cc ");
+    constexpr String NOP_PATTERN = repeat_n<SIZE>("90 ");
+    constexpr String CC_PATTERN_RET = concat("c3 ", CC_PATTERN.c);
+    constexpr String NOP1_PATTERN_RET = concat("c3 ", NOP_PATTERN.c);
+    constexpr String CC_PATTERN_RETN = concat("c2 ?? ?? ", CC_PATTERN.c);
+    constexpr String NOP1_PATTERN_RETN = concat("c2 ?? ?? ", NOP_PATTERN.c);
 
     const char* NOP2_RET = "c3 0f 1f 44 00 00";
     const char* NOP3_RET = "c3 0f 1f 84 00 00 00 00 00";
@@ -93,12 +95,12 @@ std::optional<uintptr_t> x64Detour::findNearestCodeCave(uintptr_t address) {
 
     // Scan in the same order as listing above
     const char* PATTERNS_OFF1[] = {
-        CC_PATTERN_RET.c_str(), NOP1_PATTERN_RET.c_str(), NOP2_RET, NOP3_RET, NOP4_RET,
+        CC_PATTERN_RET.c, NOP1_PATTERN_RET.c, NOP2_RET, NOP3_RET, NOP4_RET,
         NOP5_RET, NOP6_RET, NOP7_RET, NOP8_RET, NOP9_RET, NOP10_RET, NOP11_RET
     };
 
     const char* PATTERNS_OFF3[] = {
-        CC_PATTERN_RETN.c_str(), NOP1_PATTERN_RETN.c_str(), NOP2_RETN, NOP3_RETN, NOP4_RETN,
+        CC_PATTERN_RETN.c, NOP1_PATTERN_RETN.c, NOP2_RETN, NOP3_RETN, NOP4_RETN,
         NOP5_RETN, NOP6_RETN, NOP7_RETN, NOP8_RETN, NOP9_RETN, NOP10_RETN, NOP11_RETN
     };
 
@@ -397,7 +399,7 @@ bool x64Detour::hook() {
 
     LOG_PRINT("Hook instructions: \n" + instsToStr(m_hookInsts) + "\n");
     MemProtector prot{m_fnAddress, m_hookSize, ProtFlag::RWX, *this};
-    ZydisDisassembler::writeEncoding(m_hookInsts, *this);
+    writeEncoding(m_hookInsts);
 
     LOG_PRINT("Hook size: " + std::to_string(m_hookSize) + "\n");
     LOG_PRINT("Prologue offset: " + std::to_string(m_nopProlOffset) + "\n");
@@ -406,7 +408,7 @@ bool x64Detour::hook() {
     assert(m_hookSize >= m_nopProlOffset);
     m_nopSize = (uint16_t) (m_hookSize - m_nopProlOffset);
     const auto nops = make_nops(m_fnAddress + m_nopProlOffset, m_nopSize);
-    ZydisDisassembler::writeEncoding(nops, *this);
+    writeEncoding(nops);
 
     m_hooked = true;
     return true;
@@ -717,7 +719,7 @@ bool x64Detour::makeTrampoline(insts_t& prologue, insts_t& outJmpTable) {
     }
 
     m_trampoline = tmpTrampoline;*/
-    delta = m_trampoline - prolStart;
+    delta = (intptr_t) (m_trampoline - prolStart);
 
     buildRelocationList(prologue, prolSz, delta, instsNeedingEntry, instsNeedingReloc, instsNeedingTranslation);
     if(!instsNeedingEntry.empty()) {
@@ -737,9 +739,8 @@ bool x64Detour::makeTrampoline(insts_t& prologue, insts_t& outJmpTable) {
         // Address of the instruction that follows the problematic instruction
         const uintptr_t resume_address = m_trampoline + inst_offset + instruction.size();
         auto opt_translation_address = generateTranslationRoutine(instruction, resume_address);
-        if (!opt_translation_address) {
+        if (!opt_translation_address)
             return false;
-        }
 
         // replace the rip-relative instruction with jump to translation
         auto inst_iterator = std::find(prologue.begin(), prologue.end(), instruction);
@@ -777,7 +778,7 @@ bool x64Detour::makeTrampoline(insts_t& prologue, insts_t& outJmpTable) {
     const auto jmpToProl = makex64MinimumJump(jmpToProlAddr, prolStart + prolSz, jmpHolderCurAddr);
 
     LOG_PRINT("Jmp To Prol:\n" + instsToStr(jmpToProl) + "\n");
-    ZydisDisassembler::writeEncoding(jmpToProl, *this);
+    writeEncoding(jmpToProl);
 
     // each jmp tbl entries holder is one slot down from the previous (lambda holds state)
     const auto makeJmpFn = [&, captureAddress = jmpHolderCurAddr](uintptr_t a, Instruction& inst) mutable {

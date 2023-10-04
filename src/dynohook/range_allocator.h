@@ -4,7 +4,7 @@ namespace dyno {
 	public:
 		RangeAllocator(uint8_t blockSize, uint8_t blockCount);
 		~RangeAllocator() = default;
-		NONCOPYABLE(RangeAllocator);
+		DYNO_NONCOPYABLE(RangeAllocator);
 
 		char* allocate(uintptr_t min, uintptr_t max);
 		void deallocate(uintptr_t addr);

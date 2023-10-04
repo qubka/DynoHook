@@ -42,7 +42,7 @@ int __fastcall MyFunc(int x, int y) {
 	return result;
 }
 
-ReturnAction PreMyFunc(HookType hookType, Hook& hook) {
+ReturnAction PreMyFunc(CallbackType hookType, Hook& hook) {
 	g_PreMyFuncCallCount++;
 	int x = hook.getArgument<int>(0);
 	assert(x == 3);
@@ -53,7 +53,7 @@ ReturnAction PreMyFunc(HookType hookType, Hook& hook) {
 	return ReturnAction::Ignored;
 }
 
-ReturnAction PostMyFunc(HookType hookType, Hook& hook) {
+ReturnAction PostMyFunc(CallbackType hookType, Hook& hook) {
 	g_PostMyFuncCallCount++;
 	int x = hook.getArgument<int>(0);
 	assert(x == 3);
@@ -76,8 +76,8 @@ void main() {
 	Hook* hook = manager.hook((void*) &MyFunc, [] { return new x64MsFastcall({DataType::Int, DataType::Int}, DataType::Int); });
 
 	// Add the callbacks
-	hook->addCallback(HookType::Pre, (HookHandler*) &PreMyFunc);
-	hook->addCallback(HookType::Post, (HookHandler*) &PostMyFunc);
+	hook->addCallback(CallbackType::Pre, (HookHandler*) &PreMyFunc);
+	hook->addCallback(CallbackType::Post, (HookHandler*) &PostMyFunc);
 
 	// Call the function
 	int ret = MyFunc(3, 10);
@@ -122,7 +122,7 @@ private:
 	int m_iData;
 };
 
-ReturnAction PreMyFunc(HookType hookType, Hook& hook) {
+ReturnAction PreMyFunc(CallbackType hookType, Hook& hook) {
 	g_PreMyFuncCallCount++;
 	MyClass* pMyClass = hook.getArgument<MyClass *>(0);
 	assert(pMyClass == g_pMyClass);
@@ -136,7 +136,7 @@ ReturnAction PreMyFunc(HookType hookType, Hook& hook) {
 	return ReturnAction::Ignored;
 }
 
-ReturnAction PostMyFunc(HookType hookType, Hook& hook) {
+ReturnAction PostMyFunc(CallbackType hookType, Hook& hook) {
 	g_PostMyFuncCallCount++;
 	MyClass* pMyClass = hook.getArgument<MyClass *>(0);
 	assert(pMyClass == g_pMyClass);
@@ -164,8 +164,8 @@ void main() {
 	Hook* hook = manager.hook((void*) &myFunc, [] { return new x64MsFastcall({DataType::Pointer, DataType::Int, DataType::Int}, DataType::Int); });
 
 	// Add the callbacks
-	hook->addCallback(HookType::Pre, (HookHandler*) &PreMyFunc);
-	hook->addCallback(HookType::Post, (HookHandler*) &PostMyFunc);
+	hook->addCallback(CallbackType::Pre, (HookHandler*) &PreMyFunc);
+	hook->addCallback(CallbackType::Post, (HookHandler*) &PostMyFunc);
 
 	MyClass a;
 	g_pMyClass = &a;
@@ -213,7 +213,7 @@ private:
     int m_iData;
 };
 
-ReturnAction PreMyFunc(HookType hookType, Hook& hook) {
+ReturnAction PreMyFunc(CallbackType hookType, Hook& hook) {
     g_PreMyFuncCallCount++;
     MyClass* pMyClass = hook.getArgument<MyClass *>(0);
     assert(pMyClass == g_pMyClass);
@@ -227,7 +227,7 @@ ReturnAction PreMyFunc(HookType hookType, Hook& hook) {
     return ReturnAction::Ignored;
 }
 
-ReturnAction PostMyFunc(HookType hookType, Hook& hook) {
+ReturnAction PostMyFunc(CallbackType hookType, Hook& hook) {
     g_PostMyFuncCallCount++;
     MyClass* pMyClass = hook.getArgument<MyClass *>(0);
     assert(pMyClass == g_pMyClass);
@@ -258,8 +258,8 @@ void test() {
     Hook* hook = manager.hook(&a, 0, [] { return new x64MsFastcall({DataType::Pointer, DataType::Int, DataType::Int}, DataType::Int); });
 
     // add the callbacks
-    hook->addCallback(HookType::Pre, (HookHandler*) &PreMyFunc);
-    hook->addCallback(HookType::Post, (HookHandler*) &PostMyFunc);
+    hook->addCallback(CallbackType::Pre, (HookHandler*) &PreMyFunc);
+    hook->addCallback(CallbackType::Post, (HookHandler*) &PostMyFunc);
 
     // call the function
     void** vtable = *(void***)&a;

@@ -44,21 +44,21 @@ ProtFlag MemAccessor::mem_protect(uintptr_t dest, size_t size, ProtFlag prot, bo
 #elif DYNO_PLATFORM_LINUX
 
 struct region_t {
-	uintptr_t start;
-	uintptr_t end;
+    uintptr_t start;
+    uintptr_t end;
 	ProtFlag prot;
 };
 
 static region_t get_region_from_addr(uintptr_t addr) {
 	region_t res{};
 
-	std::ifstream f("/proc/self/maps");
+	std::ifstream f{"/proc/self/maps"};
 	std::string s;
 	while (std::getline(f, s)) {
 		if (!s.empty() && s.find("vdso") == std::string::npos && s.find("vsyscall") == std::string::npos) {
 			char* strend = &s[0];
-			uintptr_t start = strtoul(strend  , &strend, 16);
-			uintptr_t end   = strtoul(strend+1, &strend, 16);
+            uintptr_t start = strtoul(strend  , &strend, 16);
+            uintptr_t end   = strtoul(strend+1, &strend, 16);
 			if (start != 0 && end != 0 && start <= addr && addr < end) {
 				res.start = start;
 				res.end = end;
@@ -160,8 +160,10 @@ ProtFlag MemAccessor::mem_protect(uintptr_t dest, size_t size, ProtFlag prot, bo
 
 #endif
 
-/**Write a 25 byte absolute jump. This is preferred since it doesn't require an indirect memory holder.
- * We first sub rsp by 128 bytes to avoid the red-zone stack space. This is specific to unix only afaik.**/
+/**
+ * Write a 25 byte absolute jump. This is preferred since it doesn't require an indirect memory holder.
+ * We first sub rsp by 128 bytes to avoid the red-zone stack space. This is specific to unix only afaik.
+ */
 insts_t MemAccessor::makex64PreferredJump(uintptr_t address, uintptr_t destination) {
     Instruction::Displacement zeroDisp{0};
     uintptr_t curInstAddress = address;
@@ -202,17 +204,19 @@ insts_t MemAccessor::makex64PreferredJump(uintptr_t address, uintptr_t destinati
     return { pushRax, movRax, xchgRspRax, ret };
 }
 
-/**Write an indirect style 6byte jump. Address is where the jmp instruction will be located, and
+/**
+ * Write an indirect style 6byte jump. Address is where the jmp instruction will be located, and
  * destHolder should point to the memory location that *CONTAINS* the address to be jumped to.
  * Destination should be the value that is written into destHolder, and be the address of where
- * the jmp should land.**/
+ * the jmp should land.
+ */
 insts_t MemAccessor::makex64MinimumJump(uintptr_t address, uintptr_t destination, uintptr_t destHolder) {
     Instruction::Displacement disp{0};
     disp.Relative = Instruction::calculateRelativeDisplacement<int32_t>(address, destHolder, 6);
 
     std::vector<uint8_t> destBytes(8);
     std::memcpy(destBytes.data(), &destination, 8);
-    Instruction specialDest{this, destHolder, disp, 0, false, false, std::move(destBytes), "dest holder", "", Mode::x64 };
+    Instruction specialDest{this, destHolder, disp, 0, false, false, std::move(destBytes), "dest holder", "", Mode::x64};
 
     std::vector<uint8_t> bytes(6);
     bytes[0] = 0xFF;
@@ -248,4 +252,22 @@ insts_t MemAccessor::makex64DestHolder(uintptr_t destination, uintptr_t destHold
     std::vector<uint8_t> destBytes(8);
     std::memcpy(destBytes.data(), &destination, 8);
     return insts_t{ Instruction{this, destHolder, Instruction::Displacement{0}, 0, false, false, std::move(destBytes), "dest holder", "", Mode::x64} };
+}
+
+void MemAccessor::writeEncoding(const insts_t& instructions) {
+    for (const auto& inst : instructions)
+        writeEncoding(inst);
+}
+
+/**
+ * Write the raw bytes of the given instruction into the memory specified by the
+ * instruction's address. If the address value of the instruction has been changed
+ * since the time it was decoded this will copy the instruction to a new memory address.
+ * This will not automatically do any code relocation, all relocation logic should
+ * first modify the byte array, and then call write encoding, proper order to relocate
+ * an instruction should be disasm instructions -> set relative/absolute displacement() ->
+ */
+void MemAccessor::writeEncoding(const Instruction& instruction) {
+    assert(instruction.size() <= instruction.getBytes().size());
+    mem_copy(instruction.getAddress(), (uintptr_t)&instruction.getBytes()[0], instruction.size());
 }

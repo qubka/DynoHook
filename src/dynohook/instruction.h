@@ -1,8 +1,11 @@
 #pragma once
 
-#include "enums.h"
-
 namespace dyno {
+    enum class Mode : bool {
+        x86,
+        x64
+    };
+
     class MemAccessor;
     class Instruction {
     public:
@@ -214,14 +217,13 @@ namespace dyno {
         uint8_t       m_dispOffset;      // Offset into the byte array where displacement is encoded
         uint8_t       m_dispSize;        // Size of the displacement, in bytes
 
+        Mode m_mode;
+        uint32_t m_uid;
+
         std::vector<uint8_t> m_bytes;    // All the raw bytes of this instruction
         std::vector<OperandType> m_operands; // Types of all instruction operands
         std::string m_mnemonic;
         std::string m_opStr;
-
-        Mode m_mode;
-
-        uint32_t m_uid;
 
 		inline static uint32_t s_counter = 0;
     };

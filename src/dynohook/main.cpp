@@ -20,7 +20,7 @@ DYNO_NOINLINE int MyFunc(int x, int y) {
     return result;
 }
 
-ReturnAction PreMyFunc(HookType hookType, Hook& hook) {
+ReturnAction PreMyFunc(CallbackType hookType, Hook& hook) {
     g_PreMyFuncCallCount++;
     int x = hook.getArgument<int>(0);
     assert(x == 3);
@@ -31,7 +31,7 @@ ReturnAction PreMyFunc(HookType hookType, Hook& hook) {
     return ReturnAction::Ignored;
 }
 
-ReturnAction PostMyFunc(HookType hookType, Hook& hook) {
+ReturnAction PostMyFunc(CallbackType hookType, Hook& hook) {
     g_PostMyFuncCallCount++;
     int x = hook.getArgument<int>(0);
     assert(x == 3);
@@ -55,8 +55,8 @@ int main(int argc, char* argv[]) {
     detour.hook();
 
     // add the callbacks
-    detour.addCallback(HookType::Pre, (HookHandler*) &PreMyFunc);
-    detour.addCallback(HookType::Post, (HookHandler*) &PostMyFunc);
+    detour.addCallback(CallbackType::Pre, (CallbackHandler*) &PreMyFunc);
+    detour.addCallback(CallbackType::Post, (CallbackHandler*) &PostMyFunc);
 
     // call the function
     int ret = MyFunc(3, 10);

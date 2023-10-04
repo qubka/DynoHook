@@ -4,19 +4,21 @@
 
 #define LOG_PRINT(x) std::cout << (x) << std::endl;
 
-#define NONCOPYABLE(x) x(const x&) = delete; \
-                       x(x&&) = delete; \
-                       x& operator=(const x&) = delete; \
-                       x& operator=(x&&) = delete;
+#define DYNO_NONCOPYABLE(x) \
+    x(const x&) = delete; \
+    x(x&&) = delete; \
+    x& operator=(const x&) = delete; \
+    x& operator=(x&&) = delete;
 
-#define ITERATABLE(t, o) std::vector<t>::iterator begin() { return o.begin(); } \
-                         std::vector<t>::iterator end() { return o.end(); } \
-                         std::vector<t>::reverse_iterator rbegin() { return o.rbegin(); } \
-                         std::vector<t>::reverse_iterator rend() { return o.rend(); } \
-                         std::vector<t>::const_iterator begin() const { return o.begin(); } \
-                         std::vector<t>::const_iterator end() const { return o.end(); } \
-                         std::vector<t>::const_reverse_iterator rbegin() const { return o.rbegin(); } \
-                         std::vector<t>::const_reverse_iterator rend() const { return o.rend(); }     \
+#define DYNO_ITERATABLE(t, o) \
+    std::vector<t>::iterator begin() { return o.begin(); } \
+    std::vector<t>::iterator end() { return o.end(); } \
+    std::vector<t>::reverse_iterator rbegin() { return o.rbegin(); } \
+    std::vector<t>::reverse_iterator rend() { return o.rend(); } \
+    std::vector<t>::const_iterator begin() const { return o.begin(); } \
+    std::vector<t>::const_iterator end() const { return o.end(); } \
+    std::vector<t>::const_reverse_iterator rbegin() const { return o.rbegin(); } \
+    std::vector<t>::const_reverse_iterator rend() const { return o.rend(); }     \
 
 namespace dyno {
     template< typename T >
@@ -94,14 +96,41 @@ namespace dyno {
     uint64_t calc_2gb_above(uint64_t address);
 #endif // DYNO_ARCH_X86
 
-    inline std::string repeat_n(std::string_view s, size_t n, std::string_view delim = "") {
-        std::string out;
-        for (size_t i = 0; i < n; i++) {
-            out += s;
-            if (i != n - 1) {
-                out += delim;
+    // we cannot return a char array from a function, therefore we need a wrapper
+    template<size_t N>
+    struct String {
+        char c[N];
+    };
+
+    template <size_t N, size_t L>
+    constexpr auto repeat_n(const char (&pattern)[L]) {
+        static_assert(N != 0, "Size is empty!");
+        static_assert(L != 3, "Length is invalid!");
+        constexpr auto length = L - 1;
+        constexpr auto size = N * length;
+        constexpr auto last = size - 1;
+        String<size> result = {};
+        for (size_t i = 0; i < last; i += length) {
+            for (size_t j = 0; j < length; j++) {
+                result.c[i + j] = pattern[j];
             }
         }
-        return out;
+        result.c[last] = '\0';
+        return result;
+    }
+
+    template<size_t ...L>
+    constexpr auto concat(const char (&...strings)[L]) {
+        constexpr size_t N = (... + L) - sizeof...(L);
+        String<N + 1> result = {};
+        result.c[N] = '\0';
+
+        char* dst = result.c;
+        for (const char* src : {strings...}) {
+            for (; *src != '\0'; src++, dst++) {
+                *dst = *src;
+            }
+        }
+        return result;
     }
 }

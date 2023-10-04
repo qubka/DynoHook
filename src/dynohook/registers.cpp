@@ -354,8 +354,8 @@ Registers::Registers(const regs_t& registers) {
     }
 }
 
-const Register& Registers::operator[](RegisterType regType) const {
-    return at(regType);
+const Register& Registers::operator[](RegisterType reg) const {
+    return at(reg);
 }
 
 const Register& Registers::at(RegisterType regType, bool reverse) const {
@@ -374,12 +374,12 @@ const Register& Registers::at(RegisterType regType, bool reverse) const {
     return s_none;
 }
 
-const RegisterInfo& RegisterTypeInfo(RegisterType regType) {
-    return reg_table.at(regType);
+const RegisterInfo& RegisterTypeInfo(RegisterType reg) {
+    return reg_table.at(reg);
 }
 
-size_t dyno::RegisterTypeToSSEIndex(RegisterType regType) {
-    switch (regType) {
+size_t dyno::RegisterTypeToSSEIndex(RegisterType reg) {
+    switch (reg) {
         // ========================================================================
         // >> 128-bit XMM registers
         // ========================================================================

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "enums.h"
+#include "prot.h"
 
 namespace dyno {
     class MemAccessor;
@@ -11,14 +11,14 @@ namespace dyno {
 	class MemProtector {
 	public:
 		MemProtector() = delete;
-		MemProtector(uintptr_t address, uintptr_t length, ProtFlag prot, MemAccessor& accessor, bool unsetOnDestroy = true);
+		MemProtector(uintptr_t address, size_t length, ProtFlag prot, MemAccessor& accessor, bool unsetOnDestroy = true);
 		~MemProtector();
 		
-		ProtFlag originalProt() {
+		ProtFlag originalProt() const {
 			return m_origProtection;
 		}
 
-		bool isGood() {
+		bool isGood() const {
 			return status;
 		}
 
@@ -26,7 +26,7 @@ namespace dyno {
 		MemAccessor& m_accessor;
 
         uintptr_t m_address;
-        uintptr_t m_length;
+        size_t m_length;
 		bool status;
 		bool unsetLater;
 		
