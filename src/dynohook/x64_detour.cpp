@@ -196,12 +196,12 @@ std::optional<uintptr_t> x64Detour::findNearestCodeCave(uintptr_t address) {
     return std::nullopt;
 }
 
-bool x64Detour::make_inplace_trampoline(
+bool x64Detour::makeInplaceTrampoline(
     uintptr_t base_address,
     const std::function<void(asmjit::x86::Assembler&)>& builder
 ) {
     CodeHolder code;
-    code.init(m_asmjit_rt.environment(), base_address);
+    code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpuFeatures(), base_address);
     x86::Assembler a{&code};
 
     builder(a);
@@ -225,7 +225,7 @@ bool x64Detour::make_inplace_trampoline(
     return true;
 }
 
-bool x64Detour::allocate_jump_to_bridge() {
+bool x64Detour::allocateJumpToBridge() {
     // Create the bridge function
     if (!createBridge()) {
         LOG_PRINT("Failed to create bridge");
@@ -262,7 +262,7 @@ bool x64Detour::allocate_jump_to_bridge() {
     // otherwise this will overwrite adjacent bytes. The default in-place scheme is non-spoiling,
     // but larger, which reduces chances of success.
     if (m_detourScheme & detour_scheme_t::INPLACE) {
-        const auto success = make_inplace_trampoline(m_fnAddress, [&](auto& a) {
+        const auto success = makeInplaceTrampoline(m_fnAddress, [&](auto &a) {
             a.lea(x86::rsp, x86::ptr(x86::rsp, -0x80));
             a.push(x86::rax);
             a.mov(x86::rax, m_fnBridge);
@@ -293,7 +293,7 @@ bool x64Detour::allocate_jump_to_bridge() {
     // This short in-place scheme works almost like the default in-place scheme, except that it doesn't
     // try to not spoil shadow space. It doesn't mean that it will necessarily spoil it, though.
     if (m_detourScheme & detour_scheme_t::INPLACE_SHORT) {
-        const auto success = make_inplace_trampoline(m_fnAddress, [&](auto& a) {
+        const auto success = makeInplaceTrampoline(m_fnAddress, [&](auto &a) {
             a.mov(x86::rax, m_fnBridge);
             a.push(x86::rax);
             a.ret();
@@ -341,7 +341,7 @@ bool x64Detour::hook() {
     }
     m_trampoline = tmpTrampoline;
 
-    if (!allocate_jump_to_bridge()) {
+    if (!allocateJumpToBridge()) {
         return false;
     }
 
@@ -483,7 +483,7 @@ struct TranslationResult {
  * Generates an equivalent instruction that replaces memory operand with register
  * of corresponding size.
  */
-std::optional<TranslationResult> translate_instruction(const Instruction& instruction) {
+std::optional<TranslationResult> translateInstruction(const Instruction& instruction) {
     const auto& mnemonic = instruction.getMnemonic();
     ZydisRegister scratch_register;
     std::string scratch_register_string, address_register_string, second_operand_string;
@@ -590,12 +590,12 @@ std::vector<std::string> generateAbsoluteJump(uintptr_t destination, uint16_t st
 std::optional<uintptr_t> x64Detour::generateTranslationRoutine(const Instruction& instruction, uintptr_t resume_address) {
     // AsmTK parses strings for AsmJit, which generates the binary code.
     CodeHolder code;
-    code.init(m_asmjit_rt.environment());
+    code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpuFeatures());
 
     x86::Assembler assembler{&code};
     asmtk::AsmParser parser{&assembler};
 
-    const auto result = translate_instruction(instruction);
+    const auto result = translateInstruction(instruction);
     if (!result) {
         return std::nullopt;
     }

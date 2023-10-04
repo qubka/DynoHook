@@ -6,7 +6,7 @@
 #include "range_allocator.h"
 
 namespace dyno {
-    class x64Detour : public Detour {
+    class x64Detour final : public Detour {
     public:
         enum detour_scheme_t : uint8_t {
             VALLOC2 = 1 << 0, // use virtualalloc2 to allocate in range. Only on win10 > 1803
@@ -51,9 +51,9 @@ namespace dyno {
         Instruction makeRelJmpWithAbsDest(uintptr_t address, uintptr_t abs_destination);
         std::optional<uintptr_t> generateTranslationRoutine(const Instruction& instruction, uintptr_t resume_address);
 
-        bool make_inplace_trampoline(uintptr_t base_address, const std::function<void(asmjit::x86::Assembler&)>& builder);
+        bool makeInplaceTrampoline(uintptr_t base_address, const std::function<void(asmjit::x86::Assembler&)>& builder);
 
-        bool allocate_jump_to_bridge();
+        bool allocateJumpToBridge();
     };
 }
 

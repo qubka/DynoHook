@@ -145,7 +145,7 @@ bool Hook::createBridge() {
     CodeHolder code;
 
     // code holder must be initialized before it can be used
-    code.init(Environment::host(), CpuInfo::host().features());
+    code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpuFeatures());
 
     // emitters can emit code to CodeHolder
     Assembler a{&code};
@@ -164,7 +164,7 @@ bool Hook::createBridge() {
     // skip trampoline if equal
     a.je(override);
 
-    // jump to the trampoline/original
+    // jump to the original address (trampoline)
     uintptr_t address = getAddress();
     assert(address && "Function address cannot be null");
     a.jmp(address);
@@ -249,7 +249,7 @@ bool Hook::createPostCallback() {
     CodeHolder code;
 
     // code holder must be initialized before it can be used
-    code.init(Environment::host(), CpuInfo::host().features());
+    code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpuFeatures());
 
     // emitters can emit code to CodeHolder
     Assembler a{&code};

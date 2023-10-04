@@ -110,6 +110,7 @@ namespace dyno {
             return true;
         }
 
+        virtual HookMode getMode() const = 0;
         virtual uintptr_t getAddress() const = 0;
 
         virtual bool setHooked(bool state) {
@@ -122,8 +123,6 @@ namespace dyno {
         virtual bool isHooked() {
             return m_hooked;
         }
-
-        virtual HookMode getMode() const = 0;
 
         ////
 

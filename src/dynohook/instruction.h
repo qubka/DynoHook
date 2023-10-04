@@ -225,7 +225,7 @@ namespace dyno {
         std::string m_mnemonic;
         std::string m_opStr;
 
-		inline static uint32_t s_counter = 0;
+		inline static std::atomic_uint32_t s_counter = { 0 };
     };
     static_assert(std::is_nothrow_move_constructible<Instruction>::value, "dyno::Instruction should be noexcept move constructable");
 
