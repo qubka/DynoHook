@@ -46,8 +46,6 @@ namespace dyno {
 
 	protected:
         uintptr_t m_fnAddress;
-		//uint64_t m_fnCallback;
-		//uint64_t* m_userTrampVar;
 		ZydisDisassembler m_disasm;
 		uint8_t m_maxDepth{ 5 };
         uintptr_t m_trampoline{ 0 };

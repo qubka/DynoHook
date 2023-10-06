@@ -215,7 +215,7 @@ insts_t Detour::make_nops(uintptr_t address, uint16_t size) const {
         return {};
     }
 
-    static const uint8_t max_nop_size = 9;
+    const uint8_t max_nop_size = 9;
 
     const auto make_nop_inst = [&](std::vector<uint8_t>&& bytes) {
         return Instruction{this, address, {0}, 0, false, false, std::move(bytes), "nop", "", getArchType()};

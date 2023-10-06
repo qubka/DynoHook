@@ -1,8 +1,5 @@
 #include "fb_allocator.h"
 
-//----------------------------------------------------------------------------
-// ALLOC_NewBlock
-//----------------------------------------------------------------------------
 void* ALLOC_NewBlock(ALLOC_Allocator* self)  {
     ALLOC_Block* pBlock = NULL;
 
@@ -15,9 +12,6 @@ void* ALLOC_NewBlock(ALLOC_Allocator* self)  {
     return pBlock;
 } 
 
-//----------------------------------------------------------------------------
-// ALLOC_Push
-//----------------------------------------------------------------------------
 void ALLOC_Push(ALLOC_Allocator* self, void* pBlock) {
     if (!pBlock)
         return;
@@ -32,9 +26,6 @@ void ALLOC_Push(ALLOC_Allocator* self, void* pBlock) {
     self->pHead = pClient;
 }
 
-//----------------------------------------------------------------------------
-// ALLOC_Pop
-//----------------------------------------------------------------------------
 void* ALLOC_Pop(ALLOC_Allocator* self) {
     ALLOC_Block* pBlock = NULL;
 
@@ -50,9 +41,6 @@ void* ALLOC_Pop(ALLOC_Allocator* self) {
     return pBlock;
 } 
 
-//----------------------------------------------------------------------------
-// ALLOC_Alloc
-//----------------------------------------------------------------------------
 void* ALLOC_Alloc(ALLOC_HANDLE hAlloc, size_t size) {
     ALLOC_Allocator* self = NULL;
     void* pBlock = NULL;
@@ -84,9 +72,6 @@ void* ALLOC_Alloc(ALLOC_HANDLE hAlloc, size_t size) {
     return pBlock;
 } 
 
-//----------------------------------------------------------------------------
-// ALLOC_Calloc
-//----------------------------------------------------------------------------
 void* ALLOC_Calloc(ALLOC_HANDLE hAlloc, size_t num, size_t size) {
     void* pMem = NULL;
     size_t n = 0;
@@ -105,9 +90,6 @@ void* ALLOC_Calloc(ALLOC_HANDLE hAlloc, size_t num, size_t size) {
     return pMem;
 }
 
-//----------------------------------------------------------------------------
-// ALLOC_Free
-//----------------------------------------------------------------------------
 void ALLOC_Free(ALLOC_HANDLE hAlloc, void* pBlock) {
     ALLOC_Allocator* self = NULL;
 
