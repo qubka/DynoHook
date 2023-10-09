@@ -16,7 +16,7 @@ void CallingConvention::init() {
 
     for (auto& [type, reg, size] : m_arguments) {
         if (!size)
-            size = getDataTypeSize(type, m_alignment);
+            size = static_cast<uint16_t>(getDataTypeSize(type, m_alignment));
 
         if (reg == NONE)
             m_stackSize += size;
@@ -25,7 +25,7 @@ void CallingConvention::init() {
     }
 
     if (!m_return.size)
-        m_return.size = getDataTypeSize(m_return.type, m_alignment);
+        m_return.size = static_cast<uint16_t>(getDataTypeSize(m_return.type, m_alignment));
 }
 
 void CallingConvention::saveReturnValue(const Registers& registers) {

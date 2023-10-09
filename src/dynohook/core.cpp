@@ -27,8 +27,7 @@ uintptr_t findPattern(uintptr_t rangeStart, size_t len, const char* pattern) {
     }
 
     *msk = 0;
-    for (size_t n = 0; n < (len - (patSize + 1)); ++n)
-    {
+    for (size_t n = 0; n < (len - (patSize + 1)); ++n) {
         if (isMatch((char*)(rangeStart + n), (char*)(&pattern_scratch[0]), (char*)(&mask_scratch[0]))) {
             return rangeStart + n;
         }
@@ -157,7 +156,7 @@ void boundAllocFree(uintptr_t address, size_t size) {
 	VirtualFree((LPVOID)address, (SIZE_T)0, MEM_RELEASE);
 }
 
-size_t getAllocationAlignment(){
+size_t getAllocationAlignment() {
 	SYSTEM_INFO si;
 	memset(&si, 0, sizeof(si));
 	GetSystemInfo(&si);

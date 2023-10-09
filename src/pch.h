@@ -7,6 +7,7 @@
 #include <utility>
 #include <optional>
 #include <string>
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <cstring>

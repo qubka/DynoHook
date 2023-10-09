@@ -1,5 +1,4 @@
 #include "manager.h"
-#include "detour.h"
 
 using namespace dyno;
 
@@ -13,7 +12,7 @@ Hook* HookManager::hook(void* pFunc, const ConvFunc& convention) {
 
 	std::lock_guard<std::mutex> m_lock{m_mutex};
 
-	auto detour = std::make_unique<Detour>((uintptr_t)pFunc, convention);
+	auto detour = std::make_unique<NatDetour>((uintptr_t)pFunc, convention);
 	if (!detour->hook())
 		return nullptr;
     return m_detours.emplace_back(std::move(detour)).get();
@@ -35,7 +34,7 @@ Hook* HookManager::hook(void* pClass, size_t index, const ConvFunc& convention) 
             return it->second;
 		auto vhook = std::make_shared<VHook>((uintptr_t)pFunc, convention);
 		if (!vhook->hook())
-			return nullptr;
+			return std::shared_ptr<VHook>(static_cast<VHook*>(nullptr));
 		return m_vhooks.emplace(pFunc, std::move(vhook)).first->second;
     };
 

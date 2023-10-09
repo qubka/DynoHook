@@ -102,29 +102,29 @@ namespace dyno {
             m_callingConvention->onReturnPtrChanged(m_registers, returnPtr);
         }
 
-        ////
-
         virtual bool hook() = 0;
         virtual bool unhook() = 0;
         virtual bool rehook() {
             return true;
         }
 
-        virtual HookMode getMode() const = 0;
         virtual uintptr_t getAddress() const = 0;
+        virtual HookMode getMode() const = 0;
 
-        virtual bool setHooked(bool state) {
+        bool setHooked(bool state) {
             if (m_hooked == state)
                 return true;
 
             return state ? hook() : unhook();
         }
 
-        virtual bool isHooked() {
+        bool isHooked() const {
             return m_hooked;
         }
 
-        ////
+        uintptr_t getBridge() const {
+            return m_fnBridge;
+        }
 
     protected:
         bool createBridge();

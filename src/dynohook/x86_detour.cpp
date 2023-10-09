@@ -16,18 +16,18 @@ uint8_t getJmpSize() {
 }
 
 bool x86Detour::hook() {
-    Log::log("m_fnAddress: " + int_to_hex(m_fnAddress) + "\n", ErrorLevel::INFO);
+    LOG_PRINT("m_fnAddress: " + int_to_hex(m_fnAddress) + "\n");
 
     insts_t insts = m_disasm.disassemble(m_fnAddress, m_fnAddress, m_fnAddress + 100, *this);
-    Log::log("Original function:\n" + instsToStr(insts) + "\n", ErrorLevel::INFO);
+    LOG_PRINT("Original function:\n" + instsToStr(insts) + "\n");
 
     if (insts.empty()) {
-        Log::log("Disassembler unable to decode any valid instructions", ErrorLevel::SEV);
+        LOG_PRINT("Disassembler unable to decode any valid instructions");
         return false;
     }
 
     if (!followJmp(insts)) {
-        Log::log("Prologue jmp resolution failed", ErrorLevel::SEV);
+        LOG_PRINT("Prologue jmp resolution failed");
         return false;
     }
 
@@ -42,7 +42,7 @@ bool x86Detour::hook() {
     // find the prologue section we will overwrite with jmp + zero or more nops
     auto prologueOpt = calcNearestSz(insts, minProlSz, roundProlSz);
     if (!prologueOpt) {
-        Log::log("Function too small to hook safely!", ErrorLevel::SEV);
+        LOG_PRINT("Function too small to hook safely!");
         return false;
     }
 
@@ -50,12 +50,12 @@ bool x86Detour::hook() {
     auto prologue = *prologueOpt;
 
     if (!expandProlSelfJmps(prologue, insts, minProlSz, roundProlSz)) {
-        Log::log("Function needs a prologue jmp table but it's too small to insert one", ErrorLevel::SEV);
+        LOG_PRINT("Function needs a prologue jmp table but it's too small to insert one");
         return false;
     }
 
     m_originalInsts = prologue;
-    Log::log("Prologue to overwrite:\n" + instsToStr(prologue) + "\n", ErrorLevel::INFO);
+    LOG_PRINT("Prologue to overwrite:\n" + instsToStr(prologue) + "\n");
 
     // copy all the prologue stuff to trampoline
     insts_t jmpTblOpt;
@@ -63,10 +63,16 @@ bool x86Detour::hook() {
         return false;
     }
 
+    // create the bridge function
+    if (!createBridge()) {
+        LOG_PRINT("Failed to create bridge");
+        return false;
+    }
+
     auto tramp_instructions = m_disasm.disassemble(m_trampoline, m_trampoline, m_trampoline + m_trampolineSz, *this);
-    Log::log("Trampoline:\n" + instsToStr(tramp_instructions) + "\n\n", ErrorLevel::INFO);
+    LOG_PRINT("Trampoline:\n" + instsToStr(tramp_instructions) + "\n\n");
     if (!jmpTblOpt.empty()) {
-        Log::log("Trampoline Jmp Tbl:\n" + instsToStr(jmpTblOpt) + "\n\n", ErrorLevel::INFO);
+        LOG_PRINT("Trampoline Jmp Tbl:\n" + instsToStr(jmpTblOpt) + "\n\n");
     }
 
     m_hookSize = (uint32_t) roundProlSz;
@@ -75,7 +81,7 @@ bool x86Detour::hook() {
     MemProtector prot{m_fnAddress, m_hookSize, ProtFlag::RWX, *this};
 
     m_hookInsts = makex86Jmp(m_fnAddress, m_fnCallback);
-    Log::log("Hook instructions:\n" + instsToStr(m_hookInsts) + "\n", ErrorLevel::INFO);
+    LOG_PRINT("Hook instructions:\n" + instsToStr(m_hookInsts) + "\n");
     writeEncoding(m_hookInsts);
 
     // Nop the space between jmp and end of prologue
@@ -109,7 +115,7 @@ bool x86Detour::makeTrampoline(insts_t& prologue, insts_t& trampolineOut) {
     uint8_t retries = 0;
     do {
         if (retries++ > 4) {
-            Log::log("Failed to calculate trampoline information", ErrorLevel::SEV);
+            LOG_PRINT("Failed to calculate trampoline information");
             return false;
         }
 
@@ -120,14 +126,14 @@ bool x86Detour::makeTrampoline(insts_t& prologue, insts_t& trampolineOut) {
 
         // prol + jmp back to prol + N * jmpEntries
         m_trampolineSz = (uint16_t) (prolSz + getJmpSize() + getJmpSize() * neededEntryCount);
-        m_trampoline = (uintptr_t) new unsigned char[m_trampolineSz];
+        m_trampoline = (uintptr_t) new uint8_t[m_trampolineSz];
 
         const intptr_t delta = 1 - prolStart;
 
         buildRelocationList(prologue, prolSz, delta, instsNeedingEntry, instsNeedingReloc, instsNeedingTranslation);
     } while (instsNeedingEntry.size() > neededEntryCount);
 
-    const intptr_t delta = (intptr_t) m_trampoline - prolStart;
+    const intptr_t delta = (intptr_t) (m_trampoline - prolStart);
     MemProtector prot{m_trampoline, m_trampolineSz, ProtFlag::R | ProtFlag::W | ProtFlag::X, *this, false};
 
     // Insert jmp from trampoline -> prologue after overwritten section

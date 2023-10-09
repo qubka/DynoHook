@@ -5,10 +5,10 @@
 namespace dyno {
     typedef std::function<std::shared_ptr<VHook>(void*)> HookSupplier;
 
-    class VTable {
+    class VTable final : public MemAccessor {
     public:
-        VTable(void* pClass);
-        ~VTable();
+        explicit VTable(void* pClass);
+        ~VTable() override;
         DYNO_NONCOPYABLE(VTable);
 
         Hook* hook(const HookSupplier& supplier, size_t index);
@@ -19,9 +19,9 @@ namespace dyno {
             return m_hooked.empty();
         }
 
-        /*bool operator==(void* pClass) const {
+        bool operator==(void* pClass) const {
             return m_class == pClass;
-        }*/
+        }
 
     private:
         static size_t getVFuncCount(void** vtable);

@@ -44,6 +44,10 @@ namespace dyno {
             return m_trampoline;
         }
 
+        bool operator==(void* pFunc) const {
+            return m_fnAddress == (uintptr_t) pFunc;
+        }
+
 	protected:
         uintptr_t m_fnAddress;
 		ZydisDisassembler m_disasm;

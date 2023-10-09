@@ -1,5 +1,6 @@
 #include "vtable.h"
 #include "memory.h"
+#include "mem_protector.h"
 
 using namespace dyno;
 
@@ -22,7 +23,8 @@ VTable::~VTable() {
 size_t VTable::getVFuncCount(void** vtable) {
     size_t count = 0;
     while (true) {
-        if (!IsValidPtr(vtable[++count]))
+        // if you have more than 500 vfuncs you have a problem
+        if (!isValidPtr(vtable[++count]) || count > 500)
             break;
     }
     return count;
@@ -45,7 +47,7 @@ Hook* VTable::hook(const HookSupplier& supplier, size_t index) {
 	}
 	
     VHook* hook = m_hooked.emplace(index, std::move(vhook)).first->second.get();
-    m_newVtable[index] = hook->getBridge();
+    m_newVtable[index] = (void*) hook->getBridge();
     return hook;
 }
 

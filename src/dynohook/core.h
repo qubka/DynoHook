@@ -87,7 +87,7 @@ namespace dyno {
     bool boundedAllocSupported();
     uintptr_t boundAlloc(uintptr_t min, uintptr_t max, size_t size);
     uintptr_t boundAllocLegacy(uintptr_t min, uintptr_t max, size_t size);
-    void     boundAllocFree(uintptr_t address, size_t size);
+    void   boundAllocFree(uintptr_t address, size_t size);
     size_t getAllocationAlignment();
     size_t getPageSize();
 
@@ -102,13 +102,14 @@ namespace dyno {
         char c[N];
     };
 
-    template <size_t N, size_t L>
+    template<size_t N, size_t L>
     constexpr auto repeat_n(const char (&pattern)[L]) {
         static_assert(N != 0, "Size is empty!");
         static_assert(L != 3, "Length is invalid!");
         constexpr auto length = L - 1;
         constexpr auto size = N * length;
         constexpr auto last = size - 1;
+
         String<size> result = {};
         for (size_t i = 0; i < last; i += length) {
             for (size_t j = 0; j < length; j++) {

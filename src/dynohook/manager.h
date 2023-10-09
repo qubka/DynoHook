@@ -3,7 +3,7 @@
 #include "convention.h"
 #include "hook.h"
 #include "vtable.h"
-#include "detour.h"
+#include "nat_detour.h"
 
 #include <asmjit/asmjit.h>
 
@@ -88,7 +88,7 @@ namespace dyno {
         static HookManager& Get();
 
     public:
-        std::vector<std::unique_ptr<Detour>> m_detours;
+        std::vector<std::unique_ptr<NatDetour>> m_detours;
         std::vector<std::unique_ptr<VTable>> m_vtables;
         std::map<void*, std::shared_ptr<VHook>> m_vhooks;
 		std::mutex m_mutex;

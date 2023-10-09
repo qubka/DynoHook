@@ -28,9 +28,7 @@ ReturnAction PreMyFunc(CallbackType hookType, Hook& hook) {
     int y = hook.getArgument<int>(1);
     assert(y == 10);
 
-    hook.setArgument(0, 11);
-
-    return ReturnAction::Supercede;
+    return ReturnAction::Handled;
 }
 
 ReturnAction PostMyFunc(CallbackType hookType, Hook& hook) {
