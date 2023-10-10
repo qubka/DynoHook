@@ -1,7 +1,5 @@
 #pragma once
 
-#if DYNO_ARCH_X86 == 64
-
 #include "dynohook/convention.h"
 
 /*
@@ -45,5 +43,3 @@ namespace dyno {
         void* m_returnBuffer;
     };
 }
-
-#endif // DYNO_ARCH_X86

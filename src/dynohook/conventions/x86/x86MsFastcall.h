@@ -1,7 +1,5 @@
 #pragma once
 
-#if DYNO_ARCH_X86 == 32
-
 #include "dynohook/convention.h"
 #include "x86MsStdcall.h"
 
@@ -32,5 +30,3 @@ namespace dyno {
         ~x86MsFastcall() override = default;
     };
 }
-
-#endif // DYNO_ARCH_X86

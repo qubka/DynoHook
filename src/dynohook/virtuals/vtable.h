@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vhook.h"
+#include "dynohook/virtuals/vhook.h"
 
 namespace dyno {
     typedef std::function<std::shared_ptr<VHook>(void*)> HookSupplier;

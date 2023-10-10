@@ -2,6 +2,16 @@
 
 using namespace dyno;
 
+VHook::VHook(uintptr_t fnAddress, const ConvFunc& convention) : Hook{convention}, m_fnAddress{fnAddress} {
+    assert(fnAddress != 0 && "Function address cannot be null");
+}
+
+VHook::~VHook() override {
+    if (m_hooked) {
+        unhook();
+    }
+}
+
 bool VHook::hook() {
     assert(!m_hooked);
     if (m_hooked) {

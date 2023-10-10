@@ -1,7 +1,5 @@
 #include "x86_detour.h"
 
-#if DYNO_ARCH_X86 == 32
-
 using namespace dyno;
 
 x86Detour::x86Detour(uintptr_t fnAddress, const ConvFunc& convention)
@@ -154,5 +152,3 @@ bool x86Detour::makeTrampoline(insts_t& prologue, insts_t& trampolineOut) {
     trampolineOut = relocateTrampoline(prologue, jmpTblStart, delta, makeJmpFn, instsNeedingReloc, instsNeedingEntry);
     return true;
 }
-
-#endif // DYNO_ARCH_X86

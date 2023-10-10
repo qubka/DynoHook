@@ -1,8 +1,6 @@
 #pragma once
 
-#if DYNO_ARCH_X86 == 32
-
-#include "detour.h"
+#include "dynohook/detours/detour.h"
 
 namespace dyno {
     class x86Detour final : public Detour {
@@ -18,5 +16,3 @@ namespace dyno {
         bool makeTrampoline(insts_t& prologue, insts_t& trampolineOut);
     };
 }
-
-#endif // DYNO_ARCH_X86

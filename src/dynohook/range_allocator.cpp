@@ -7,7 +7,7 @@ RangeAllocator::RangeAllocator(uint8_t blockSize, uint8_t blockCount) : m_maxBlo
 }
 
 std::shared_ptr<FBAllocator> RangeAllocator::findOrInsertAllocator(uintptr_t min, uintptr_t max) {
-	for (auto& allocator : m_allocators) {
+	for (const auto& allocator : m_allocators) {
 		if (allocator->inRange(min) && allocator->inRange(max - 1))
 			return allocator;
 	}

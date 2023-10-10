@@ -1,7 +1,5 @@
 #pragma once
 
-#if DYNO_ARCH_X86 == 64
-
 #include "dynohook/convention.h"
 
 /*
@@ -40,5 +38,3 @@ namespace dyno {
         void onReturnPtrChanged(const Registers& registers, void* returnPtr) override;
     };
 }
-
-#endif // DYNO_ARCH_X86

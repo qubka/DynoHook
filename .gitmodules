@@ -1,9 +1,9 @@
-[submodule "src/external/asmjit"]
-	path = src/external/asmjit
-	url = https://github.com/asmjit/asmjit.git
-[submodule "src/external/zydis"]
-	path = src/external/zydis
+[submodule "zydis"]
+	path = zydis
 	url = https://github.com/zyantific/zydis.git
-[submodule "src/external/asmtk"]
-	path = src/external/asmtk
+[submodule "asmjit"]
+	path = asmjit
+	url = https://github.com/asmjit/asmjit.git
+[submodule "asmtk"]
+	path = asmtk
 	url = https://github.com/asmjit/asmtk.git

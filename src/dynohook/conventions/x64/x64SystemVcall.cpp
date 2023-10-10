@@ -1,7 +1,5 @@
 #include "x64SystemVcall.h"
 
-#if DYNO_ARCH_X86 == 64
-
 using namespace dyno;
 
 x64SystemVcall::x64SystemVcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
@@ -114,5 +112,3 @@ void x64SystemVcall::onReturnPtrChanged(const Registers& registers, void* return
         std::memcpy(*registers.at(RDX, true), (uint8_t*) m_returnBuffer + 8, 8);
     }
 }
-
-#endif // DYNO_ARCH_X86

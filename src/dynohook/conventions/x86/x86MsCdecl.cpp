@@ -1,7 +1,5 @@
 #include "x86MsCdecl.h"
 
-#if DYNO_ARCH_X86 == 32
-
 using namespace dyno;
 
 x86MsCdecl::x86MsCdecl(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
@@ -95,5 +93,3 @@ void x86MsCdecl::onReturnPtrChanged(const Registers& registers, void* returnPtr)
         std::memcpy(*registers.at(EDX, true), (uint8_t*) m_returnBuffer + 4, 4);
     }
 }
-
-#endif // DYNO_ARCH_X86

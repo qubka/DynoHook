@@ -1,7 +1,5 @@
 #include "x86MsThiscall.h"
 
-#if DYNO_ARCH_X86 == 32
-
 using namespace dyno;
 
 x86MsThiscall::x86MsThiscall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
@@ -13,5 +11,3 @@ x86MsThiscall::x86MsThiscall(std::vector<DataObject> arguments, DataObject retur
 
     init();
 }
-
-#endif // DYNO_ARCH_X86

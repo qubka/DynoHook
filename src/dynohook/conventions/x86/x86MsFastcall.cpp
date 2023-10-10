@@ -1,7 +1,5 @@
 #include "x86MsFastcall.h"
 
-#if DYNO_ARCH_X86 == 32
-
 using namespace dyno;
 
 x86MsFastcall::x86MsFastcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
@@ -20,5 +18,3 @@ x86MsFastcall::x86MsFastcall(std::vector<DataObject> arguments, DataObject retur
 
     init();
 }
-
-#endif // DYNO_ARCH_X86

@@ -1,7 +1,5 @@
 #include "x64MsFastcall.h"
 
-#if DYNO_ARCH_X86 == 64
-
 using namespace dyno;
 
 x64MsFastcall::x64MsFastcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
@@ -83,5 +81,3 @@ void* x64MsFastcall::getReturnPtr(const Registers& registers) {
 
 void x64MsFastcall::onReturnPtrChanged(const Registers& registers, void* returnPtr) {
 }
-
-#endif // DYNO_ARCH_X86

@@ -1,23 +1,16 @@
 #pragma once
 
-#include "disassembler.h"
-#include "mem_accessor.h"
-#include "mem_protector.h"
-#include "instruction.h"
-#include "hook.h"
+#include "dynohook/disassembler.h"
+#include "dynohook/mem_accessor.h"
+#include "dynohook/mem_protector.h"
+#include "dynohook/instruction.h"
+#include "dynohook/hook.h"
 
 namespace dyno {
 	class Detour : public Hook {
 	public:
-        Detour(uintptr_t fnAddress, const ConvFunc& convention, Mode mode) : Hook{convention}, m_fnAddress{fnAddress}, m_disasm{mode} {
-			assert(fnAddress != 0 && "Function address cannot be null");
-		}
-
-		~Detour() override {
-			if (m_hooked) {
-				unhook();
-			}
-		}
+        Detour(uintptr_t fnAddress, const ConvFunc& convention, Mode mode);
+		~Detour() override;
 
 		bool unhook() override;
 

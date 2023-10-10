@@ -4,6 +4,15 @@
 
 using namespace dyno;
 
+Detour::Detour(uintptr_t fnAddress, const ConvFunc& convention, Mode mode) : Hook{convention}, m_fnAddress{fnAddress}, m_disasm{mode} {
+    assert(fnAddress != 0 && "Function address cannot be null");
+}
+
+Detour::~Detour() override {
+    if (m_hooked) {
+        unhook();
+    }
+}
 uint8_t Detour::getMaxDepth() const {
     return m_maxDepth;
 }

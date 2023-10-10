@@ -1,4 +1,4 @@
-#include "x64_detour.h"
+#include "dynohook/detours/x64_detour.h"
 #include "dynohook/conventions/x64/x64MsFastcall.h"
 
 #include <iostream>

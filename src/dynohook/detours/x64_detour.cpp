@@ -1,9 +1,5 @@
 #include "x64_detour.h"
 
-#if DYNO_ARCH_X86 == 64
-
-#include "instruction.h"
-
 #include <asmtk/asmtk.h>
 #include <Zydis/Register.h>
 
@@ -804,5 +800,3 @@ bool x64Detour::makeTrampoline(insts_t& prologue, insts_t& outJmpTable) {
 
     return true;
 }
-
-#endif // DYNO_ARCH_X86

@@ -1,7 +1,5 @@
 #pragma once
 
-#if DYNO_ARCH_X86 == 32
-
 #include "dynohook/convention.h"
 #include "x86MsCdecl.h"
 
@@ -34,5 +32,3 @@ namespace dyno {
         size_t getPopSize() override;
     };
 }
-
-#endif // DYNO_ARCH_X86

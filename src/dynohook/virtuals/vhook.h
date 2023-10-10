@@ -1,19 +1,12 @@
 #pragma once
 
-#include "hook.h"
+#include "dynohook/hook.h"
 
 namespace dyno {
     class VHook final : public Hook {
     public:
-        VHook(uintptr_t fnAddress, const ConvFunc& convention) : Hook{convention}, m_fnAddress{fnAddress} {
-            assert(fnAddress != 0 && "Function address cannot be null");
-        }
-
-        ~VHook() override {
-            if (m_hooked) {
-                unhook();
-            }
-        }
+        VHook(uintptr_t fnAddress, const ConvFunc& convention);
+        ~VHook() override;
 
         bool hook() override;
         bool unhook() override;
