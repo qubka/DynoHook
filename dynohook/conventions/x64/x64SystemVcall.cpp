@@ -8,7 +8,7 @@ x64SystemVcall::x64SystemVcall(std::vector<DataObject> arguments, DataObject ret
 
     RegisterType registers[] = { RDI, RSI, RDX, RCX, R8, R9 };
 
-    for (size_t i = 0, j = 0, k = 0; i < m_arguments.size(); ++i) {
+    for (size_t i = 0, j = 0, k = 0; i < m_arguments.size(); i++) {
         DataObject& arg = m_arguments[i];
 
         if (arg.reg == NONE) {
@@ -82,7 +82,7 @@ void* x64SystemVcall::getArgumentPtr(size_t index, const Registers& registers) {
         return *registers[regType];
 
     size_t offset = 8;
-    for (size_t i = 0; i < index; ++i) {
+    for (size_t i = 0; i < index; i++) {
         const auto& [type, reg, size] = m_arguments[i];
         if (reg == NONE)
             offset += size;

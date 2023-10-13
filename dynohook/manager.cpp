@@ -55,7 +55,7 @@ bool HookManager::unhook(void* pFunc) {
 
 	std::lock_guard<std::mutex> m_lock{m_mutex};
 
-    for (size_t i = 0; i < m_detours.size(); ++i) {
+    for (size_t i = 0; i < m_detours.size(); i++) {
         auto& detour = m_detours[i];
         if (*detour == pFunc) {
             m_detours.erase(m_detours.begin() + i);
@@ -72,7 +72,7 @@ bool HookManager::unhook(void* pClass, size_t index) {
 
 	std::lock_guard<std::mutex> m_lock{m_mutex};
 	
-    for (size_t i = 0; i < m_vtables.size(); ++i) {
+    for (size_t i = 0; i < m_vtables.size(); i++) {
         auto& table = m_vtables[i];
         if (*table == pClass) {
             if (table->unhook(index)) {
@@ -125,7 +125,7 @@ void HookManager::unhookAll(void* pClass) {
 	
 	std::lock_guard<std::mutex> m_lock{m_mutex};
 
-    for (size_t i = 0; i < m_vtables.size(); ++i) {
+    for (size_t i = 0; i < m_vtables.size(); i++) {
         auto& table = m_vtables[i];
         if (*table == pClass) {
             m_vtables.erase(m_vtables.begin() + i);

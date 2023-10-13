@@ -266,7 +266,7 @@ namespace dyno {
 
     template <typename T>
     inline std::ostream& printInsts(std::ostream& out, const T& container) {
-        for (auto ii = container.cbegin(); ii != container.cend(); ++ii)
+        for (auto ii = container.cbegin(); ii != container.cend(); ii++)
             out << *ii << std::endl;
         return out;
     }

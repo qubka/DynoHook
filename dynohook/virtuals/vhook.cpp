@@ -6,7 +6,7 @@ VHook::VHook(uintptr_t fnAddress, const ConvFunc& convention) : Hook{convention}
     assert(fnAddress != 0 && "Function address cannot be null");
 }
 
-VHook::~VHook() override {
+VHook::~VHook() {
     if (m_hooked) {
         unhook();
     }

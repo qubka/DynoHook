@@ -38,6 +38,19 @@ namespace dyno {
 
 		virtual ProtFlag mem_protect(uintptr_t dest, size_t size, ProtFlag newProtection, bool& status) const;
 
+    public:
+        void writeEncoding(const insts_t& instructions);
+
+        /**
+         * Write the raw bytes of the given instruction into the memory specified by the
+         * instruction's address. If the address value of the instruction has been changed
+         * since the time it was decoded this will copy the instruction to a new memory address.
+         * This will not automatically do any code relocation, all relocation logic should
+         * first modify the byte array, and then call write encoding, proper order to relocate
+         * an instruction should be disasm instructions -> set relative/absolute displacement() ->
+         */
+        void writeEncoding(const Instruction& instruction);
+
     protected:
         /**
          * Write a 25 byte absolute jump. This is preferred since it doesn't require an indirect memory holder.
@@ -56,17 +69,5 @@ namespace dyno {
         insts_t makeAgnosticJmp(uintptr_t address, uintptr_t destination);
 
         insts_t makex64DestHolder(uintptr_t destination, uintptr_t destHolder);
-
-        void writeEncoding(const insts_t& instructions);
-
-        /**
-         * Write the raw bytes of the given instruction into the memory specified by the
-         * instruction's address. If the address value of the instruction has been changed
-         * since the time it was decoded this will copy the instruction to a new memory address.
-         * This will not automatically do any code relocation, all relocation logic should
-         * first modify the byte array, and then call write encoding, proper order to relocate
-         * an instruction should be disasm instructions -> set relative/absolute displacement() ->
-         */
-        void writeEncoding(const Instruction& instruction);
     };
 }

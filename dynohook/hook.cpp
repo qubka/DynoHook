@@ -38,7 +38,7 @@ void Hook::removeCallback(CallbackType type, CallbackHandler* handler) {
 
     std::vector<CallbackHandler*>& callbacks = it->second;
 
-    for (size_t i = 0; i < callbacks.size(); ++i) {
+    for (size_t i = 0; i < callbacks.size(); i++) {
         if (callbacks[i] == handler) {
             callbacks.erase(callbacks.begin() + i);
             if (callbacks.empty())

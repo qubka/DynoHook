@@ -45,7 +45,7 @@ void CallingConvention::saveCallArguments(const Registers& registers) {
     size_t argTotalSize = getArgStackSize() + getArgRegisterSize();
     std::unique_ptr<uint8_t[]> savedCallArguments = std::make_unique<uint8_t[]>(argTotalSize);
     size_t offset = 0;
-    for (size_t i = 0; i < m_arguments.size(); ++i) {
+    for (size_t i = 0; i < m_arguments.size(); i++) {
         size_t size = m_arguments[i].size;
         std::memcpy(savedCallArguments.get() + offset, getArgumentPtr(i, registers), size);
         offset += size;
@@ -56,7 +56,7 @@ void CallingConvention::saveCallArguments(const Registers& registers) {
 void CallingConvention::restoreCallArguments(const Registers& registers) {
     uint8_t* savedCallArguments = m_savedCallArguments.back().get();
     size_t offset = 0;
-    for (size_t i = 0; i < m_arguments.size(); ++i) {
+    for (size_t i = 0; i < m_arguments.size(); i++) {
         size_t size = m_arguments[i].size;
         std::memcpy(getArgumentPtr(i, registers), (savedCallArguments + offset), size);
         offset += size;

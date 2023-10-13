@@ -3,7 +3,7 @@
 #include "convention.h"
 #include "hook.h"
 #include "virtuals/vtable.h"
-#include "nat_detour.h"
+#include "detours/nat_detour.h"
 
 #include <asmjit/asmjit.h>
 

@@ -63,7 +63,7 @@ void* x86MsCdecl::getArgumentPtr(size_t index, const Registers& registers) {
         return *registers[regType];
 
     size_t offset = 4;
-    for (size_t i = 0; i < index; ++i) {
+    for (size_t i = 0; i < index; i++) {
         const auto& [type, reg, size] = m_arguments[i];
         if (reg == NONE)
             offset += size;

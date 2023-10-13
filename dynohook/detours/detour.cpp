@@ -8,7 +8,7 @@ Detour::Detour(uintptr_t fnAddress, const ConvFunc& convention, Mode mode) : Hoo
     assert(fnAddress != 0 && "Function address cannot be null");
 }
 
-Detour::~Detour() override {
+Detour::~Detour() {
     if (m_hooked) {
         unhook();
     }

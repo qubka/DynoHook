@@ -11,7 +11,7 @@ x64MsFastcall::x64MsFastcall(std::vector<DataObject> arguments, DataObject retur
 
     size_t argSize = std::min<size_t>(4, m_arguments.size());
 
-    for (size_t i = 0; i < argSize; ++i) {
+    for (size_t i = 0; i < argSize; i++) {
         DataObject& arg = m_arguments[i];
 
         // RCX, RDX, R8, R9 for integer, struct or pointer arguments (in that order), and XMM0, XMM1, XMM2, XMM3 for floating point arguments
@@ -61,7 +61,7 @@ void* x64MsFastcall::getArgumentPtr(size_t index, const Registers& registers) {
     // and to pop the stack after the call. The shadow space is used to spill RCX, RDX, R8, and R9,[24] but must be made available to all functions, even those with fewer than four parameters.
 
     size_t offset = 8;
-    for (size_t i = 0; i < index; ++i) {
+    for (size_t i = 0; i < index; i++) {
         const auto& [type, reg, size] = m_arguments[i];
         if (reg == NONE)
             offset += size;
