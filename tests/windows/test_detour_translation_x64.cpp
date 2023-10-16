@@ -3,6 +3,7 @@
 #include "dynohook/detours/x64_detour.h"
 #include "dynohook/conventions/x64/x64MsFastcall.h"
 #include "dynohook/tests/stack_canary.h"
+#include "dynohook/tests/effect_tracker.h"
 #include "dynohook/os.h"
 
 #include <memoryapi.h>
@@ -68,17 +69,18 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 	// Immediate
 	typedef int (* IntFn)();
 
-	dyno::ReturnAction PreCallback(dyno::CallbackType hookType, dyno::Hook& hook) {x
+	dyno::ReturnAction preCallback(dyno::CallbackType type, dyno::Hook& hook) {
 		dyno::StackCanary canary;
 		ripEffects.peak().trigger();
-		std::cout << "PrePreCallback: %s\n" << __func__ << std::endl;
+		std::cout << "preCallback: %s\n" << __func__ << std::endl;
+		
 		return dyno::ReturnAction::Handled;
 	}
 
-	dyno::ReturnAction PostCallback(dyno::CallbackType hookType, dyno::Hook& hook) {
+	dyno::ReturnAction postCallback(dyno::CallbackType type, dyno::Hook& hook) {
 		dyno::StackCanary canary;
 		ripEffects.peak().trigger();
-		std::cout << "PostCallback: %s\n" << __func__ << std::endl;
+		std::cout << "postCallback: %s\n" << __func__ << std::endl;
 		
 		int return_value = hook.getReturnValue<int>();
 		assert(return_value == 0x1337);
@@ -86,8 +88,8 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 		return dyno::ReturnAction::Ignored;
 	}
 	
-	dyno::ConvFunc CallConvRetInt = []{ return new dyno::x64MsFastcall({}, dyno::DataType::Int); };
-	dyno::ConvFunc CallConvRetVoid = []{ return new dyno::x64MsFastcall({}, dyno::DataType::Void); };
+	dyno::ConvFunc callConvRetInt = []{ return new dyno::x64MsFastcall({}, dyno::DataType::Int); };
+	dyno::ConvFunc callConvRetVoid = []{ return new dyno::x64MsFastcall({}, dyno::DataType::Void); };
 
     SECTION("cmp qword & imm") {
         dyno::StackCanary canary;
@@ -95,12 +97,12 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
         DWORD flOldProtect;
         VirtualProtect((void*) cmpQwordImm, (SIZE_T) sizeof(cmpQwordImm), PAGE_EXECUTE_READWRITE, &flOldProtect);
 
-        dyno::x64Detour detour{(uintptr_t) cmpQwordImm, CallConvRetInt};
+        dyno::x64Detour detour{(uintptr_t) cmpQwordImm, callConvRetInt};
 
         REQUIRE(detour.hook());
 
-		detour.addCallback(dyno::CallbackType::Pre, (dyno::CallbackHandler*) &PreCallback);
-		detour.addCallback(dyno::CallbackType::Post, (dyno::CallbackHandler*) &PostCallback);
+		detour.addCallback(dyno::CallbackType::Pre, (dyno::CallbackHandler*) &preCallback);
+		detour.addCallback(dyno::CallbackType::Post, (dyno::CallbackHandler*) &postCallback);
 
         ripEffects.push();
 
@@ -115,7 +117,7 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 
     SECTION("cmp dword & imm") {
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) cmpDwordImm, CallConvRetInt};
+        dyno::x64Detour detour{(uintptr_t) cmpDwordImm, callConvRetInt};
 
         REQUIRE(detour.hook());
         REQUIRE(detour.unhook());
@@ -124,7 +126,7 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 
     SECTION("cmp word & imm") {
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) cmpWordImm, CallConvRetInt};
+        dyno::x64Detour detour{(uintptr_t) cmpWordImm, callConvRetInt};
 
         REQUIRE(detour.hook());
         REQUIRE(detour.unhook());
@@ -132,7 +134,7 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 
     SECTION("cmp byte & imm") {
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) cmpByteImm, CallConvRetInt};
+        dyno::x64Detour detour{(uintptr_t) cmpByteImm, callConvRetInt};
 
         REQUIRE(detour.hook());
         REQUIRE(detour.unhook());
@@ -146,12 +148,12 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
         DWORD flOldProtect;
         VirtualProtect((void*) cmpQwordRegR10, (SIZE_T) sizeof(cmpQwordRegR10), PAGE_EXECUTE_READWRITE, &flOldProtect);
 
-        dyno::x64Detour detour{(uintptr_t) cmpQwordRegR10, CallConvRetInt};
+        dyno::x64Detour detour{(uintptr_t) cmpQwordRegR10, callConvRetInt};
 
         REQUIRE(detour.hook());
 
-		detour.addCallback(dyno::CallbackType::Pre, (dyno::CallbackHandler*) &PreCallback);
-		detour.addCallback(dyno::CallbackType::Post, (dyno::CallbackHandler*) &PostCallback);
+		detour.addCallback(dyno::CallbackType::Pre, (dyno::CallbackHandler*) &preCallback);
+		detour.addCallback(dyno::CallbackType::Post, (dyno::CallbackHandler*) &postCallback);
 
         ripEffects.push();
 
@@ -168,7 +170,7 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 
     SECTION("cmp dword & reg") {
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) cmpRegADword, CallConvRetVoid};
+        dyno::x64Detour detour{(uintptr_t) cmpRegADword, callConvRetVoid};
 
         REQUIRE(detour.hook());
         REQUIRE(detour.unhook());
@@ -176,7 +178,7 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 
     SECTION("cmp word & reg") {
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) cmpWordRegB, CallConvRetVoid};
+        dyno::x64Detour detour{(uintptr_t) cmpWordRegB, callConvRetVoid};
 
         REQUIRE(detour.hook());
         REQUIRE(detour.unhook());
@@ -184,7 +186,7 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 
     SECTION("cmp byte & reg") {
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) cmpR15bByte, CallConvRetVoid};
+        dyno::x64Detour detour{(uintptr_t) cmpR15bByte, callConvRetVoid};
 
         REQUIRE(detour.hook());
         REQUIRE(detour.unhook());
