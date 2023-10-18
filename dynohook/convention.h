@@ -6,16 +6,14 @@ namespace dyno {
     enum class DataType : uint8_t {
         Void,
         Bool,
-        Char,
-        UChar,
-        Short,
-        UShort,
-        Int,
-        UInt,
-        Long,
-        ULong,
-        LongLong,
-        ULongLong,
+        Int8,
+        UInt8,
+        Int16,
+        UInt16,
+        Int32,
+        UInt32,
+        Int64,
+        UInt64,
         Float,
         Double,
         Pointer,
@@ -202,26 +200,22 @@ namespace dyno {
                 return 0;
             case DataType::Bool:
                 return Align(sizeof(bool), alignment);
-            case DataType::Char:
-                return Align(sizeof(char), alignment);
-            case DataType::UChar:
-                return Align(sizeof(unsigned char), alignment);
-            case DataType::Short:
-                return Align(sizeof(short), alignment);
-            case DataType::UShort:
-                return Align(sizeof(unsigned short), alignment);
-            case DataType::Int:
-                return Align(sizeof(int), alignment);
-            case DataType::UInt:
-                return Align(sizeof(unsigned int), alignment);
-            case DataType::Long:
-                return Align(sizeof(long), alignment);
-            case DataType::ULong:
-                return Align(sizeof(unsigned long), alignment);
-            case DataType::LongLong:
-                return Align(sizeof(long long), alignment);
-            case DataType::ULongLong:
-                return Align(sizeof(unsigned long long), alignment);
+            case DataType::Int8:
+                return Align(sizeof(int8_t), alignment);
+            case DataType::UInt8:
+                return Align(sizeof(uint8_t), alignment);
+            case DataType::Int16:
+                return Align(sizeof(int16_t), alignment);
+            case DataType::UInt16:
+                return Align(sizeof(uint16_t), alignment);
+            case DataType::Int32:
+                return Align(sizeof(int32_t), alignment);
+            case DataType::UInt32:
+                return Align(sizeof(uint32_t), alignment);
+            case DataType::Int64:
+                return Align(sizeof(int64_t), alignment);
+            case DataType::UInt64:
+                return Align(sizeof(uint64_t), alignment);
             case DataType::Float:
                 return Align(sizeof(float), alignment);
             case DataType::Double:

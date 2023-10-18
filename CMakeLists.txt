@@ -205,14 +205,14 @@ set(DYNOHOOK_CORE_HEADERS
         ${PROJECT_SOURCE_DIR}/dynohook/mem_protector.h
 		${PROJECT_SOURCE_DIR}/dynohook/range_allocator.h
 		${PROJECT_SOURCE_DIR}/dynohook/registers.h
-
-		${PROJECT_SOURCE_DIR}/dynohook/os.h
-		${PROJECT_SOURCE_DIR}/dynohook/platform.h
-		${PROJECT_SOURCE_DIR}/dynohook/prot.h
+		${PROJECT_SOURCE_DIR}/dynohook/log.h
+        ${PROJECT_SOURCE_DIR}/dynohook/os.h
+        ${PROJECT_SOURCE_DIR}/dynohook/platform.h
+        ${PROJECT_SOURCE_DIR}/dynohook/prot.h
 
         ${PROJECT_SOURCE_DIR}/dynohook/tests/effect_tracker.h
         ${PROJECT_SOURCE_DIR}/dynohook/tests/stack_canary.h
-		)
+        )
 install(FILES ${DYNOHOOK_CORE_HEADERS} DESTINATION include/dynohook)
 
 
@@ -227,6 +227,8 @@ target_sources(${PROJECT_NAME} PRIVATE
 		${PROJECT_SOURCE_DIR}/dynohook/mem_protector.cpp
 		${PROJECT_SOURCE_DIR}/dynohook/range_allocator.cpp
 		${PROJECT_SOURCE_DIR}/dynohook/registers.cpp
+		${PROJECT_SOURCE_DIR}/dynohook/log.cpp
+
         ${PROJECT_SOURCE_DIR}/dynohook/tests/effect_tracker.cpp
         ${PROJECT_SOURCE_DIR}/dynohook/tests/stack_canary.cpp
 		)
@@ -358,6 +360,7 @@ if(NOT DYNOHOOK_BUILD_DLL)
 	    ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_disassembler.cpp
 	    ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_translation_x64.cpp
 	    ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_scheme_x64.cpp
+	    ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_notd_x64.cpp
 		${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_mem_protector.cpp)
 endif()
 

@@ -15,12 +15,12 @@ VHook::~VHook() {
 bool VHook::hook() {
     assert(!m_hooked);
     if (m_hooked) {
-        LOG_PRINT("Vhook failed: hook already present");
+        Log::log("Vhook failed: hook already present", ErrorLevel::WARN);
         return false;
     }
     // create the bridge function
     if (!createBridge()) {
-        LOG_PRINT("Failed to create bridge");
+        Log::log("Failed to create bridge", ErrorLevel::SEV);
         return false;
     }
     m_hooked = true;
@@ -30,7 +30,7 @@ bool VHook::hook() {
 bool VHook::unhook() {
     assert(m_hooked);
     if (!m_hooked) {
-        LOG_PRINT("Vhook failed: no hook present");
+        Log::log("Vhook failed: no hook present", ErrorLevel::SEV);
         return false;
     }
     m_hooked = false;

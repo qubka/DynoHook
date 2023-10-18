@@ -61,12 +61,12 @@ std::optional<insts_t> Detour::calcNearestSz(
 
 bool Detour::followJmp(insts_t& functionInsts, uint8_t curDepth) { // NOLINT(misc-no-recursion)
     if (functionInsts.empty()) {
-        LOG_PRINT("Couldn't decompile instructions at followed jmp");
+        Log::log("Couldn't decompile instructions at followed jmp", ErrorLevel::WARN);
         return false;
     }
 
     if (curDepth >= m_maxDepth) {
-        LOG_PRINT("Prologue jmp resolution hit max depth, prologue too deep");
+        Log::log("Prologue jmp resolution hit max depth, prologue too deep", ErrorLevel::WARN);
         return false;
     }
 
@@ -76,16 +76,16 @@ bool Detour::followJmp(insts_t& functionInsts, uint8_t curDepth) { // NOLINT(mis
     }
 
     if (!m_isFollowCallOnFnAddress) {
-        LOG_PRINT("setting: Do NOT follow CALL on fnAddress");
+        Log::log("setting: Do NOT follow CALL on fnAddress", ErrorLevel::INFO);
         if (functionInsts.front().isCalling()) {
-            LOG_PRINT("First assembly instruction is CALL");
+            Log::log("First assembly instruction is CALL", ErrorLevel::INFO);
             return true;
         }
     }
 
     // might be a mem type like jmp rax, not supported
     if (!functionInsts.front().hasDisplacement()) {
-        LOG_PRINT("Branching instruction without displacement encountered");
+        Log::log("Branching instruction without displacement encountered", ErrorLevel::WARN);
         return false;
     }
 
@@ -187,7 +187,7 @@ void Detour::buildRelocationList(
 
 bool Detour::unhook() {
     if (!m_hooked) {
-        LOG_PRINT("Detour unhook failed: no hook present");
+        Log::log("Detour unhook failed: no hook present", ErrorLevel::SEV);
         return false;
     }
 
@@ -209,7 +209,7 @@ bool Detour::rehook() {
 
     // Nop the space between jmp and end of prologue
     if (m_hookSize < m_nopProlOffset) {
-        LOG_PRINT("hook size must not be larger than nop prologue offset");
+        Log::log("hook size must not be larger than nop prologue offset", ErrorLevel::SEV);
         return false;
     }
 

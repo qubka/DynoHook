@@ -4,7 +4,7 @@ namespace dyno {
 		Effect();
 		void trigger();
 
-		bool didExecute(size_t n);
+		bool didExecute(size_t n) const;
 		
 	private:
 		uint32_t m_executed;

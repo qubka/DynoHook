@@ -36,13 +36,13 @@ Hook* VTable::hook(const HookSupplier& supplier, size_t index) {
         return it->second.get();
 
     if (index >= m_vFuncCount) {
-        LOG_PRINT("Invalid virtual function index");
+        Log::log("Invalid virtual function index", ErrorLevel::SEV);
         return nullptr;
     }
 
 	auto vhook = supplier(m_origVtable[index]);
 	if (!vhook) {
-		LOG_PRINT("Invalid virtual hook");
+		Log::log("Invalid virtual hook", ErrorLevel::SEV);
 		return nullptr;
 	}
 	

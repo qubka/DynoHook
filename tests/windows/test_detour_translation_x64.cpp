@@ -63,32 +63,32 @@ uint8_t cmpR15bByte[] = {
 
 // TODO: Translation + INPLACE scheme
 
+dyno::EffectTracker ripEffects;
+
+DYNO_NOINLINE dyno::ReturnAction preCallback(dyno::CallbackType type, dyno::Hook& hook) {
+    dyno::StackCanary canary;
+    ripEffects.peak().trigger();
+    std::cout << "preCallback: called" << std::endl;
+
+    return dyno::ReturnAction::Handled;
+}
+
+DYNO_NOINLINE dyno::ReturnAction postCallback(dyno::CallbackType type, dyno::Hook& hook) {
+    dyno::StackCanary canary;
+    ripEffects.peak().trigger();
+    std::cout << "postCallback: called" << std::endl;
+
+    int return_value = hook.getReturnValue<int>();
+    assert(return_value == 0x1337);
+
+    return dyno::ReturnAction::Ignored;
+}
+
 TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
-    dyno::EffectTracker ripEffects;
-	
 	// Immediate
 	typedef int (* IntFn)();
 
-	dyno::ReturnAction preCallback(dyno::CallbackType type, dyno::Hook& hook) {
-		dyno::StackCanary canary;
-		ripEffects.peak().trigger();
-		std::cout << "preCallback: %s\n" << __func__ << std::endl;
-		
-		return dyno::ReturnAction::Handled;
-	}
-
-	dyno::ReturnAction postCallback(dyno::CallbackType type, dyno::Hook& hook) {
-		dyno::StackCanary canary;
-		ripEffects.peak().trigger();
-		std::cout << "postCallback: %s\n" << __func__ << std::endl;
-		
-		int return_value = hook.getReturnValue<int>();
-		assert(return_value == 0x1337);
-
-		return dyno::ReturnAction::Ignored;
-	}
-	
-	dyno::ConvFunc callConvRetInt = []{ return new dyno::x64MsFastcall({}, dyno::DataType::Int); };
+	dyno::ConvFunc callConvRetInt = []{ return new dyno::x64MsFastcall({}, dyno::DataType::Int32); };
 	dyno::ConvFunc callConvRetVoid = []{ return new dyno::x64MsFastcall({}, dyno::DataType::Void); };
 
     SECTION("cmp qword & imm") {
@@ -101,8 +101,8 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 
         REQUIRE(detour.hook());
 
-		detour.addCallback(dyno::CallbackType::Pre, (dyno::CallbackHandler*) &preCallback);
-		detour.addCallback(dyno::CallbackType::Post, (dyno::CallbackHandler*) &postCallback);
+		detour.addCallback(dyno::CallbackType::Pre, &preCallback);
+		detour.addCallback(dyno::CallbackType::Post, &postCallback);
 
         ripEffects.push();
 
@@ -152,8 +152,8 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 
         REQUIRE(detour.hook());
 
-		detour.addCallback(dyno::CallbackType::Pre, (dyno::CallbackHandler*) &preCallback);
-		detour.addCallback(dyno::CallbackType::Post, (dyno::CallbackHandler*) &postCallback);
+		detour.addCallback(dyno::CallbackType::Pre, &preCallback);
+		detour.addCallback(dyno::CallbackType::Post, &postCallback);
 
         ripEffects.push();
 

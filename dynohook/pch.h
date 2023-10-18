@@ -19,3 +19,4 @@
 
 #include "dynohook/platform.h"
 #include "dynohook/core.h"
+#include "dynohook/log.h"

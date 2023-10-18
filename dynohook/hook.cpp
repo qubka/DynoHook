@@ -14,13 +14,13 @@ Hook::Hook(const ConvFunc& convention) :
     m_scratchRegisters{Registers::ScratchList()} {
 }
 
-void Hook::addCallback(CallbackType type, CallbackHandler* handler) {
+void Hook::addCallback(CallbackType type, CallbackHandler handler) {
     if (!handler)
         return;
 
-    std::vector<CallbackHandler*>& callbacks = m_handlers[type];
+    std::vector<CallbackHandler>& callbacks = m_handlers[type];
 
-    for (const CallbackHandler* callback : callbacks) {
+    for (const CallbackHandler callback : callbacks) {
         if (callback == handler)
             return;
     }
@@ -28,7 +28,7 @@ void Hook::addCallback(CallbackType type, CallbackHandler* handler) {
     callbacks.push_back(handler);
 }
 
-void Hook::removeCallback(CallbackType type, CallbackHandler* handler) {
+void Hook::removeCallback(CallbackType type, CallbackHandler handler) {
     if (!handler)
         return;
 
@@ -36,7 +36,7 @@ void Hook::removeCallback(CallbackType type, CallbackHandler* handler) {
     if (it == m_handlers.end())
         return;
 
-    std::vector<CallbackHandler*>& callbacks = it->second;
+    std::vector<CallbackHandler>& callbacks = it->second;
 
     for (size_t i = 0; i < callbacks.size(); i++) {
         if (callbacks[i] == handler) {
@@ -48,14 +48,14 @@ void Hook::removeCallback(CallbackType type, CallbackHandler* handler) {
     }
 }
 
-bool Hook::isCallbackRegistered(CallbackType type, CallbackHandler* handler) const {
+bool Hook::isCallbackRegistered(CallbackType type, CallbackHandler handler) const {
     auto it = m_handlers.find(type);
     if (it == m_handlers.end())
         return false;
 
-    const std::vector<CallbackHandler*>& callbacks = it->second;
+    const std::vector<CallbackHandler>& callbacks = it->second;
 
-    for (const CallbackHandler* callback : callbacks) {
+    for (const CallbackHandler callback : callbacks) {
         if (callback == handler)
             return true;
     }
@@ -97,10 +97,10 @@ ReturnAction Hook::hookHandler(CallbackType type) {
         return returnAction;
     }
 
-    const std::vector<CallbackHandler*>& callbacks = it->second;
+    const std::vector<CallbackHandler>& callbacks = it->second;
 
-    for (const CallbackHandler* callback : callbacks) {
-        ReturnAction result = ((CallbackHandler) callback)(type, *this);
+    for (const CallbackHandler callback : callbacks) {
+        ReturnAction result = callback(type, *this);
         if (result > returnAction)
             returnAction = result;
     }
@@ -183,7 +183,7 @@ bool Hook::createBridge() {
     // Generate code
     auto error = m_asmjit_rt.add(&m_fnBridge, &code);
     if (error) {
-        LOG_PRINT("AsmJit error: "s + DebugUtils::errorAsString(error));
+        Log::log("AsmJit error: "s + DebugUtils::errorAsString(error), ErrorLevel::SEV);
         return false;
     }
 
@@ -319,7 +319,7 @@ bool Hook::createPostCallback() {
     // Generate code
     auto error = m_asmjit_rt.add(&m_newRetAddr, &code);
     if (error) {
-        LOG_PRINT("AsmJit error: "s + DebugUtils::errorAsString(error));
+        Log::log("AsmJit error: "s + DebugUtils::errorAsString(error), ErrorLevel::SEV);
         return false;
     }
 

@@ -55,14 +55,14 @@ namespace dyno {
          * @param type The callback type.
          * @param handler The callback handler that should be added.
          */
-        void addCallback(CallbackType type, CallbackHandler* handler);
+        void addCallback(CallbackType type, CallbackHandler handler);
 
         /**
          * @brief Removes a callback handler to the hook.
          * @param type The callback type.
          * @param handler The callback handler that should be removed.
          */
-        void removeCallback(CallbackType type, CallbackHandler* handler);
+        void removeCallback(CallbackType type, CallbackHandler handler);
 
         /**
          * @brief Checks if a callback handler is already added.
@@ -70,7 +70,7 @@ namespace dyno {
          * @param handler The callback handler that should be checked.
          * @return
          */
-        bool isCallbackRegistered(CallbackType type, CallbackHandler* handler) const;
+        bool isCallbackRegistered(CallbackType type, CallbackHandler handler) const;
 
         /**
          * @brief Checks if there are any callback handlers added to this hook.
@@ -171,7 +171,7 @@ DYNO_OPTS_ON
         std::map<void*, std::vector<void*>> m_retAddr;
 
         // callbacks list
-        std::map<CallbackType, std::vector<CallbackHandler*>> m_handlers;
+        std::map<CallbackType, std::vector<CallbackHandler>> m_handlers;
 
         //
         bool m_hooked{ false };

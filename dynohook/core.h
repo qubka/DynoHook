@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#define LOG_PRINT(x) std::cout << (x) << std::endl;
+#define LOG_PRINT(x) //std::cout << (x) << std::endl;
 
 #define DYNO_NONCOPYABLE(x) \
     x(const x&) = delete; \

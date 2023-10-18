@@ -230,3 +230,5 @@
 #define DYNO_OPTS_OFF
 #define DYNO_OPTS_ON
 #endif
+
+#define DYNO_UNUSED(a) (void)a
