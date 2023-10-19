@@ -106,7 +106,7 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 
         ripEffects.push();
 
-        IntFn fn = (IntFn) cmpQwordImm;
+        IntFn fn = (IntFn) &cmpQwordImm;
 		int result = fn();
 
         REQUIRE(ripEffects.pop().didExecute(2));
@@ -157,7 +157,7 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 
         ripEffects.push();
 
-        IntFn fn = (IntFn) cmpQwordRegR10;
+        IntFn fn = (IntFn) &cmpQwordRegR10;
 		int result = fn();
 		
         REQUIRE(ripEffects.pop().didExecute(2));

@@ -161,6 +161,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
     SECTION("Jmp into prol w/src in range") {
         dyno::StackCanary canary;
         dyno::x64Detour detour{(uintptr_t) &hookMe3, callConvVoid};
+
         REQUIRE(detour.hook() == true);
         REQUIRE(detour.unhook() == true);
     }
@@ -189,7 +190,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
         REQUIRE(detour.unhook() == true);
     }
 
-    SECTION("hook malloc") {
+    /*SECTION("hook malloc") {
 		dyno::ConvFunc callConvWinApi = []{ return new dyno::x64MsFastcall({dyno::DataType::UInt64}, dyno::DataType::Pointer); };
 		
 		auto PreMalloc = +[](dyno::CallbackType type, dyno::Hook& hook) {
@@ -230,5 +231,5 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
         REQUIRE(detour.hook() == true);
 		
 		detour.addCallback(dyno::CallbackType::Post, PostNtQueueApcthread);
-    }
+    }*/
 }

@@ -2,8 +2,9 @@ namespace dyno {
 	class StackCanary {
 	public:
 		StackCanary();
-		bool isStackGood();
 		~StackCanary() noexcept(false);
+
+        bool isStackGood();
 		
 	private:
 		uint8_t buf[100];

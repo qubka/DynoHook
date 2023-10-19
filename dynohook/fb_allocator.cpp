@@ -147,13 +147,12 @@ bool FBAllocator::initialize() {
 	if (m_alloc2Supported) {
 		// alignment shrinks area by aligning both towards middle so we don't allocate beyond the given bounds
 		m_dataPool = boundAlloc(start, end, ALLOC_BLOCK_SIZE(m_blockSize) * m_maxBlocks);
-		if (!m_dataPool)
-			return false;
 	} else {
 		m_dataPool = boundAllocLegacy(start, end, ALLOC_BLOCK_SIZE(m_blockSize) * m_maxBlocks);
-		if (!m_dataPool)
-			return false;
 	}
+
+    if (!m_dataPool)
+        return false;
 	
     m_allocator = new ALLOC_Allocator{"dyno", (char*)m_dataPool, 
 		m_blockSize, ALLOC_BLOCK_SIZE(m_blockSize), m_maxBlocks, nullptr, 0, 0, 0, 0, 0};
