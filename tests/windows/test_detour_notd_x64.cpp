@@ -13,14 +13,15 @@ DYNO_NOINLINE void hookMeInt(int a) {
     volatile int var = 1;
     int var2 = var + a;
 
-    std::cout << var << var2 << std::endl;
+    std::cout << var << " " << var2 << std::endl;
 }
 
 DYNO_NOINLINE void hookMeFloat(float a) {
     dyno::StackCanary canary;
     float ans = 1.0f;
     ans += a;
-    std::cout << ans << a << std::endl;
+	
+    std::cout << ans << " " << a << std::endl;
 }
 
 DYNO_NOINLINE void hookMeIntFloatDouble(int a, float b, double c) {
@@ -29,7 +30,8 @@ DYNO_NOINLINE void hookMeIntFloatDouble(int a, float b, double c) {
     ans += (float) a;
     ans += (float) c;
     ans += b;
-    std::cout << a << b << c << ans << std::endl;
+	
+    std::cout << a << "" << b << " " << c << " " << ans << std::endl;
 }
 
 TEST_CASE("Simple Callback", "[AsmJit][Callback]") {
@@ -125,7 +127,7 @@ DYNO_NOINLINE int rw_int(int a, float b, double c, int type) {
     if (a == 5 && (b > 4.0f && b < 6.0f) && (c > 4.0 && c < 6.0)) {
         effectsNTD64.peak().trigger();
     }
-    std::cout << a << b << c << ans << std::endl;
+    std::cout << a << " " << b << " " << c << " " << ans << std::endl;
     return ans;
 }
 
@@ -139,7 +141,7 @@ DYNO_NOINLINE float rw_float(int a, float b, double c, int type) {
     if (a == 5 && (b > 4.0f && b < 6.0f) && (c > 4.0 && c < 6.0)) {
         effectsNTD64.peak().trigger();
     }
-    std::cout << a << b << c << ans << std::endl;
+    std::cout << a << " " << b << " " << c << " " << ans << std::endl;
     return ans;
 }
 
@@ -153,7 +155,7 @@ DYNO_NOINLINE double rw_double(int a, float b, double c, int type) {
     if (a == 5 && (b > 4.0f && b < 6.0f) && (c > 4.0 && c < 6.0)) {
         effectsNTD64.peak().trigger();
     }
-    std::cout << a << b << c << ans << std::endl;
+    std::cout << a << " " << b << " " << c << " " << ans << std::endl;
     return ans;
 }
 
@@ -345,8 +347,30 @@ DYNO_NOINLINE bool rw_bool(int a, float b, double c, int type) {
     ans += (float) c;
     ans += b;
     effectsNTD64.peak().trigger();
-	std::cout << a << b << c << ans << std::endl;
+	
+	std::cout << a << " " << b << " " << c << " " << ans << std::endl;
 	return true;
+}
+
+DYNO_NOINLINE long rw_long(long a, long b, long c, long d, long e, long f, long g, long h, long i, long k) {
+    dyno::StackCanary canary;
+	volatile long ans = 0;
+	ans += a;
+	ans += b;
+	ans += c;
+	ans += d;
+	ans += e;
+	ans += f;
+	ans += g;
+	ans += h;
+	ans += i;
+	ans += k;
+	if (ans == 136) {
+		effectsNTD64.peak().trigger();
+	}
+	
+	std::cout << a << " " << b << " " << c << " " << ans << std::endl;
+	return ans;
 }
 
 TEST_CASE("Callback Skip original function", "[Convention]") {
@@ -382,6 +406,43 @@ TEST_CASE("Callback Skip original function", "[Convention]") {
         bool b = rw_bool(1337, 1337.1337f, 1337.1337, 1);
         REQUIRE(b == false);
         REQUIRE(effectsNTD64.pop().didExecute(0));
+        REQUIRE(detour.unhook());
+	}
+	
+	SECTION("Longs arguments, long ret, host") {
+		dyno::StackCanary canary;
+        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastcall({dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64}, dyno::DataType::Int64); };
+	
+		auto pre_rw_long = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            dyno::StackCanary canary;
+
+			hook.setArgument(9, 100);
+			
+			std::cout << "pre_rw_long called" << std::endl;
+			
+            return dyno::ReturnAction::Handled;
+        };
+		
+		auto post_rw_long = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            dyno::StackCanary canary;
+
+			hook.setReturnValue<long>(1337);
+
+			std::cout << "post_rw_long called" << std::endl;
+			
+            return dyno::ReturnAction::Handled;
+        };
+	
+        dyno::x64Detour detour{(uintptr_t) &rw_long, callConv};
+        REQUIRE(detour.hook() == true);
+		
+		detour.addCallback(dyno::CallbackType::Pre, pre_rw_long);
+		detour.addCallback(dyno::CallbackType::Post, post_rw_long);
+
+        effectsNTD64.push();
+        long l = rw_long(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+        REQUIRE(l == 1337);
+        REQUIRE(effectsNTD64.pop().didExecute(1));
         REQUIRE(detour.unhook());
 	}
 }

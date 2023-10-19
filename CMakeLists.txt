@@ -361,6 +361,7 @@ if(NOT DYNOHOOK_BUILD_DLL)
 	    ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_translation_x64.cpp
 	    ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_scheme_x64.cpp
 	    ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_notd_x64.cpp
+	    ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_x64.cpp
 		${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_mem_protector.cpp)
 endif()
 
