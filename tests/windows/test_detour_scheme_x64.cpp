@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "dynohook/detours/x64_detour.h"
-#include "dynohook/conventions/x64/x64MsFastcall.h"
+#include "dynohook/conventions/x64_ms_fastcall.h"
 #include "dynohook/tests/stack_canary.h"
 #include "dynohook/tests/effect_tracker.h"
 #include "dynohook/os.h"
@@ -30,29 +30,31 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
         return fn;
     };
 	
-	dyno::ConvFunc call_conv_ret_i32 = []{ return new dyno::x64MsFastcall({}, dyno::DataType::Int32); };
-	dyno::ConvFunc call_conv_ret_i64 = []{ return new dyno::x64MsFastcall({}, dyno::DataType::Int64); };
+	dyno::ConvFunc call_conv_ret_i32 = []{ return new dyno::x64MsFastCall({}, dyno::DataType::Int32); };
+	dyno::ConvFunc call_conv_ret_i64 = []{ return new dyno::x64MsFastCall({}, dyno::DataType::Int64); };
 
     SECTION("Validate valloc2 scheme in function with translation and back-references") {
         dyno::StackCanary canary;
 
         auto valloc_function = make_func([](asmjit::x86::Assembler& a) {
-            auto SetRax = a.newLabel();
-            auto Exit = a.newLabel();
+            auto setRax = a.newLabel();
+            auto exit = a.newLabel();
 
             a.cmp(asmjit::x86::qword_ptr(asmjit::x86::rip, -11), 0x12345678);
 
-            a.bind(SetRax);
+            a.bind(setRax);
             a.cmp(asmjit::x86::rax, 0x1337);
-            a.je(Exit);
+            a.je(exit);
             a.mov(asmjit::x86::rax, 0x1337);
-            a.jmp(SetRax);
+            a.jmp(setRax);
 
-            a.bind(Exit);
+            a.bind(exit);
             a.ret();
         });
 
         auto pre_hook_valloc_function = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
+            DYNO_UNUSED(hook);
 			dyno::StackCanary canary;
             schemeEffects.peak().trigger();
 			std::cout << "pre_hook_valloc_function called" << std::endl;
@@ -61,12 +63,14 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
 		};
 
 		auto post_hook_valloc_function = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
 			dyno::StackCanary canary;
-            schemeEffects.peak().trigger();
 			std::cout << "post_hook_valloc_function called" << std::endl;
 
             int32_t return_value = hook.getReturnValue<int32_t>();
-			assert(return_value == 0x1337);
+			if (return_value == 0x1337) {
+                schemeEffects.peak().trigger();
+            }
 
 			return dyno::ReturnAction::Ignored;
 		};
@@ -96,6 +100,8 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
         });
 
         auto pre_hook_large_function = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
+            DYNO_UNUSED(hook);
 			dyno::StackCanary canary;
             schemeEffects.peak().trigger();
 			std::cout << "pre_hook_large_function called" << std::endl;
@@ -104,12 +110,14 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
 		};
 
         auto post_hook_large_function = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
 			dyno::StackCanary canary;
-            schemeEffects.peak().trigger();
 			std::cout << "post_hook_large_function called" << std::endl;
 
             int64_t return_value = hook.getReturnValue<int64_t>();
-			assert(return_value == 0x1234567890123456);
+			if (return_value == 0x1234567890123456) {
+                schemeEffects.peak().trigger();
+            }
 
 			return dyno::ReturnAction::Ignored;
 		};
@@ -137,6 +145,8 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
         });
 
         auto pre_hook_medium_function = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
+            DYNO_UNUSED(hook);
 			dyno::StackCanary canary;
             schemeEffects.peak().trigger();
 			std::cout << "pre_hook_medium_function called" << std::endl;
@@ -145,12 +155,14 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
 		};
 
         auto post_hook_medium_function = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
 			dyno::StackCanary canary;
-			schemeEffects.peak().trigger();
 			std::cout << "post_hook_medium_function called" << std::endl;
 
             int64_t return_value = hook.getReturnValue<int64_t>();
-			assert(return_value == 0x1234567890123456);
+			if (return_value == 0x1234567890123456) {
+                schemeEffects.peak().trigger();
+            }
 
 			return dyno::ReturnAction::Ignored;
 		};
@@ -182,6 +194,8 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
         });
 
 		auto pre_hook_rip_function = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
+            DYNO_UNUSED(hook);
 			dyno::StackCanary canary;
             schemeEffects.peak().trigger();
 			std::cout << "pre_hook_rip_function called" << std::endl;
@@ -190,12 +204,14 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
 		};
 
         auto post_hook_rip_function = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
 			dyno::StackCanary canary;
-            schemeEffects.peak().trigger();
 			std::cout << "post_hook_rip_function called" << std::endl;
 
             int32_t return_value = hook.getReturnValue<int32_t>();
-			assert(return_value == 0x1337);
+			if (return_value == 0x1337) {
+                schemeEffects.peak().trigger();
+            }
 
 			return dyno::ReturnAction::Ignored;
 		};
@@ -220,13 +236,14 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
             a.ret();
         });
 
-		auto pre_tramp_small_function = +[](dyno::CallbackType type, dyno::Hook& hook) {
+		/*auto pre_tramp_small_function = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
 			dyno::StackCanary canary;
             schemeEffects.peak().trigger();
 			std::cout << "pre_tramp_small_function called" << std::endl;
 			
 			return dyno::ReturnAction::Handled;
-		};
+		};*/
 
         dyno::x64Detour detour1{(uintptr_t) small_function, call_conv_ret_i32};
         detour1.setDetourScheme(dyno::x64Detour::detour_scheme_t::INPLACE_SHORT);

@@ -11,7 +11,7 @@ uintptr_t findPattern(uintptr_t rangeStart, size_t len, const char* pattern) {
     char* msk = (char*)&mask_scratch[0];
 
     if (patSize + 1 > len)
-        return NULL;
+        return 0;
 
     size_t counter = patSize;
     while (counter) {
@@ -32,7 +32,7 @@ uintptr_t findPattern(uintptr_t rangeStart, size_t len, const char* pattern) {
             return rangeStart + n;
         }
     }
-    return NULL;
+    return 0;
 }
 
 size_t getPatternSize(const char* pattern) {
@@ -50,7 +50,7 @@ uintptr_t findPattern_rev(uintptr_t rangeStart, size_t len, const char* pattern)
     char* msk = (char*)&mask_scratch[0];
 
     if (patSize + 1 > len)
-        return NULL;
+        return 0;
 
     size_t counter = patSize;
     while (counter) {
@@ -71,7 +71,7 @@ uintptr_t findPattern_rev(uintptr_t rangeStart, size_t len, const char* pattern)
             return rangeStart + n;
         }
     }
-    return NULL;
+    return 0;
 }
 
 #if DYNO_ARCH_X86 == 64
@@ -88,10 +88,10 @@ uint64_t calc_2gb_above(uint64_t address) {
 
 bool boundedAllocSupported() {
 	auto hMod = LoadLibraryA("kernelbase.dll");
-	if(hMod == nullptr)
+	if (hMod == NULL)
 		return false;
 
-	return GetProcAddress(hMod, "VirtualAlloc2") != nullptr;
+	return GetProcAddress(hMod, "VirtualAlloc2") != NULL;
 }
 
 uintptr_t boundAlloc(uintptr_t min, uintptr_t max, size_t size) {
@@ -109,12 +109,12 @@ uintptr_t boundAlloc(uintptr_t min, uintptr_t max, size_t size) {
 	param.Pointer = &addressReqs;
 
 	auto hMod = LoadLibraryA("kernelbase.dll");
-	if(hMod == nullptr)
+	if (hMod == NULL)
 		return false;
 
 	auto pVirtualAlloc2 = (decltype(&::VirtualAlloc2))GetProcAddress(hMod, "VirtualAlloc2");
 	return (uintptr_t)pVirtualAlloc2(
-		GetCurrentProcess(), (PVOID)nullptr,
+		GetCurrentProcess(), (PVOID)NULL,
 		(SIZE_T)size,
 		MEM_RESERVE | MEM_COMMIT,
 		PAGE_READWRITE,
@@ -130,7 +130,7 @@ uintptr_t boundAllocLegacy(uintptr_t start, uintptr_t end, size_t size) {
 	MEMORY_BASIC_INFORMATION mbi;
 	for (uintptr_t addr = start; addr < end;) {
 		if (!VirtualQuery((char*)addr, &mbi, sizeof(mbi)))
-			return NULL;
+			return 0;
 
 		assert(mbi.RegionSize != 0);
 		if (mbi.State != MEM_FREE || mbi.RegionSize < size) {
@@ -148,7 +148,7 @@ uintptr_t boundAllocLegacy(uintptr_t start, uintptr_t end, size_t size) {
             addr = nextPage + mbi.RegionSize;
 		}
 	}
-	return NULL;
+	return 0;
 }
 
 void boundAllocFree(uintptr_t address, size_t size) {
@@ -184,11 +184,11 @@ uintptr_t boundAllocLegacy(uintptr_t start, uintptr_t end, size_t size) {
 	uintptr_t res = (uintptr_t)mmap(hint, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
 	if (res == (uintptr_t)MAP_FAILED)
-		return NULL;
+		return 0;
 
 	if (res < start || res >= end) {
 		boundAllocFree(res, size);
-		return NULL;
+		return 0;
 	}
 
 	return res;
@@ -245,7 +245,7 @@ uintptr_t boundAllocLegacy(uintptr_t start, uintptr_t end, size_t size) {
 		}
 	}
 	
-	return NULL;
+	return 0;
 }
 
 void boundAllocFree(uintptr_t address, size_t size) {

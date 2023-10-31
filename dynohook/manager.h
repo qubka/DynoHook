@@ -24,7 +24,7 @@ namespace dyno {
          * @param convention
          * @return NULL or the Hook instance.
          */
-        Hook* hook(void* pFunc, const ConvFunc& convention);
+        std::shared_ptr<Hook> hook(void* pFunc, const ConvFunc& convention);
 
         /**
          * @brief Creates a function hook inside the virtual function table.
@@ -34,7 +34,7 @@ namespace dyno {
          * @param convention
          * @return NULL or the Hook instance.
          */
-        Hook* hook(void* pClass, size_t index, const ConvFunc& convention);
+        std::shared_ptr<Hook> hook(void* pClass, size_t index, const ConvFunc& convention);
 
         /**
          * @brief Removes all callbacks and restores the original function.
@@ -56,7 +56,7 @@ namespace dyno {
          * @param pFunc address to apply the hook to.
          * @return NULL or the found Hook instance.
          */
-        Hook* find(void* pFunc) const;
+        std::shared_ptr<Hook> find(void* pFunc) const;
 
         /**
          * @brief Finds the hook for a given class and virtual function index.
@@ -64,7 +64,7 @@ namespace dyno {
          * @param index index of the function to hook inside the virtual function table. (starting at 0)
          * @return NULL or the found Hook instance.
          */
-        Hook* find(void* pClass, size_t index) const;
+        std::shared_ptr<Hook> find(void* pClass, size_t index) const;
 
         /**
          * @brief Removes all callbacks and restores all functions.
@@ -88,9 +88,9 @@ namespace dyno {
         static HookManager& Get();
 
     public:
-        std::vector<std::unique_ptr<NatDetour>> m_detours;
-        std::vector<std::unique_ptr<VTable>> m_vtables;
-        std::map<void*, std::shared_ptr<VHook>> m_vhooks;
+        std::unordered_map<void*, std::shared_ptr<NatDetour>> m_detours;
+        std::unordered_map<void*, std::unique_ptr<VTable>> m_vtables;
+        VHookCache m_cache;
 		std::mutex m_mutex;
     };
 }

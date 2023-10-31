@@ -14,5 +14,12 @@ int main(int argc, char* argv[]) {
     // and its constructor, as it (optionally) registers leak detector
     (void)&Catch::leakDetector;
 
+    auto logger = std::make_shared<dyno::ErrorLogger>();
+    logger->setLogLevel(dyno::ErrorLevel::INFO);
+    dyno::Log::registerLogger(logger);
+
+    DYNO_LOG("Git: [" DYNO_GIT_COMMIT_HASH "]:(" DYNO_GIT_TAG ") - " DYNO_GIT_COMMIT_SUBJECT " on " DYNO_GIT_BRANCH " at '" DYNO_GIT_COMMIT_DATE "'", dyno::ErrorLevel::INFO);
+    DYNO_LOG("Compiled on: " DYNO_COMPILED_SYSTEM " from: " DYNO_COMPILED_GENERATOR" with: '" DYNO_COMPILED_COMPILER "'", dyno::ErrorLevel::INFO);
+
     return Catch::Session().run(argc, argv);
 }

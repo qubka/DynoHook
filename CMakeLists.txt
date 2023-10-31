@@ -30,6 +30,7 @@ if(DYNOHOOK_BUILD_32)
     endif()
 endif()
 
+include(git.cmake)
 
 #
 # Options
@@ -52,6 +53,7 @@ endif()
 
 option(DYNOHOOK_FEATURE_DETOURS "Implement detour functionality" ON)
 option(DYNOHOOK_FEATURE_VIRTUALS "Implement virtual table hooking functionality" ON)
+option(DYNOHOOK_FEATURE_LOGGING "Implement logging functionality" On)
 
 #
 # Catch2
@@ -155,6 +157,7 @@ endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 20)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS ON)
+target_link_libraries(${PROJECT_NAME} PRIVATE git-info)
 
 if(MSVC)
     if(DYNOHOOK_BUILD_STATIC_RUNTIME)
@@ -301,7 +304,16 @@ if(DYNOHOOK_FEATURE_DETOURS)
 
 	# only build tests if making exe
 	if(NOT DYNOHOOK_BUILD_DLL)
-		#target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_${DYNOHOOK_BUILD_PREFIX}_detour.cpp
+        if(DYNOHOOK_BUILD_64)
+            target_sources(${PROJECT_NAME} PRIVATE
+                ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_translation_x64.cpp
+                ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_scheme_x64.cpp
+                ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_notd_x64.cpp
+                ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_x64.cpp)
+        elseif(DYNOHOOK_BUILD_32)
+            target_sources(${PROJECT_NAME} PRIVATE
+                    ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_x86.cpp)
+        endif()
 	endif()
 endif()
 
@@ -318,37 +330,45 @@ if(DYNOHOOK_FEATURE_VIRTUALS)
 
 	# only build tests if making exe
 	if(NOT DYNOHOOK_BUILD_DLL)
-		#target_sources(${PROJECT_NAME} PRIVATE
-		#	${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_vtable.cpp
-		#	${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_vhook.cpp)
+		target_sources(${PROJECT_NAME} PRIVATE
+			${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_virtual.cpp)
 	endif()
 endif()
 
 #Feature/CallConv
 if(DYNOHOOK_BUILD_64)
 	set(DYNOHOOK_CALLCONV_HEADERS
-		${PROJECT_SOURCE_DIR}/dynohook/conventions/x64/x64MsFastcall.h
-		${PROJECT_SOURCE_DIR}/dynohook/conventions/x64/x64SystemVcall.h)
+            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x64_ms_fastcall.h
+            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x64_systemV_call.h)
 	install(FILES ${DYNOHOOK_CALLCONV_HEADERS} DESTINATION include/dynohook/conventions)
 
 	target_sources(${PROJECT_NAME} PRIVATE
-		${PROJECT_SOURCE_DIR}/dynohook/conventions/x64/x64MsFastcall.cpp
-		${PROJECT_SOURCE_DIR}/dynohook/conventions/x64/x64SystemVcall.cpp)
+            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x64_ms_fastcall.cpp
+            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x64_systemV_call.cpp)
 elseif(DYNOHOOK_BUILD_32)
 	set(DYNOHOOK_CALLCONV_HEADERS
-		${PROJECT_SOURCE_DIR}/dynohook/conventions/x86/x86GccCdecl.h
-		${PROJECT_SOURCE_DIR}/dynohook/conventions/x86/x86GccThiscall.h
-		${PROJECT_SOURCE_DIR}/dynohook/conventions/x86/x86MsCdecl.h
-		${PROJECT_SOURCE_DIR}/dynohook/conventions/x86/x86MsFastcall.h
-		${PROJECT_SOURCE_DIR}/dynohook/conventions/x86/x86MsStdcall.h
-		${PROJECT_SOURCE_DIR}/dynohook/conventions/x86/x86MsThiscall.h)
+            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x86_gcc_cdecl.h
+            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x86_gcc_thiscall.h
+            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x86_ms_cdecl.h
+            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x86_ms_fastcall.h
+            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x86_ms_stdcall.h
+            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x86_ms_thiscall.h)
 	install(FILES ${DYNOHOOK_CALLCONV_HEADERS} DESTINATION include/dynohook/conventions)
 
 	target_sources(${PROJECT_NAME} PRIVATE
-		${PROJECT_SOURCE_DIR}/dynohook/conventions/x86/x86MsCdecl.cpp
-		${PROJECT_SOURCE_DIR}/dynohook/conventions/x86/x86MsFastcall.cpp
-		${PROJECT_SOURCE_DIR}/dynohook/conventions/x86/x86MsStdcall.cpp
-		${PROJECT_SOURCE_DIR}/dynohook/conventions/x86/x86MsThiscall.cpp)
+            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x86_ms_cdecl.cpp
+            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x86_ms_fastcall.cpp
+            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x86_ms_stdcall.cpp
+            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x86_ms_thiscall.cpp)
+endif()
+
+#Feature/Logging
+if(DYNOHOOK_FEATURE_LOGGING)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE
+        DYNO_LOGGING
+        DYNO_COMPILED_COMPILER="${CMAKE_CXX_COMPILER}"
+        DYNO_COMPILED_SYSTEM="${CMAKE_SYSTEM}"
+        DYNO_COMPILED_GENERATOR="${CMAKE_GENERATOR}")
 endif()
 
 #Tests
@@ -358,10 +378,6 @@ if(NOT DYNOHOOK_BUILD_DLL)
 	target_sources(${PROJECT_NAME} PRIVATE
 		${PROJECT_SOURCE_DIR}/tests/main_tests.cpp
 	    ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_disassembler.cpp
-	    ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_translation_x64.cpp
-	    ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_scheme_x64.cpp
-	    ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_notd_x64.cpp
-	    ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_x64.cpp
 		${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_mem_protector.cpp)
 endif()
 

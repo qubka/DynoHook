@@ -33,20 +33,17 @@ namespace dyno {
 
 		void setIsFollowCallOnFnAddress(bool value);
 
-        uintptr_t getAddress() const override {
+        const uintptr_t& getAddress() const override {
             return m_trampoline;
-        }
-
-        bool operator==(void* pFunc) const {
-            return m_fnAddress == (uintptr_t) pFunc;
         }
 
 	protected:
         uintptr_t m_fnAddress;
 		ZydisDisassembler m_disasm;
 		uint8_t m_maxDepth{ 5 };
-        uintptr_t m_trampoline{ 0 };
+		bool m_isFollowCallOnFnAddress{ true };  // whether follow 'CALL' destination
 		uint16_t m_trampolineSz{ 0 };
+        uintptr_t m_trampoline{ 0 };
 		insts_t m_originalInsts;
 
 		/*
@@ -57,21 +54,26 @@ namespace dyno {
 		uint16_t m_nopProlOffset{ 0 };
 		uint16_t m_nopSize{ 0 };
 		uint32_t m_hookSize{ 0 };
-		bool m_isFollowCallOnFnAddress{ true };  // whether follow 'CALL' destination
 
-		/**Walks the given vector of instructions and sets roundedSz to the lowest size possible that doesn't split any instructions and is greater than minSz.
-		If end of function is encountered before this condition an empty optional is returned. Returns instructions in the range start to adjusted end**/
+		/**
+		 * Walks the given vector of instructions and sets roundedSz to the lowest size possible that doesn't split any instructions and is greater than minSz.
+		 * If end of function is encountered before this condition an empty optional is returned. Returns instructions in the range start to adjusted end
+		 */
 		static std::optional<insts_t> calcNearestSz(const insts_t& functionInsts, uintptr_t minSz, uintptr_t& roundedSz);
 
-		/**If function starts with a jump follow it until the first non-jump instruction, recursively. This handles already hooked functions
-		and also compilers that emit jump tables on function call. Returns true if resolution was successful (nothing to resolve, or resolution worked),
-		false if resolution failed.**/
+		/**
+		 * If function starts with a jump follow it until the first non-jump instruction, recursively. This handles already hooked functions
+		 * and also compilers that emit jump tables on function call. Returns true if resolution was successful (nothing to resolve, or resolution worked),
+		 * false if resolution failed.
+		 */
 		bool followJmp(insts_t& functionInsts, uint8_t curDepth = 0);
 
-		/**Expand the prologue up to the address of the last jmp that points back into the prologue. This
-		is necessary because we modify the location of things in the prologue, so re-entrant jmps point
-		to the wrong place. Therefore we move all of it to the trampoline where there is ample space to
-		relocate and create jmp tbl entries**/
+		/**
+		 * Expand the prologue up to the address of the last jmp that points back into the prologue. This
+		 * is necessary because we modify the location of things in the prologue, so re-entrant jmps point
+		 * to the wrong place. Therefore we move all of it to the trampoline where there is ample space to
+		 * relocate and create jmp tbl entries
+		 */
 		bool expandProlSelfJmps(insts_t& prol,
 			const insts_t& func,
             uintptr_t& minProlSz,

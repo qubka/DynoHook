@@ -82,7 +82,6 @@ namespace dyno {
         uintptr_t m_max;
         uintptr_t m_dataPool;
 
-		ALLOC_Allocator* m_allocator;
-		ALLOC_HANDLE m_hAllocator;
+		std::unique_ptr<ALLOC_Allocator> m_allocator;
 	};
 }

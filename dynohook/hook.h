@@ -32,8 +32,6 @@ namespace dyno {
     typedef ReturnAction (*CallbackHandler)(CallbackType, Hook&);
     using ConvFunc = std::function<CallingConvention*()>;
 
-    typedef std::unordered_map<uintptr_t, insts_t> branch_map_t;
-
     /**
 	 * @brief Creates and manages hooks at the beginning of a function.
 	 *
@@ -43,7 +41,6 @@ namespace dyno {
     public:
         /**
          * @brief Creates a new function hook.
-         * @param func The address of the function to hook.
          * @param convention The calling convention of <func>.
          */
         explicit Hook(const ConvFunc& convention);
@@ -54,27 +51,29 @@ namespace dyno {
          * @brief Adds a callback handler to the hook.
          * @param type The callback type.
          * @param handler The callback handler that should be added.
+         * @return True on success, false otherwise.
          */
-        void addCallback(CallbackType type, CallbackHandler handler);
+        bool addCallback(CallbackType type, CallbackHandler handler);
 
         /**
          * @brief Removes a callback handler to the hook.
          * @param type The callback type.
          * @param handler The callback handler that should be removed.
+         * @return True on success, false otherwise.
          */
-        void removeCallback(CallbackType type, CallbackHandler handler);
+        bool removeCallback(CallbackType type, CallbackHandler handler);
 
         /**
          * @brief Checks if a callback handler is already added.
          * @param type The callback type.
          * @param handler The callback handler that should be checked.
-         * @return
+         * @return True on success, false otherwise.
          */
         bool isCallbackRegistered(CallbackType type, CallbackHandler handler) const;
 
         /**
          * @brief Checks if there are any callback handlers added to this hook.
-         * @return
+         * @return True on success, false otherwise.
          */
         bool areCallbacksRegistered() const;
 
@@ -108,9 +107,6 @@ namespace dyno {
             return true;
         }
 
-        virtual uintptr_t getAddress() const = 0;
-        virtual HookMode getMode() const = 0;
-
         bool setHooked(bool state) {
             if (m_hooked == state)
                 return true;
@@ -122,7 +118,9 @@ namespace dyno {
             return m_hooked;
         }
 
-        uintptr_t getBridge() const {
+        virtual const uintptr_t& getAddress() const = 0;
+        virtual HookMode getMode() const = 0;
+        const uintptr_t& getBridge() const {
             return m_fnBridge;
         }
 
@@ -143,7 +141,7 @@ namespace dyno {
         void writeMemToReg(Assembler& a, const Register& reg, CallbackType type = CallbackType::Pre) const;
 
 DYNO_OPTS_OFF
-        DYNO_NOINLINE ReturnAction DYNO_CDECL hookHandler(CallbackType type);
+        DYNO_NOINLINE ReturnAction DYNO_CDECL callbackHandler(CallbackType type);
         DYNO_NOINLINE void* DYNO_CDECL getReturnAddress(void* stackPtr);
         DYNO_NOINLINE void DYNO_CDECL setReturnAddress(void* retAddr, void* stackPtr);
 DYNO_OPTS_ON
@@ -151,11 +149,9 @@ DYNO_OPTS_ON
     protected:
         asmjit::JitRuntime m_asmjit_rt;
 
-        // address of the bridge
-        uintptr_t m_fnBridge;
-
-        // address of new return
-        uintptr_t m_newRetAddr;
+        // address storage
+        uintptr_t m_fnBridge{ 0 };
+        uintptr_t m_newRetAddr{ 0 };
 
         // interface if the calling convention
         std::unique_ptr<CallingConvention> m_callingConvention;
@@ -164,16 +160,15 @@ DYNO_OPTS_ON
         Registers m_registers;
         Registers m_scratchRegisters;
 
-        // save the last return action of the pre HookHandler for use in the post handler.
+        // save the last return action of the pre callbackHander for use in the post handler.
         std::vector<ReturnAction> m_lastPreReturnAction;
 
         // individual return's stack for stack pointers
-        std::map<void*, std::vector<void*>> m_retAddr;
+        std::unordered_map<void*, std::vector<void*>> m_retAddr;
 
         // callbacks list
-        std::map<CallbackType, std::vector<CallbackHandler>> m_handlers;
+        std::unordered_map<CallbackType, std::vector<CallbackHandler>> m_handlers;
 
-        //
         bool m_hooked{ false };
     };
 }

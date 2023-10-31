@@ -3,30 +3,32 @@
 #include "dynohook/convention.h"
 
 /*
-    Source: DynCall manual and Windows docs
+    Source: DynCall manual and System V docs
 
     Registers:
         - rax = return value
+        - rdx = return value
         - rsp = stack pointer
-        - xmm0 = floating point return value
+        - [xyz]mm0 = floating point return value
+        - [xyz]mm1 = floating point return value
 
     Parameter passing:
-        - first parameter in rcx/xmm0, second parameter in rdx/xmm1, third parameter in r8/xmm2, forth parameter in r9/xmm3, rest on the stack
+        - rdi, rsi, rdx, rcx, r8, r9, rest on the stack
+        - [xyz]mm0-[xyz]mm7 used for passing floating values
         - stack parameter order: right-to-left
         - caller cleans up the stack
         - alignment: 8 bytes
-        - shadow space: 32 bytes (for arguments)
 
     Return values:
         - return values of pointer or intergral type (<= 64 bits) are returned via the rax register
-        - integers > 64 bits are returned via the rax registers as pointers
-        - floating pointer types are returned via the xmm0 register
+        - integers > 64 bits are returned via the rax and rdx registers
+        - floating pointer types are returned via the xmm0 and xmm1 register
 */
 namespace dyno {
-    class x64MsFastcall : public CallingConvention {
+    class x64SystemVcall : public CallingConvention {
     public:
-        x64MsFastcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = SIZE_QWORD);
-        ~x64MsFastcall() override = default;
+        x64SystemVcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = SIZE_QWORD);
+        ~x64SystemVcall() override;
 
         regs_t getRegisters() override;
         void** getStackArgumentPtr(const Registers &registers) override;
@@ -36,5 +38,8 @@ namespace dyno {
 
         void* getReturnPtr(const Registers& registers) override;
         void onReturnPtrChanged(const Registers& registers, void* returnPtr) override;
+
+    private:
+        void* m_returnBuffer;
     };
 }

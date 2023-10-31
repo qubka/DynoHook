@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "dynohook/detours/x64_detour.h"
-#include "dynohook/conventions/x64/x64MsFastcall.h"
+#include "dynohook/conventions/x64_ms_fastcall.h"
 #include "dynohook/tests/stack_canary.h"
 #include "dynohook/tests/effect_tracker.h"
 #include "dynohook/os.h"
@@ -38,9 +38,10 @@ TEST_CASE("Simple Callback", "[AsmJit][Callback]") {
    
     SECTION("Integer argument") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastcall({dyno::DataType::Int32}, dyno::DataType::Void); };
+        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int32}, dyno::DataType::Void); };
 
         auto preHookMeInt = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
             dyno::StackCanary canary;
 
             if (hook.getArgument<int>(0) == 1337) {
@@ -64,9 +65,10 @@ TEST_CASE("Simple Callback", "[AsmJit][Callback]") {
 
     SECTION("Floating argument") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastcall({dyno::DataType::Float}, dyno::DataType::Void); };
+        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Float}, dyno::DataType::Void); };
 
         auto preHookMeFloat = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
             dyno::StackCanary canary;
 
             if (hook.getArgument<float>(0) == 1337.1337f) {
@@ -90,14 +92,19 @@ TEST_CASE("Simple Callback", "[AsmJit][Callback]") {
 
     SECTION("Int, float, double arguments, string parsing types") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastcall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double}, dyno::DataType::Void); };
+        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double}, dyno::DataType::Void); };
 
         auto preHookMeIntFloatDouble = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
             dyno::StackCanary canary;
 
-            if (hook.getArgument<int>(0) == 1337 &&
-                hook.getArgument<float>(1) == 1337.1337f &&
-                hook.getArgument<double>(2) == 1337.1337) {
+            auto a1 = hook.getArgument<int>(0);
+            auto a2 = hook.getArgument<float>(1);
+            auto a3 = hook.getArgument<double>(2);
+
+            if (a1 == 1337 &&
+                a2 == 1337.1337f &&
+                a3 == 1337.1337) {
                 effectsNTD64.peak().trigger();
                 std::cout << "preHookMeIntFloatDouble called" << std::endl;
             }
@@ -128,7 +135,7 @@ DYNO_NOINLINE int rw_int(int a, float b, double c, int type) {
         effectsNTD64.peak().trigger();
     }
     std::cout << a << " " << b << " " << c << " " << ans << std::endl;
-    return ans;
+    return (int) ans;
 }
 
 DYNO_NOINLINE float rw_float(int a, float b, double c, int type) {
@@ -173,12 +180,33 @@ bool isApproximatelyEqual(T a, T b, T tolerance = std::numeric_limits<T>::epsilo
     return false;
 }
 
+DYNO_NOINLINE void rw_void(double a, double b, double c, double d, double e, double f, double g, double h, double i, double k) {
+    dyno::StackCanary canary;
+    volatile double ans = 0;
+    ans += a;
+    ans += b;
+    ans += c;
+    ans += d;
+    ans += e;
+    ans += f;
+    ans += g;
+    ans += h;
+    ans += i;
+    ans += k;
+    if (isApproximatelyEqual(ans, 36.0)) {
+        effectsNTD64.peak().trigger();
+    }
+
+    std::cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << g << " " << h << " " << i << " " << k << " " << ans << std::endl;
+}
+
 TEST_CASE("Callback Argument re-writing", "[Convention]") {
     SECTION("Int, float, double arguments overwrite, int ret, host") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastcall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Int32); };
+        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Int32); };
 
 		auto pre_rw_int = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
             dyno::StackCanary canary;
 			
 			hook.setArgument<int>(0, 5);
@@ -204,9 +232,10 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
 
     SECTION("Int, float, double arguments overwrite, float ret, host") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastcall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Float); };
+        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Float); };
 	
 		auto pre_rw_float = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
             dyno::StackCanary canary;
 			
 			hook.setArgument<int>(0, 5);
@@ -232,9 +261,10 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
 
     SECTION("Int, float, double arguments overwrite, double ret, host") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastcall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Double); };
+        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Double); };
 
 		auto pre_rw_double = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
             dyno::StackCanary canary;
 			
 			hook.setArgument<int>(0, 5);
@@ -257,14 +287,41 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
         REQUIRE(effectsNTD64.pop().didExecute(1));
         REQUIRE(detour.unhook());
     }
+
+    SECTION("Doubles arguments overwrite, void ret, host") {
+        dyno::StackCanary canary;
+        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double}, dyno::DataType::Void); };
+
+        auto pre_rw_void = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
+            dyno::StackCanary canary;
+
+            hook.setArgument<double>(9, 0);
+
+            std::cout << "pre_rw_void called" << std::endl;
+
+            return dyno::ReturnAction::Handled;
+        };
+
+        dyno::x64Detour detour{(uintptr_t) &rw_void, callConv};
+        REQUIRE(detour.hook() == true);
+
+        detour.addCallback(dyno::CallbackType::Pre, pre_rw_void);
+
+        effectsNTD64.push();
+        rw_void(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+        REQUIRE(effectsNTD64.pop().didExecute(1));
+        REQUIRE(detour.unhook());
+    }
 }
 
 TEST_CASE("Callback Return re-writing", "[Convention]") {
 	SECTION("Int, float, double arguments, int ret overwrite, host") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastcall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Int32); };
+        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Int32); };
 
 		auto post_rw_int = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
             dyno::StackCanary canary;
 			
 			hook.setReturnValue<int>(5);
@@ -288,9 +345,10 @@ TEST_CASE("Callback Return re-writing", "[Convention]") {
 
     SECTION("Int, float, double arguments, float ret overwrite, host") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastcall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Float); };
+        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Float); };
 	
 		auto post_rw_float = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
             dyno::StackCanary canary;
 			
 			hook.setReturnValue<float>(5.0f);
@@ -314,9 +372,10 @@ TEST_CASE("Callback Return re-writing", "[Convention]") {
 
     SECTION("Int, float, double arguments, double ret overwrite, host") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastcall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Double); };
+        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Double); };
 
 		auto post_rw_double = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
             dyno::StackCanary canary;
 			
 			hook.setReturnValue<double>(5.0);
@@ -369,16 +428,18 @@ DYNO_NOINLINE long rw_long(long a, long b, long c, long d, long e, long f, long 
 		effectsNTD64.peak().trigger();
 	}
 	
-	std::cout << a << " " << b << " " << c << " " << ans << std::endl;
+	std::cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << g << " " << h << " " << i << " " << k << " " << ans << std::endl;
 	return ans;
 }
 
 TEST_CASE("Callback Skip original function", "[Convention]") {
 	SECTION("Int, float, double arguments, bool ret, supercede host") {
 		dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastcall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Bool); };
+        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Bool); };
 	
 		auto pre_rw_bool = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
+            DYNO_UNUSED(hook);
             dyno::StackCanary canary;
 
 			std::cout << "pre_rw_bool called" << std::endl;
@@ -387,6 +448,7 @@ TEST_CASE("Callback Skip original function", "[Convention]") {
         };
 		
 		auto post_rw_bool = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
             dyno::StackCanary canary;
 
 			hook.setReturnValue<bool>(false);
@@ -411,9 +473,10 @@ TEST_CASE("Callback Skip original function", "[Convention]") {
 	
 	SECTION("Longs arguments, long ret, host") {
 		dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastcall({dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64}, dyno::DataType::Int64); };
+        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64}, dyno::DataType::Int64); };
 	
 		auto pre_rw_long = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
             dyno::StackCanary canary;
 
 			hook.setArgument(9, 100);
@@ -424,6 +487,7 @@ TEST_CASE("Callback Skip original function", "[Convention]") {
         };
 		
 		auto post_rw_long = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
             dyno::StackCanary canary;
 
 			hook.setReturnValue<long>(1337);

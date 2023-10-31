@@ -1,4 +1,4 @@
-#include "x86MsCdecl.h"
+#include "x86_ms_cdecl.h"
 
 using namespace dyno;
 
@@ -73,6 +73,9 @@ void* x86MsCdecl::getArgumentPtr(size_t index, const Registers& registers) {
 }
 
 void x86MsCdecl::onArgumentPtrChanged(size_t index, const Registers& registers, void* argumentPtr) {
+    DYNO_UNUSED(index);
+    DYNO_UNUSED(registers);
+    DYNO_UNUSED(argumentPtr);
 }
 
 void* x86MsCdecl::getReturnPtr(const Registers& registers) {
@@ -87,6 +90,7 @@ void* x86MsCdecl::getReturnPtr(const Registers& registers) {
 }
 
 void x86MsCdecl::onReturnPtrChanged(const Registers& registers, void* returnPtr) {
+    DYNO_UNUSED(returnPtr);
     if (m_returnBuffer) {
         // first half in eax, second half in edx
         std::memcpy(*registers.at(EAX, true), m_returnBuffer, 4);

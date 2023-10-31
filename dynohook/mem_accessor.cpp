@@ -92,7 +92,7 @@ bool MemAccessor::safe_mem_write(uintptr_t dest, uintptr_t src, size_t size, siz
 	region_t region_infos = get_region_from_addr(src);
 	
 	// Make sure that the region we query is writable
-	if(!(region_infos.prot & ProtFlag::W))
+	if (!(region_infos.prot & ProtFlag::W))
 		return false;
 	
 	size = std::min<uintptr_t>(region_infos.end - src, size);
@@ -107,7 +107,7 @@ bool MemAccessor::safe_mem_read(uintptr_t src, uintptr_t dest, size_t size, size
 	region_t region_infos = get_region_from_addr(src);
 	
 	// Make sure that the region we query is readable
-	if(!(region_infos.prot & ProtFlag::R))
+	if (!(region_infos.prot & ProtFlag::R))
 		return false;
 
 	size = std::min<uintptr_t>(region_infos.end - src, size);

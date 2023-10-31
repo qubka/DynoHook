@@ -10,7 +10,7 @@ void* ALLOC_NewBlock(ALLOC_Allocator* self)  {
     }
 
     return pBlock;
-} 
+}
 
 void ALLOC_Push(ALLOC_Allocator* self, void* pBlock) {
     if (!pBlock)
@@ -37,9 +37,9 @@ void* ALLOC_Pop(ALLOC_Allocator* self) {
         // Set the head to the next block
         self->pHead = (ALLOC_Block*)self->pHead->pNext;
     }
- 
+
     return pBlock;
-} 
+}
 
 void* ALLOC_Alloc(ALLOC_HANDLE hAlloc, size_t size) {
     ALLOC_Allocator* self = NULL;
@@ -68,9 +68,9 @@ void* ALLOC_Alloc(ALLOC_HANDLE hAlloc, size_t size) {
         self->blocksInUse++;
         if (self->blocksInUse > self->maxBlocksInUse)
             self->maxBlocksInUse = self->blocksInUse;
-    } 
+    }
     return pBlock;
-} 
+}
 
 void* ALLOC_Calloc(ALLOC_HANDLE hAlloc, size_t num, size_t size) {
     void* pMem = NULL;
@@ -112,8 +112,6 @@ void ALLOC_Free(ALLOC_HANDLE hAlloc, void* pBlock) {
 using namespace dyno; 
 
 FBAllocator::FBAllocator(uintptr_t min, uintptr_t max, uint8_t blockSize, uint8_t blockCount) :
-	m_allocator{nullptr}, 
-	m_hAllocator{nullptr},
 	m_min{min},
 	m_max{max},
 	m_dataPool{0},
@@ -128,22 +126,22 @@ FBAllocator::~FBAllocator() {
 
 	if (m_allocator) {
 		freeSize = m_allocator->blockSize * m_allocator->maxBlocks;
-		delete m_allocator;
-		m_allocator = nullptr;
-		m_hAllocator = nullptr;
 	}
 
-	if(m_dataPool) { 
+	if (m_dataPool) {
 		boundAllocFree(m_dataPool, freeSize);
 		m_dataPool = 0;
 	}
 }
 
 bool FBAllocator::initialize() {
-	size_t alignment = getAllocationAlignment();
+    if (m_dataPool)
+        return true;
+
+    size_t alignment = getAllocationAlignment();
     uintptr_t start = AlignUpwards(m_min, alignment);
     uintptr_t end = AlignDownwards(m_max, alignment);
-	
+
 	if (m_alloc2Supported) {
 		// alignment shrinks area by aligning both towards middle so we don't allocate beyond the given bounds
 		m_dataPool = boundAlloc(start, end, ALLOC_BLOCK_SIZE(m_blockSize) * m_maxBlocks);
@@ -153,11 +151,16 @@ bool FBAllocator::initialize() {
 
     if (!m_dataPool)
         return false;
-	
-    m_allocator = new ALLOC_Allocator{"dyno", (char*)m_dataPool, 
-		m_blockSize, ALLOC_BLOCK_SIZE(m_blockSize), m_maxBlocks, nullptr, 0, 0, 0, 0, 0};
 
-    m_hAllocator = m_allocator;
+    m_allocator = std::make_unique<ALLOC_Allocator>(ALLOC_Allocator{
+        "dyno",
+        (char*)m_dataPool,
+        m_blockSize,
+        ALLOC_BLOCK_SIZE(m_blockSize),
+        m_maxBlocks,
+        nullptr,
+        0, 0, 0, 0, 0} );
+
 	return true;
 }
 
@@ -166,17 +169,17 @@ char* FBAllocator::allocate() {
 		return nullptr;
 
 	m_usedBlocks++;
-	return (char*)ALLOC_Alloc(m_hAllocator, m_blockSize);
+	return (char*) ALLOC_Alloc(m_allocator.get(), m_blockSize);
 }
 
 char* FBAllocator::callocate(uint8_t num) {
 	m_usedBlocks += num;
-	return (char*)ALLOC_Calloc(m_hAllocator, num, m_blockSize);
+	return (char*) ALLOC_Calloc(m_allocator.get(), num, m_blockSize);
 }
 
 void FBAllocator::deallocate(char* mem) {
 	m_usedBlocks--;
-	ALLOC_Free(m_hAllocator, mem);
+	ALLOC_Free(m_allocator.get(), mem);
 }
 
 bool FBAllocator::inRange(uintptr_t addr) const {

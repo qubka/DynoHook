@@ -101,7 +101,7 @@ void Instruction::setRelativeDisplacement(intptr_t displacement) {
 }
 
 bool Instruction::startsWithDisplacement() const {
-    if(getOperandTypes().empty()) {
+    if (getOperandTypes().empty()) {
         return false;
     }
 

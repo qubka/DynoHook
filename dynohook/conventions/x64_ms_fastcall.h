@@ -7,28 +7,26 @@
 
     Registers:
         - rax = return value
-        - rdx = return value
         - rsp = stack pointer
-        - [xyz]mm0 = floating point return value
-        - [xyz]mm1 = floating point return value
+        - xmm0 = floating point return value
 
     Parameter passing:
-        - rdi, rsi, rdx, rcx, r8, r9, rest on the stack
-        - [xyz]mm0-[xyz]mm7 used for passing floating values
+        - first parameter in rcx/xmm0, second parameter in rdx/xmm1, third parameter in r8/xmm2, forth parameter in r9/xmm3, rest on the stack
         - stack parameter order: right-to-left
         - caller cleans up the stack
         - alignment: 8 bytes
+        - shadow space: 32 bytes (for arguments)
 
     Return values:
         - return values of pointer or intergral type (<= 64 bits) are returned via the rax register
-        - integers > 64 bits are returned via the rax and rdx registers
-        - floating pointer types are returned via the xmm0 and xmm1 register
+        - integers > 64 bits are returned via the rax registers as pointers
+        - floating pointer types are returned via the xmm0 register
 */
 namespace dyno {
-    class x64SystemVcall : public CallingConvention {
+    class x64MsFastCall : public CallingConvention {
     public:
-        x64SystemVcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = SIZE_QWORD);
-        ~x64SystemVcall() override;
+        x64MsFastCall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = SIZE_QWORD);
+        ~x64MsFastCall() override = default;
 
         regs_t getRegisters() override;
         void** getStackArgumentPtr(const Registers &registers) override;
@@ -38,8 +36,5 @@ namespace dyno {
 
         void* getReturnPtr(const Registers& registers) override;
         void onReturnPtrChanged(const Registers& registers, void* returnPtr) override;
-
-    private:
-        void* m_returnBuffer;
     };
 }

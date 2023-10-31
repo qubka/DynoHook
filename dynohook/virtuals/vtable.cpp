@@ -4,7 +4,7 @@
 
 using namespace dyno;
 
-VTable::VTable(void* pClass) : m_class((void***)pClass) {
+VTable::VTable(void* pClass, VHookCache& hookCache) : m_class{(void***)pClass}, m_hookCache{hookCache} {
 	MemProtector protector{(uintptr_t)m_class, sizeof(void*), ProtFlag::R | ProtFlag::W, *this};
 
     m_origVtable = *m_class;
@@ -30,28 +30,33 @@ size_t VTable::getVFuncCount(void** vtable) {
     return count;
 }
 
-Hook* VTable::hook(const HookSupplier& supplier, size_t index) {
-    auto it = m_hooked.find(index);
-    if (it != m_hooked.end())
-        return it->second.get();
-
+std::shared_ptr<Hook> VTable::hook(size_t index, const ConvFunc& convention) {
     if (index >= m_vFuncCount) {
-        Log::log("Invalid virtual function index", ErrorLevel::SEV);
+        DYNO_LOG("Invalid virtual function index", ErrorLevel::SEV);
         return nullptr;
     }
 
-	auto vhook = supplier(m_origVtable[index]);
+    auto it = m_hooked.find(index);
+    if (it != m_hooked.end())
+        return it->second;
+
+	auto vhook = m_hookCache.get(m_origVtable[index], convention);
 	if (!vhook) {
-		Log::log("Invalid virtual hook", ErrorLevel::SEV);
+		DYNO_LOG("Invalid virtual hook", ErrorLevel::SEV);
 		return nullptr;
 	}
 	
-    VHook* hook = m_hooked.emplace(index, std::move(vhook)).first->second.get();
-    m_newVtable[index] = (void*) hook->getBridge();
-    return hook;
+    m_hooked.emplace(index, vhook);
+    m_newVtable[index] = (void*) vhook->getBridge();
+    return vhook;
 }
 
 bool VTable::unhook(size_t index) {
+    if (index >= m_vFuncCount) {
+        DYNO_LOG("Invalid virtual function index", ErrorLevel::SEV);
+        return false;
+    }
+
     auto it = m_hooked.find(index);
     if (it == m_hooked.end())
         return false;
@@ -61,7 +66,33 @@ bool VTable::unhook(size_t index) {
     return true;
 }
 
-Hook* VTable::find(size_t index) const {
+std::shared_ptr<Hook> VTable::find(size_t index) const {
     auto it = m_hooked.find(index);
-    return it != m_hooked.end() ? it->second.get() : nullptr;
+    return it != m_hooked.end() ? it->second : nullptr;
+}
+
+std::shared_ptr<VHook> VHookCache::get(void* pFunc, const ConvFunc &convention) {
+    auto it = m_hooked.find(pFunc);
+    if (it != m_hooked.end())
+        return it->second;
+    auto vhook = std::make_shared<VHook>((uintptr_t)pFunc, convention);
+    if (!vhook->hook())
+        return std::shared_ptr<VHook>(static_cast<VHook*>(nullptr));
+    m_hooked.emplace(pFunc, vhook);
+    return vhook;
+}
+
+void VHookCache::clear() {
+    m_hooked.clear();
+}
+
+void VHookCache::remove() {
+    auto it = m_hooked.cbegin();
+    while (it != m_hooked.cend()) {
+        if (it->second.use_count() == 1) {
+            it = m_hooked.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }

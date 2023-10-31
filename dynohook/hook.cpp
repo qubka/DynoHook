@@ -7,34 +7,39 @@ using namespace asmjit;
 using namespace asmjit::x86;
 
 Hook::Hook(const ConvFunc& convention) :
-    m_fnBridge{NULL},
-    m_newRetAddr{NULL},
     m_callingConvention{convention()},
     m_registers{m_callingConvention->getRegisters()},
     m_scratchRegisters{Registers::ScratchList()} {
 }
 
-void Hook::addCallback(CallbackType type, CallbackHandler handler) {
-    if (!handler)
-        return;
+bool Hook::addCallback(CallbackType type, CallbackHandler handler) {
+    if (!handler) {
+        DYNO_LOG("Callback handler is null", ErrorLevel::WARN);
+        return false;
+    }
 
     std::vector<CallbackHandler>& callbacks = m_handlers[type];
 
     for (const CallbackHandler callback : callbacks) {
-        if (callback == handler)
-            return;
+        if (callback == handler) {
+            DYNO_LOG("Callback handler was already added", ErrorLevel::WARN);
+            return false;
+        }
     }
 
     callbacks.push_back(handler);
+    return true;
 }
 
-void Hook::removeCallback(CallbackType type, CallbackHandler handler) {
-    if (!handler)
-        return;
+bool Hook::removeCallback(CallbackType type, CallbackHandler handler) {
+    if (!handler) {
+        DYNO_LOG("Callback handler is null", ErrorLevel::WARN);
+        return false;
+    }
 
     auto it = m_handlers.find(type);
     if (it == m_handlers.end())
-        return;
+        return false;
 
     std::vector<CallbackHandler>& callbacks = it->second;
 
@@ -43,12 +48,20 @@ void Hook::removeCallback(CallbackType type, CallbackHandler handler) {
             callbacks.erase(callbacks.begin() + i);
             if (callbacks.empty())
                 m_handlers.erase(it);
-            return;
+            return true;
         }
     }
+
+    DYNO_LOG("Callback handler not registered", ErrorLevel::WARN);
+    return false;
 }
 
 bool Hook::isCallbackRegistered(CallbackType type, CallbackHandler handler) const {
+    if (!handler) {
+        DYNO_LOG("Callback handler is null", ErrorLevel::WARN);
+        return false;
+    }
+
     auto it = m_handlers.find(type);
     if (it == m_handlers.end())
         return false;
@@ -75,7 +88,7 @@ bool Hook::areCallbacksRegistered() const {
     return false;
 }
 
-ReturnAction Hook::hookHandler(CallbackType type) {
+ReturnAction Hook::callbackHandler(CallbackType type) {
     if (type == CallbackType::Post) {
         ReturnAction lastPreReturnAction = m_lastPreReturnAction.back();
         m_lastPreReturnAction.pop_back();
@@ -119,7 +132,7 @@ ReturnAction Hook::hookHandler(CallbackType type) {
 void* Hook::getReturnAddress(void* stackPtr) {
     auto it = m_retAddr.find(stackPtr);
     if (it == m_retAddr.end()) {
-        puts("[Error] - Hook - Failed to find return address of original function. Check the arguments and return type of your detour setup.");
+        DYNO_LOG("Failed to find return address of original function. Check the arguments and return type of your detour setup.", ErrorLevel::SEV);
         return nullptr;
     }
 
@@ -139,16 +152,12 @@ void Hook::setReturnAddress(void* retAddr, void* stackPtr) {
 }
 
 bool Hook::createBridge() {
-    assert(m_fnBridge == NULL);
+    assert(m_fnBridge == 0);
 
-    // holds code and relocation information during code generation
     CodeHolder code;
-
-    // code holder must be initialized before it can be used
     code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpuFeatures());
-
-    // emitters can emit code to CodeHolder
     Assembler a{&code};
+
     Label override = a.newLabel();
 
     // write a redirect to the post-hook code
@@ -165,11 +174,25 @@ bool Hook::createBridge() {
     a.je(override);
 
     // jump to the original address (trampoline)
-    uintptr_t address = getAddress();
-    assert(address && "Function address cannot be null");
-    a.jmp(address);
+    const uintptr_t& address = getAddress();
+    if (address) {
+        a.jmp(address);
+    } else {
+        // if address not available yet, load later
+        uintptr_t addr = (uintptr_t)&address;
+#if DYNO_ARCH_X86 == 64
+        a.push(rax);
+        a.mov(rax, qword_ptr(addr));
+        a.xchg(qword_ptr(rsp), rax);
+#elif DYNO_ARCH_X86 == 32
+        a.push(eax);
+        a.mov(eax, dword_ptr(addr));
+        a.xchg(dword_ptr(esp), eax);
+#endif // DYNO_ARCH_X86
+        a.ret();
+    }
 
-    // this code will be executed if a pre-hook returns true
+    // this code will be executed if a pre-hook returns Supercede
     a.bind(override);
 
     // finally, return to the caller
@@ -180,10 +203,10 @@ bool Hook::createBridge() {
     else
         a.ret();
 
-    // Generate code
+    // generate code
     auto error = m_asmjit_rt.add(&m_fnBridge, &code);
     if (error) {
-        Log::log("AsmJit error: "s + DebugUtils::errorAsString(error), ErrorLevel::SEV);
+        DYNO_LOG("AsmJit error: "s + DebugUtils::errorAsString(error), ErrorLevel::SEV);
         return false;
     }
 
@@ -196,7 +219,7 @@ void Hook::writeModifyReturnAddress(Assembler& a) {
     // save scratch registers that are used by setReturnAddress
     writeSaveScratchRegisters(a);
 
-    // save the original return address by using the current esp as the key.
+    // save the original return address by using the current sp as the key.
     // this should be unique until we have returned to the original caller.
     void (DYNO_CDECL Hook::*setReturnAddress)(void*, void*) = &Hook::setReturnAddress;
 
@@ -243,15 +266,10 @@ void Hook::writeModifyReturnAddress(Assembler& a) {
 }
 
 bool Hook::createPostCallback() {
-    assert(m_newRetAddr == NULL);
+    assert(m_newRetAddr == 0);
 
-    // holds code and relocation information during code generation
     CodeHolder code;
-
-    // code holder must be initialized before it can be used
     code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpuFeatures());
-
-    // emitters can emit code to CodeHolder
     Assembler a{&code};
 
     // gets pop size + return address
@@ -316,10 +334,10 @@ bool Hook::createPostCallback() {
     // don't corrupt the stack.
     a.ret(popSize);
 
-    // Generate code
+    // generate code
     auto error = m_asmjit_rt.add(&m_newRetAddr, &code);
     if (error) {
-        Log::log("AsmJit error: "s + DebugUtils::errorAsString(error), ErrorLevel::SEV);
+        DYNO_LOG("AsmJit error: "s + DebugUtils::errorAsString(error), ErrorLevel::SEV);
         return false;
     }
 
@@ -327,7 +345,7 @@ bool Hook::createPostCallback() {
 }
 
 void Hook::writeCallHandler(Assembler& a, CallbackType type) const {
-    ReturnAction (DYNO_CDECL Hook::*hookHandler)(CallbackType) = &Hook::hookHandler;
+    ReturnAction (DYNO_CDECL Hook::*callbackHandler)(CallbackType) = &Hook::callbackHandler;
 
     // save the registers so that we can access them in our handlers
     writeSaveRegisters(a, type);
@@ -338,13 +356,13 @@ void Hook::writeCallHandler(Assembler& a, CallbackType type) const {
     a.mov(rdx, type);
     a.mov(rcx, this);
     a.sub(rsp, 40);
-    a.call((void*&) hookHandler); // +8 = 48 (aligned by 16 bytes)
+    a.call((void*&) callbackHandler); // +8 = 48 (aligned by 16 bytes)
     a.add(rsp, 40);
 #else // __systemV__
     a.mov(rsi, type);
     a.mov(rdi, this);
     a.sub(rsp, 24);
-    a.call((void*&) hookHandler); // +8 = 32 (aligned by 16 bytes)
+    a.call((void*&) callbackHandler); // +8 = 32 (aligned by 16 bytes)
     a.add(rsp, 24);
 #endif
 #elif DYNO_ARCH_X86 == 32
@@ -352,7 +370,7 @@ void Hook::writeCallHandler(Assembler& a, CallbackType type) const {
     a.sub(esp, 4);
     a.push(type);
     a.push(this);
-    a.call((void*&) hookHandler); // +4 = 16 (aligned by 16 bytes)
+    a.call((void*&) callbackHandler); // +4 = 16 (aligned by 16 bytes)
     a.add(esp, 12);
 #endif // DYNO_ARCH_X86
 }
@@ -391,7 +409,7 @@ void Hook::writeRestoreScratchRegisters(Assembler& a) const {
     }
 }
 
-void Hook::writeSaveRegisters(Assembler& a, CallbackType type) const {
+void Hook::writeSaveRegisters(Assembler& a, CallbackType) const {
     // save rax first, because we use it to save others
 
     for (const auto& reg : m_registers) {
@@ -407,7 +425,7 @@ void Hook::writeSaveRegisters(Assembler& a, CallbackType type) const {
     }
 }
 
-void Hook::writeRestoreRegisters(Assembler& a, CallbackType type) const {
+void Hook::writeRestoreRegisters(Assembler& a, CallbackType) const {
     // restore rax last, because we use it to restore others
 
     for (const auto& reg : m_registers) {
@@ -423,7 +441,7 @@ void Hook::writeRestoreRegisters(Assembler& a, CallbackType type) const {
     }
 }
 
-void Hook::writeRegToMem(Assembler& a, const Register& reg, CallbackType type) const {
+void Hook::writeRegToMem(Assembler& a, const Register& reg, CallbackType) const {
     /**
      * The moffs8, moffs16, moffs32 and moffs64 operands specify a simple offset relative to the segment base,
      * where 8, 16, 32 and 64 refer to the size of the data. The address-size attribute of the instruction determines the size of the offset, either 16, 32 or 64 bits.
@@ -656,11 +674,11 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, CallbackType type) c
         case FS: a.mov(rax, addr); a.mov(word_ptr(rax), fs); break;
         case GS: a.mov(rax, addr); a.mov(word_ptr(rax), gs); break;
 
-        default: puts("[Warning] - Hook - Unsupported register.");
+        default: DYNO_LOG("Unsupported register.", ErrorLevel::WARN);
     }
 }
 
-void Hook::writeMemToReg(Assembler& a, const Register& reg, CallbackType type) const {
+void Hook::writeMemToReg(Assembler& a, const Register& reg, CallbackType) const {
     /**
      * The moffs8, moffs16, moffs32 and moffs64 operands specify a simple offset relative to the segment base,
      * where 8, 16, 32 and 64 refer to the size of the data. The address-size attribute of the instruction determines the size of the offset, either 16, 32 or 64 bits.
@@ -893,7 +911,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, CallbackType type) c
         case FS: a.mov(rax, addr); a.mov(fs, word_ptr(rax)); break;
         case GS: a.mov(rax, addr); a.mov(gs, word_ptr(rax)); break;
 
-        default: puts("[Warning] - Hook - Unsupported register.");
+        default: DYNO_LOG("Unsupported register.", ErrorLevel::WARN);
     }
 }
 
@@ -1019,7 +1037,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, CallbackType type) c
         //case ST6: a.movl(tword_ptr(addr), st6); break;
         //case ST7: a.movl(tword_ptr(addr), st7); break;
 
-        default: puts("[Warning] - Hook - Unsupported register.");
+        default: DYNO_LOG("Unsupported register.", ErrorLevel::WARN);
     }
 }
 
@@ -1123,7 +1141,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, CallbackType type) c
         //case ST6: a.movl(st6, tword_ptr(addr)); break;
         //case ST7: a.movl(st7, tword_ptr(addr)); break;
 
-        default: puts("[Warning] - Hook - Unsupported register.");
+        default: DYNO_LOG("Unsupported register.", ErrorLevel::WARN);
     }
 }
 

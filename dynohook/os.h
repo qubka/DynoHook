@@ -4,10 +4,10 @@
 #if DYNO_PLATFORM_WINDOWS
 
 #ifndef WIN32_LEAN_AND_MEAN
-  #define WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 #endif
 #ifndef NOMINMAX
-  #define NOMINMAX
+#define NOMINMAX
 #endif
 #define NTDDI_VERSION NTDDI_WIN10_RS4
 #include <windows.h>
@@ -20,7 +20,9 @@
 //
 // The operation was blocked as the process prohibits dynamic code generation.
 //
+#ifndef ERROR_DYNAMIC_CODE_BLOCKED
 #define ERROR_DYNAMIC_CODE_BLOCKED       1655L
+#endif
 
 #elif DYNO_PLATFORM_LINUX
 

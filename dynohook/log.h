@@ -1,3 +1,5 @@
+#pragma once
+
 namespace dyno {
 	enum class ErrorLevel : uint8_t {
 		NONE,
@@ -47,3 +49,9 @@ namespace dyno {
 		ErrorLevel m_level = ErrorLevel::INFO;
 	};
 }
+
+#if DYNO_LOGGING
+#define DYNO_LOG(msg, lvl) dyno::Log::log(msg, lvl)
+#else
+#define DYNO_LOG(msg, lvl)
+#endif

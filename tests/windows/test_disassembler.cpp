@@ -93,9 +93,9 @@ std::vector<uint8_t> x86x64Nops = {
 };
 
 std::string filterJXX(const std::string& lhs) {
-	if(lhs == "jnz")
+	if (lhs == "jnz")
 		return "jne";
-	else if(lhs == "jz")
+	else if (lhs == "jz")
 		return "je";
 	return lhs;
 }
@@ -112,7 +112,7 @@ TEST_CASE("Test Instruction UUID generator", "[Instruction],[UID]") {
 	dyno::Instruction::Displacement displacement{0};
 	displacement.Absolute = 0;
 
-	long lastID = 0;
+	uint32_t lastID = 0;
 	for (int i = 0; i < 30; i++) {
 		auto inst = dyno::Instruction{&accessor,
                                       0,
@@ -135,6 +135,7 @@ TEST_CASE("Test Instruction UUID generator", "[Instruction],[UID]") {
 }
 
 TEST_CASE("Test Disassemblers x64", "[ZydisDisassembler]") {
+#if DYNO_ARCH_X86 == 64
     dyno::MemAccessor accessor;
     dyno::ZydisDisassembler disasm{dyno::Mode::x64};
 	auto Instructions = disasm.disassemble((uintptr_t)&x64ASM.front(), (uintptr_t)&x64ASM.front(),
@@ -164,7 +165,7 @@ TEST_CASE("Test Disassemblers x64", "[ZydisDisassembler]") {
 				<< " Mnemonic:"
 				<< filterJXX(Instructions[i].getMnemonic()));
 
-			REQUIRE(filterJXX(Instructions[i].getMnemonic()).compare(CorrectMnemonic[i]) == 0);
+			REQUIRE(filterJXX(Instructions[i].getMnemonic()) == CorrectMnemonic[i]);
 
 			REQUIRE(Instructions[i].size() == CorrectSizes[i]);
 
@@ -237,16 +238,18 @@ TEST_CASE("Test Disassemblers x64", "[ZydisDisassembler]") {
 										500, accessor);
 		std::cout << insts << std::endl;
 	}
+#endif
 }
 
 TEST_CASE("Test Disassemblers x86 FF25", "[ZydisDisassembler]") {
     // this test is not suitable for x64 due to ff 25 not being re-written
-#if DYNO_ARCH_X86 == 32
+#if DYNO_ARCH_X86 == 0
 	// re-write ff 25 displacement to point to data (absolute)
 	*(uint32_t*)(x86ASM_FF25.data() + 2) = (uint32_t)(x86ASM_FF25.data() + 6); // 0xFF25 <pMem> = &mem; (just fyi *mem == 0xAA0000AB)
 
+    dyno::MemAccessor accessor;
     dyno::ZydisDisassembler disasm{dyno::Mode::x86};
-	auto                      Instructions = disasm.disassemble((uintptr_t)&x86ASM_FF25.front(), (uintptr_t)&x86ASM_FF25.front(),
+	auto Instructions = disasm.disassemble((uintptr_t)&x86ASM_FF25.front(), (uintptr_t)&x86ASM_FF25.front(),
 		(uintptr_t)&x86ASM_FF25.front() + x86ASM_FF25.size(), accessor);
 
 	SECTION("Check disassembler integrity") {
@@ -286,7 +289,7 @@ TEST_CASE("Test Disassemblers x86", "[ZydisDisassembler]") {
 			<< " Mnemonic:"
 			<< Instructions[i].getMnemonic());
 
-		REQUIRE(filterJXX(Instructions.at(i).getMnemonic()).compare(CorrectMnemonic.at(i)) == 0);
+		REQUIRE(filterJXX(Instructions.at(i).getMnemonic()) == CorrectMnemonic.at(i));
 
 		REQUIRE(Instructions.at(i).size() == CorrectSizes.at(i));
 
@@ -365,6 +368,7 @@ TEST_CASE("Test Disassemblers x86", "[ZydisDisassembler]") {
 }
 
 TEST_CASE("Test Disassemblers x64 Two", "[ZydisDisassembler]") {
+#if DYNO_ARCH_X86 == 64
     dyno::MemAccessor accessor;
     dyno::ZydisDisassembler disasm{dyno::Mode::x64};
 	dyno::insts_t Instructions = disasm.disassemble((uintptr_t)&x64ASM2.front(), (uintptr_t)&x64ASM2.front(),
@@ -387,6 +391,7 @@ TEST_CASE("Test Disassemblers x64 Two", "[ZydisDisassembler]") {
 		REQUIRE(Instructions.at(0).getDispSize() == 4);
 		REQUIRE(Instructions.at(0).getDisplacement().Relative == 0x0000000000097ea5);
 	}
+#endif
 }
 
 TEST_CASE("Test Disassemblers NOPS", "[ZydisDisassembler]") {

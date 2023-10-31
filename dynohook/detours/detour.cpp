@@ -61,12 +61,12 @@ std::optional<insts_t> Detour::calcNearestSz(
 
 bool Detour::followJmp(insts_t& functionInsts, uint8_t curDepth) { // NOLINT(misc-no-recursion)
     if (functionInsts.empty()) {
-        Log::log("Couldn't decompile instructions at followed jmp", ErrorLevel::WARN);
+        DYNO_LOG("Couldn't decompile instructions at followed jmp", ErrorLevel::WARN);
         return false;
     }
 
     if (curDepth >= m_maxDepth) {
-        Log::log("Prologue jmp resolution hit max depth, prologue too deep", ErrorLevel::WARN);
+        DYNO_LOG("Prologue jmp resolution hit max depth, prologue too deep", ErrorLevel::WARN);
         return false;
     }
 
@@ -76,16 +76,16 @@ bool Detour::followJmp(insts_t& functionInsts, uint8_t curDepth) { // NOLINT(mis
     }
 
     if (!m_isFollowCallOnFnAddress) {
-        Log::log("setting: Do NOT follow CALL on fnAddress", ErrorLevel::INFO);
+        DYNO_LOG("setting: Do NOT follow CALL on fnAddress", ErrorLevel::INFO);
         if (functionInsts.front().isCalling()) {
-            Log::log("First assembly instruction is CALL", ErrorLevel::INFO);
+            DYNO_LOG("First assembly instruction is CALL", ErrorLevel::INFO);
             return true;
         }
     }
 
     // might be a mem type like jmp rax, not supported
     if (!functionInsts.front().hasDisplacement()) {
-        Log::log("Branching instruction without displacement encountered", ErrorLevel::WARN);
+        DYNO_LOG("Branching instruction without displacement encountered", ErrorLevel::WARN);
         return false;
     }
 
@@ -187,16 +187,16 @@ void Detour::buildRelocationList(
 
 bool Detour::unhook() {
     if (!m_hooked) {
-        Log::log("Detour unhook failed: no hook present", ErrorLevel::SEV);
+        DYNO_LOG("Detour unhook failed: no hook present", ErrorLevel::SEV);
         return false;
     }
 
     MemProtector prot{m_fnAddress, calcInstsSz(m_originalInsts), ProtFlag::R | ProtFlag::W | ProtFlag::X, *this};
     writeEncoding(m_originalInsts);
 
-    if (m_trampoline != NULL) {
+    if (m_trampoline != 0) {
         delete[](uint8_t*) m_trampoline;
-        m_trampoline = NULL;
+        m_trampoline = 0;
     }
 
     m_hooked = false;
@@ -209,7 +209,7 @@ bool Detour::rehook() {
 
     // Nop the space between jmp and end of prologue
     if (m_hookSize < m_nopProlOffset) {
-        Log::log("hook size must not be larger than nop prologue offset", ErrorLevel::SEV);
+        DYNO_LOG("hook size must not be larger than nop prologue offset", ErrorLevel::SEV);
         return false;
     }
 

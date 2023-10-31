@@ -1,21 +1,22 @@
 #pragma once
 
 #include "dynohook/convention.h"
-#include "x86MsStdcall.h"
+#include "x86_ms_stdcall.h"
 
 /*
     Source: DynCall manual and Windows docs
 
     Registers:
         - eax = return value
+        - ecx = this pointer
         - edx = return value
         - esp = stack pointer
         - st0 = floating point return value
 
     Parameter passing:
-        - first parameter in ecx, second parameter in edx, rest on the stack
         - stack parameter order: right-to-left
         - callee cleans up the stack
+        - all other arguments are pushed onto the stack
         - alignment: 4 bytes
 
     Return values:
@@ -24,9 +25,9 @@
         - floating pointer types are returned via the st0 register
 */
 namespace dyno {
-    class x86MsFastcall : public x86MsStdcall {
+    class x86MsThiscall : public x86MsStdcall {
     public:
-        x86MsFastcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = 4);
-        ~x86MsFastcall() override = default;
+        x86MsThiscall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = 4);
+        ~x86MsThiscall() override = default;
     };
 }

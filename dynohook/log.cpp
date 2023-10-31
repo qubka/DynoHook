@@ -1,7 +1,9 @@
+#include "log.h"
+
 using namespace dyno;
 
 void Log::registerLogger(std::shared_ptr<Logger> logger) {
-	m_logger = logger;
+	m_logger = std::move(logger);
 }
 
 void Log::log(const std::string& msg, ErrorLevel level) {
@@ -40,6 +42,11 @@ Error ErrorLogger::pop() {
 		m_log.pop_back();
 	}
 	return err;
+}
+
+
+void ErrorLogger::setLogLevel(ErrorLevel level) {
+    m_level = level;
 }
 
 ErrorLogger& ErrorLogger::Get() {

@@ -1,4 +1,4 @@
-#include "x64SystemVcall.h"
+#include "x64_systemV_call.h"
 
 using namespace dyno;
 
@@ -92,6 +92,9 @@ void* x64SystemVcall::getArgumentPtr(size_t index, const Registers& registers) {
 }
 
 void x64SystemVcall::onArgumentPtrChanged(size_t index, const Registers& registers, void* argumentPtr) {
+    DYNO_UNUSED(index);
+    DYNO_UNUSED(registers);
+    DYNO_UNUSED(argumentPtr);
 }
 
 void* x64SystemVcall::getReturnPtr(const Registers& registers) {
@@ -106,6 +109,7 @@ void* x64SystemVcall::getReturnPtr(const Registers& registers) {
 }
 
 void x64SystemVcall::onReturnPtrChanged(const Registers& registers, void* returnPtr) {
+    DYNO_UNUSED(returnPtr);
     if (m_returnBuffer) {
         // first half in rax, second half in rdx
         std::memcpy(*registers.at(RAX, true), m_returnBuffer, 8);

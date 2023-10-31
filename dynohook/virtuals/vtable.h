@@ -3,24 +3,21 @@
 #include "dynohook/virtuals/vhook.h"
 
 namespace dyno {
-    typedef std::function<std::shared_ptr<VHook>(void*)> HookSupplier;
+    class VHookCache;
 
     class VTable final : public MemAccessor {
     public:
-        explicit VTable(void* pClass);
+        VTable(void* pClass, VHookCache& cache);
         ~VTable() override;
         DYNO_NONCOPYABLE(VTable);
 
-        Hook* hook(const HookSupplier& supplier, size_t index);
+        std::shared_ptr<Hook> hook(size_t index, const ConvFunc& convention);
         bool unhook(size_t index);
 
-        Hook* find(size_t index) const;
+        std::shared_ptr<Hook> find(size_t index) const;
+
         bool empty() const {
             return m_hooked.empty();
-        }
-
-        bool operator==(void* pClass) const {
-            return m_class == pClass;
         }
 
     private:
@@ -31,6 +28,18 @@ namespace dyno {
         size_t m_vFuncCount;
         std::unique_ptr<void*[]> m_newVtable;
 
-        std::map<size_t, std::shared_ptr<VHook>> m_hooked;
+        VHookCache& m_hookCache;
+
+        std::unordered_map<size_t, std::shared_ptr<VHook>> m_hooked;
+    };
+
+    class VHookCache {
+    public:
+        std::shared_ptr<VHook> get(void* pFunc, const ConvFunc& convention);
+        void clear();
+        void remove(); // remove unused
+
+    private:
+        std::unordered_map<void*, std::shared_ptr<VHook>> m_hooked;
     };
 }

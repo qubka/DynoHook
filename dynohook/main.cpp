@@ -1,5 +1,5 @@
 #include "dynohook/detours/x64_detour.h"
-#include "dynohook/conventions/x64/x64MsFastcall.h"
+#include "dynohook/conventions/x64_ms_fastcall.h"
 
 #include <iostream>
 
@@ -51,7 +51,7 @@ ReturnAction PostMyFunc(CallbackType hookType, Hook& hook) {
 int main(int argc, char* argv[]) {
     auto yy = &MyFunc;
 
-    dyno::x64Detour detour{(uintptr_t)&MyFunc, [] { return new x64MsFastcall({DataType::Int, DataType::Int}, DataType::Int); }};
+    dyno::x64Detour detour{(uintptr_t)&MyFunc, [] { return new x64MsFastCall({DataType::Int, DataType::Int}, DataType::Int); }};
     detour.hook();
 
     // add the callbacks

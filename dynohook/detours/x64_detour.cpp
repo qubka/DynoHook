@@ -206,7 +206,7 @@ bool x64Detour::makeInplaceTrampoline(
     auto error = m_asmjit_rt.add(&trampoline_address, &code);
 
     if (error) {
-        Log::log("Failed to generate in-place trampoline: "s + asmjit::DebugUtils::errorAsString(error), ErrorLevel::SEV);
+        DYNO_LOG("Failed to generate in-place trampoline: "s + asmjit::DebugUtils::errorAsString(error), ErrorLevel::SEV);
         return false;
     }
 
@@ -224,7 +224,7 @@ bool x64Detour::makeInplaceTrampoline(
 bool x64Detour::allocateJumpToBridge() {
     // Create the bridge function
     if (!createBridge()) {
-        Log::log("Failed to create bridge", ErrorLevel::SEV);
+        DYNO_LOG("Failed to create bridge", ErrorLevel::SEV);
         return false;
     }
 
@@ -236,13 +236,13 @@ bool x64Detour::allocateJumpToBridge() {
         // each block is m_blocksize (8) at the time of writing. Do not write more than this.
         auto region = (uintptr_t) m_allocator.allocate(min, max);
         if (!region) {
-            Log::log("VirtualAlloc2 failed to find a region near function", ErrorLevel::SEV);
+            DYNO_LOG("VirtualAlloc2 failed to find a region near function", ErrorLevel::SEV);
         } else if (region < min || region >= max) {
             // Workaround for WINE bug, VirtualAlloc2 does not return region in the correct range (always?)
             // see: https://github.com/stevemk14ebr/PolyHook_2_0/pull/168
             m_allocator.deallocate(region);
             region = 0;
-            Log::log("VirtualAlloc2 failed allocate within requested range", ErrorLevel::SEV);
+            DYNO_LOG("VirtualAlloc2 failed allocate within requested range", ErrorLevel::SEV);
             // intentionally try other schemes.
         } else {
             m_valloc2_region = region;
@@ -283,7 +283,7 @@ bool x64Detour::allocateJumpToBridge() {
             return true;
         }
 
-        Log::log("No code caves found near function", ErrorLevel::SEV);
+        DYNO_LOG("No code caves found near function", ErrorLevel::SEV);
     }
 
     // This short in-place scheme works almost like the default in-place scheme, except that it doesn't
@@ -301,41 +301,33 @@ bool x64Detour::allocateJumpToBridge() {
         }
     }
 
-    Log::log("None of the allowed hooking schemes have succeeded", ErrorLevel::SEV);
+    DYNO_LOG("None of the allowed hooking schemes have succeeded", ErrorLevel::SEV);
 
     if (m_hookInsts.empty()) {
-        Log::log("Invalid state: hook instructions are empty", ErrorLevel::SEV);
+        DYNO_LOG("Invalid state: hook instructions are empty", ErrorLevel::SEV);
     }
 
     return false;
 }
 
 bool x64Detour::hook() {
-    Log::log("m_fnAddress: " + int_to_hex(m_fnAddress) + "\n", ErrorLevel::INFO);
+    DYNO_LOG("m_fnAddress: " + int_to_hex(m_fnAddress) + "\n", ErrorLevel::INFO);
 
     insts_t insts = m_disasm.disassemble(m_fnAddress, m_fnAddress, m_fnAddress + 100, *this);
-    Log::log("Original function:\n" + instsToStr(insts) + "\n", ErrorLevel::INFO);
+    DYNO_LOG("Original function:\n" + instsToStr(insts) + "\n", ErrorLevel::INFO);
 
     if (insts.empty()) {
-        Log::log("Disassembler unable to decode any valid instructions", ErrorLevel::SEV);
+        DYNO_LOG("Disassembler unable to decode any valid instructions", ErrorLevel::SEV);
         return false;
     }
 
     if (!followJmp(insts)) {
-        Log::log("Prologue jmp resolution failed", ErrorLevel::SEV);
+        DYNO_LOG("Prologue jmp resolution failed", ErrorLevel::SEV);
         return false;
     }
 
     // update given fn address to resolved one
     m_fnAddress = insts.front().getAddress();
-
-    // TODO: Move tram allocation here (temp)
-    // allocate new trampoline before deleting old to increase odds of new mem address
-    auto tmpTrampoline = (uintptr_t) new uint8_t[512];
-    if (m_trampoline != NULL) {
-        delete[] (uint8_t*) m_trampoline;
-    }
-    m_trampoline = tmpTrampoline;
 
     if (!allocateJumpToBridge()) {
         return false;
@@ -344,7 +336,7 @@ bool x64Detour::hook() {
     {
         std::stringstream ss;
         ss << printDetourScheme(m_chosenScheme);
-        Log::log("Chosen detour scheme: " + ss.str() + "\n", ErrorLevel::INFO);
+        DYNO_LOG("Chosen detour scheme: " + ss.str() + "\n", ErrorLevel::INFO);
     }
 
     // min size of patches that may split instructions
@@ -359,7 +351,7 @@ bool x64Detour::hook() {
     // find the prologue section we will overwrite with jmp + zero or more nops
     auto prologueOpt = calcNearestSz(insts, minProlSz, roundProlSz);
     if (!prologueOpt) {
-        Log::log("Function too small to hook safely!", ErrorLevel::SEV);
+        DYNO_LOG("Function too small to hook safely!", ErrorLevel::SEV);
         return false;
     }
 
@@ -367,13 +359,13 @@ bool x64Detour::hook() {
     auto prologue = *prologueOpt;
 
     if (!expandProlSelfJmps(prologue, insts, minProlSz, roundProlSz)) {
-        Log::log("Function needs a prologue jmp table but it's too small to insert one", ErrorLevel::SEV);
+        DYNO_LOG("Function needs a prologue jmp table but it's too small to insert one", ErrorLevel::SEV);
         return false;
     }
 
     m_originalInsts = prologue;
 
-    Log::log("Prologue to overwrite:\n" + instsToStr(prologue) + "\n", ErrorLevel::INFO);
+    DYNO_LOG("Prologue to overwrite:\n" + instsToStr(prologue) + "\n", ErrorLevel::INFO);
 
     // copy all the prologue stuff to trampoline
     insts_t jmpTblOpt;
@@ -381,24 +373,24 @@ bool x64Detour::hook() {
         return false;
     }
 
-    Log::log("m_trampoline: " + int_to_hex(m_trampoline) + "\n", ErrorLevel::INFO);
-    Log::log("m_trampolineSz: " + int_to_hex(m_trampolineSz) + "\n", ErrorLevel::INFO);
+    DYNO_LOG("m_trampoline: " + int_to_hex(m_trampoline) + "\n", ErrorLevel::INFO);
+    DYNO_LOG("m_trampolineSz: " + int_to_hex(m_trampolineSz) + "\n", ErrorLevel::INFO);
 
     auto tramp_instructions = m_disasm.disassemble(m_trampoline, m_trampoline, m_trampoline + m_trampolineSz, *this);
-    Log::log("Trampoline:\n" + instsToStr(tramp_instructions) + "\n", ErrorLevel::INFO);
+    DYNO_LOG("Trampoline:\n" + instsToStr(tramp_instructions) + "\n", ErrorLevel::INFO);
     if (!jmpTblOpt.empty()) {
-        Log::log("Trampoline Jmp Tbl:\n" + instsToStr(jmpTblOpt) + "\n", ErrorLevel::INFO);
+        DYNO_LOG("Trampoline Jmp Tbl:\n" + instsToStr(jmpTblOpt) + "\n", ErrorLevel::INFO);
     }
 
     m_hookSize = (uint32_t) roundProlSz;
     m_nopProlOffset = (uint16_t) minProlSz;
 
-    Log::log("Hook instructions: \n" + instsToStr(m_hookInsts) + "\n", ErrorLevel::INFO);
+    DYNO_LOG("Hook instructions: \n" + instsToStr(m_hookInsts) + "\n", ErrorLevel::INFO);
     MemProtector prot{m_fnAddress, m_hookSize, ProtFlag::RWX, *this};
     writeEncoding(m_hookInsts);
 
-    Log::log("Hook size: " + std::to_string(m_hookSize) + "\n", ErrorLevel::INFO);
-    Log::log("Prologue offset: " + std::to_string(m_nopProlOffset) + "\n", ErrorLevel::INFO);
+    DYNO_LOG("Hook size: " + std::to_string(m_hookSize) + "\n", ErrorLevel::INFO);
+    DYNO_LOG("Prologue offset: " + std::to_string(m_nopProlOffset) + "\n", ErrorLevel::INFO);
 
     // Nop the space between jmp and end of prologue
     assert(m_hookSize >= m_nopProlOffset);
@@ -498,7 +490,7 @@ std::optional<TranslationResult> translateInstruction(const Instruction& instruc
             inst_contains("byte") ? "al" : "";
 
         if (scratch_register_string.empty()) {
-            Log::log("Failed to detect pointer size: " + instruction.getFullName(), ErrorLevel::SEV);
+            DYNO_LOG("Failed to detect pointer size: " + instruction.getFullName(), ErrorLevel::SEV);
             return std::nullopt;
         }
 
@@ -510,7 +502,7 @@ std::optional<TranslationResult> translateInstruction(const Instruction& instruc
             imm_size == 1 ? int_to_hex((uint8_t) instruction.getImmediate()) : "";
 
         if (immediate_string.empty()) {
-            Log::log("Unexpected size of immediate: " + std::to_string(imm_size), ErrorLevel::SEV);
+            DYNO_LOG("Unexpected size of immediate: " + std::to_string(imm_size), ErrorLevel::SEV);
             return std::nullopt;
         }
 
@@ -529,21 +521,21 @@ std::optional<TranslationResult> translateInstruction(const Instruction& instruc
             scratch_register = class_to_reg.at(regClass);
         } else {
             // Unexpected register
-            Log::log("Unexpected register: " + reg_string, ErrorLevel::SEV);
+            DYNO_LOG("Unexpected register: " + reg_string, ErrorLevel::SEV);
             return std::nullopt;
         }
 
         scratch_register_string = ZydisRegisterGetString(scratch_register);
 
         if (!scratch_to_64.count(scratch_register_string)) {
-            Log::log("Unexpected scratch register: " + scratch_register_string, ErrorLevel::SEV);
+            DYNO_LOG("Unexpected scratch register: " + scratch_register_string, ErrorLevel::SEV);
             return std::nullopt;
         }
 
         address_register_string = reg_string.find("r15") != std::string::npos ? "r14" : "r15";
         second_operand_string = reg_string;
     } else {
-        Log::log("No translation support for such instruction", ErrorLevel::SEV);
+        DYNO_LOG("No translation support for such instruction", ErrorLevel::SEV);
         return std::nullopt;
     }
 
@@ -644,22 +636,22 @@ std::optional<uintptr_t> x64Detour::generateTranslationRoutine(const Instruction
     std::copy(translation.begin(), translation.end(), std::ostream_iterator<std::string>(translation_stream, "\n"));
     const auto translation_string = translation_stream.str();
 
-    Log::log("Translation:\n" + translation_string + "\n", ErrorLevel::INFO);
+    DYNO_LOG("Translation:\n" + translation_string + "\n", ErrorLevel::INFO);
 
     // Parse the instructions via AsmTK
     if (auto error = parser.parse(translation_string.c_str())) {
-        Log::log("AsmTK error: "s + DebugUtils::errorAsString(error), ErrorLevel::SEV);
+        DYNO_LOG("AsmTK error: "s + DebugUtils::errorAsString(error), ErrorLevel::SEV);
         return std::nullopt;
     }
 
     // Generate the binary code via AsmJit
     uintptr_t translation_address = 0;
     if (auto error = m_asmjit_rt.add(&translation_address, &code)) {
-        Log::log("AsmJit error: "s + DebugUtils::errorAsString(error), ErrorLevel::SEV);
+        DYNO_LOG("AsmJit error: "s + DebugUtils::errorAsString(error), ErrorLevel::SEV);
         return std::nullopt;
     }
 
-    Log::log("Translation address: " + int_to_hex(translation_address) + "\n", ErrorLevel::INFO);
+    DYNO_LOG("Translation address: " + int_to_hex(translation_address) + "\n", ErrorLevel::INFO);
 
     return {translation_address };
 }
@@ -682,18 +674,20 @@ Instruction x64Detour::makeRelJmpWithAbsDest(uintptr_t address, uintptr_t abs_de
 
 bool x64Detour::makeTrampoline(insts_t& prologue, insts_t& outJmpTable) {
     assert(!prologue.empty());
-    //assert(m_trampoline == NULL);
+    assert(m_trampoline == 0);
 
     const uintptr_t prolStart = prologue.front().getAddress();
     const uint16_t prolSz = calcInstsSz(prologue);
     const uint8_t destHldrSz = 8;
 
-    /** Make a guess for the number entries we need so we can try to allocate a trampoline. The allocation
-	address will change each attempt, which changes delta, which changes the number of needed entries. So
-	we just try until we hit that lucky number that works
-
-	The relocation could also because of data operations too. But that's specific to the function and can't
-	work again on a retry (same function, duh). Return immediately in that case.**/
+    /**
+     * Make a guess for the number entries we need so we can try to allocate a trampoline. The allocation
+     * address will change each attempt, which changes delta, which changes the number of needed entries. So
+     * we just try until we hit that lucky number that works
+     *
+     * The relocation could also because of data operations too. But that's specific to the function and can't
+     * work again on a retry (same function, duh). Return immediately in that case.
+     */
     insts_t instsNeedingEntry;
     insts_t instsNeedingReloc;
     insts_t instsNeedingTranslation;
@@ -709,26 +703,26 @@ bool x64Detour::makeTrampoline(insts_t& prologue, insts_t& outJmpTable) {
     m_trampolineSz = (uint16_t) (prolSz + jmp_size * (1 + neededEntryCount) + alignment_pad_size);
 
     // allocate new trampoline before deleting old to increase odds of new mem address
-    /*auto tmpTrampoline = (uintptr_t) new uint8_t[m_trampolineSz];
-    if (m_trampoline != NULL) {
+    auto tmpTrampoline = (uintptr_t) new uint8_t[m_trampolineSz];
+    if (m_trampoline != 0) {
         delete[] (uint8_t*) m_trampoline;
     }
 
-    m_trampoline = tmpTrampoline;*/
+    m_trampoline = tmpTrampoline;
     delta = (intptr_t) (m_trampoline - prolStart);
 
     buildRelocationList(prologue, prolSz, delta, instsNeedingEntry, instsNeedingReloc, instsNeedingTranslation);
-    if(!instsNeedingEntry.empty()) {
-        Log::log("Instructions needing entry:\n" + instsToStr(instsNeedingEntry) + "\n", ErrorLevel::INFO);
+    if (!instsNeedingEntry.empty()) {
+        DYNO_LOG("Instructions needing entry:\n" + instsToStr(instsNeedingEntry) + "\n", ErrorLevel::INFO);
     }
-    if(!instsNeedingReloc.empty()) {
-        Log::log("Instructions needing relocation:\n" + instsToStr(instsNeedingReloc) + "\n", ErrorLevel::INFO);
+    if (!instsNeedingReloc.empty()) {
+        DYNO_LOG("Instructions needing relocation:\n" + instsToStr(instsNeedingReloc) + "\n", ErrorLevel::INFO);
     }
-    if(!instsNeedingTranslation.empty()) {
-        Log::log("Instructions needing translation:\n" + instsToStr(instsNeedingTranslation) + "\n", ErrorLevel::INFO);
+    if (!instsNeedingTranslation.empty()) {
+        DYNO_LOG("Instructions needing translation:\n" + instsToStr(instsNeedingTranslation) + "\n", ErrorLevel::INFO);
     }
 
-    Log::log("Trampoline address: " + int_to_hex(m_trampoline), ErrorLevel::INFO);
+    DYNO_LOG("Trampoline address: " + int_to_hex(m_trampoline), ErrorLevel::INFO);
 
     for (auto& instruction: instsNeedingTranslation) {
         const auto inst_offset = instruction.getAddress() - prolStart;
@@ -773,7 +767,7 @@ bool x64Detour::makeTrampoline(insts_t& prologue, insts_t& outJmpTable) {
     const uintptr_t jmpHolderCurAddr = (trampoline_end - destHldrSz) & ~0x7;
     const auto jmpToProl = makex64MinimumJump(jmpToProlAddr, prolStart + prolSz, jmpHolderCurAddr);
 
-    Log::log("Jmp To Prol:\n" + instsToStr(jmpToProl) + "\n", ErrorLevel::INFO);
+    DYNO_LOG("Jmp To Prol:\n" + instsToStr(jmpToProl) + "\n", ErrorLevel::INFO);
     writeEncoding(jmpToProl);
 
     // each jmp tbl entries holder is one slot down from the previous (lambda holds state)

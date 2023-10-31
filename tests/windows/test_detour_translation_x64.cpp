@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "dynohook/detours/x64_detour.h"
-#include "dynohook/conventions/x64/x64MsFastcall.h"
+#include "dynohook/conventions/x64_ms_fastcall.h"
 #include "dynohook/tests/stack_canary.h"
 #include "dynohook/tests/effect_tracker.h"
 #include "dynohook/os.h"
@@ -66,6 +66,8 @@ uint8_t cmpR15bByte[] = {
 dyno::EffectTracker ripEffects;
 
 DYNO_NOINLINE dyno::ReturnAction preCallback(dyno::CallbackType type, dyno::Hook& hook) {
+    DYNO_UNUSED(type);
+    DYNO_UNUSED(hook);
     dyno::StackCanary canary;
     ripEffects.peak().trigger();
     std::cout << "preCallback: called" << std::endl;
@@ -74,12 +76,14 @@ DYNO_NOINLINE dyno::ReturnAction preCallback(dyno::CallbackType type, dyno::Hook
 }
 
 DYNO_NOINLINE dyno::ReturnAction postCallback(dyno::CallbackType type, dyno::Hook& hook) {
+    DYNO_UNUSED(type);
     dyno::StackCanary canary;
-    ripEffects.peak().trigger();
     std::cout << "postCallback: called" << std::endl;
 
     int return_value = hook.getReturnValue<int>();
-    assert(return_value == 0x1337);
+    if (return_value == 0x1337) {
+        ripEffects.peak().trigger();
+    }
 
     return dyno::ReturnAction::Ignored;
 }
@@ -88,8 +92,8 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 	// Immediate
 	typedef int (* IntFn)();
 
-	dyno::ConvFunc callConvRetInt = []{ return new dyno::x64MsFastcall({}, dyno::DataType::Int32); };
-	dyno::ConvFunc callConvRetVoid = []{ return new dyno::x64MsFastcall({}, dyno::DataType::Void); };
+	dyno::ConvFunc callConvRetInt = []{ return new dyno::x64MsFastCall({}, dyno::DataType::Int32); };
+	dyno::ConvFunc callConvRetVoid = []{ return new dyno::x64MsFastCall({}, dyno::DataType::Void); };
 
     SECTION("cmp qword & imm") {
         dyno::StackCanary canary;
