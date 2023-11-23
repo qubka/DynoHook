@@ -70,9 +70,9 @@ namespace dyno {
         return false;
     }
 
-#define INRANGE(x,a,b)	(x >= a && x <= b)
-#define getBits(x)		(INRANGE(x,'0','9') ? (x - '0') : ((x&(~0x20)) - 'A' + 0xa))
-#define getByte(x)		(getBits(x[0]) << 4 | getBits(x[1]))
+#define INRANGE(x,a,b)    (x >= a && x <= b)
+#define getBits(x)        (INRANGE(x,'0','9') ? (x - '0') : ((x&(~0x20)) - 'A' + 0xa))
+#define getByte(x)        (getBits(x[0]) << 4 | getBits(x[1]))
 
     constexpr uint8_t FINDPATTERN_SCRATCH_SIZE = 64;
 

@@ -87,115 +87,115 @@ uint64_t calc_2gb_above(uint64_t address) {
 #if DYNO_PLATFORM_WINDOWS
 
 bool boundedAllocSupported() {
-	auto hMod = LoadLibraryA("kernelbase.dll");
-	if (hMod == NULL)
-		return false;
+    auto hMod = LoadLibraryA("kernelbase.dll");
+    if (hMod == NULL)
+        return false;
 
-	return GetProcAddress(hMod, "VirtualAlloc2") != NULL;
+    return GetProcAddress(hMod, "VirtualAlloc2") != NULL;
 }
 
 uintptr_t boundAlloc(uintptr_t min, uintptr_t max, size_t size) {
-	MEM_ADDRESS_REQUIREMENTS addressReqs = { 0 };
-	MEM_EXTENDED_PARAMETER param = { 0 };
+    MEM_ADDRESS_REQUIREMENTS addressReqs = { 0 };
+    MEM_EXTENDED_PARAMETER param = { 0 };
 
-	SYSTEM_INFO info = { 0 };
-	GetSystemInfo(&info);
+    SYSTEM_INFO info = { 0 };
+    GetSystemInfo(&info);
 
-	addressReqs.Alignment = 0; // any alignment
-	addressReqs.LowestStartingAddress = (PVOID)min < info.lpMinimumApplicationAddress ? info.lpMinimumApplicationAddress : (PVOID)min; // PAGE_SIZE aligned
-	addressReqs.HighestEndingAddress = (PVOID)(max - 1) > info.lpMaximumApplicationAddress ? info.lpMaximumApplicationAddress : (PVOID)(max - 1); // PAGE_SIZE aligned, exclusive so -1
+    addressReqs.Alignment = 0; // any alignment
+    addressReqs.LowestStartingAddress = (PVOID)min < info.lpMinimumApplicationAddress ? info.lpMinimumApplicationAddress : (PVOID)min; // PAGE_SIZE aligned
+    addressReqs.HighestEndingAddress = (PVOID)(max - 1) > info.lpMaximumApplicationAddress ? info.lpMaximumApplicationAddress : (PVOID)(max - 1); // PAGE_SIZE aligned, exclusive so -1
 
-	param.Type = MemExtendedParameterAddressRequirements;
-	param.Pointer = &addressReqs;
+    param.Type = MemExtendedParameterAddressRequirements;
+    param.Pointer = &addressReqs;
 
-	auto hMod = LoadLibraryA("kernelbase.dll");
-	if (hMod == NULL)
-		return false;
+    auto hMod = LoadLibraryA("kernelbase.dll");
+    if (hMod == NULL)
+        return false;
 
-	auto pVirtualAlloc2 = (decltype(&::VirtualAlloc2))GetProcAddress(hMod, "VirtualAlloc2");
-	return (uintptr_t)pVirtualAlloc2(
-		GetCurrentProcess(), (PVOID)NULL,
-		(SIZE_T)size,
-		MEM_RESERVE | MEM_COMMIT,
-		PAGE_READWRITE,
-		&param, 1);
+    auto pVirtualAlloc2 = (decltype(&::VirtualAlloc2))GetProcAddress(hMod, "VirtualAlloc2");
+    return (uintptr_t)pVirtualAlloc2(
+        GetCurrentProcess(), (PVOID)NULL,
+        (SIZE_T)size,
+        MEM_RESERVE | MEM_COMMIT,
+        PAGE_READWRITE,
+        &param, 1);
 }
 
 uintptr_t boundAllocLegacy(uintptr_t start, uintptr_t end, size_t size) {
-	SYSTEM_INFO si;
-	memset(&si, 0, sizeof(si));
-	GetSystemInfo(&si);
+    SYSTEM_INFO si;
+    memset(&si, 0, sizeof(si));
+    GetSystemInfo(&si);
 
-	// start low, go up
-	MEMORY_BASIC_INFORMATION mbi;
-	for (uintptr_t addr = start; addr < end;) {
-		if (!VirtualQuery((char*)addr, &mbi, sizeof(mbi)))
-			return 0;
+    // start low, go up
+    MEMORY_BASIC_INFORMATION mbi;
+    for (uintptr_t addr = start; addr < end;) {
+        if (!VirtualQuery((char*)addr, &mbi, sizeof(mbi)))
+            return 0;
 
-		assert(mbi.RegionSize != 0);
-		if (mbi.State != MEM_FREE || mbi.RegionSize < size) {
+        assert(mbi.RegionSize != 0);
+        if (mbi.State != MEM_FREE || mbi.RegionSize < size) {
             addr = (uintptr_t)mbi.BaseAddress + mbi.RegionSize;
-			continue;
-		}
+            continue;
+        }
 
-		uintptr_t nextPage = AlignUpwards((uintptr_t)mbi.BaseAddress, si.dwAllocationGranularity);
-		
-		if (auto allocated = (uintptr_t)VirtualAlloc((char*)nextPage, (SIZE_T)size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE)) {
-			return allocated;
-		} else if (GetLastError() == ERROR_DYNAMIC_CODE_BLOCKED) {
+        uintptr_t nextPage = AlignUpwards((uintptr_t)mbi.BaseAddress, si.dwAllocationGranularity);
+        
+        if (auto allocated = (uintptr_t)VirtualAlloc((char*)nextPage, (SIZE_T)size, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE)) {
+            return allocated;
+        } else if (GetLastError() == ERROR_DYNAMIC_CODE_BLOCKED) {
             addr += size;
-		} else {
+        } else {
             addr = nextPage + mbi.RegionSize;
-		}
-	}
-	return 0;
+        }
+    }
+    return 0;
 }
 
 void boundAllocFree(uintptr_t address, size_t size) {
-	(void)size;
-	VirtualFree((LPVOID)address, (SIZE_T)0, MEM_RELEASE);
+    (void)size;
+    VirtualFree((LPVOID)address, (SIZE_T)0, MEM_RELEASE);
 }
 
 size_t getAllocationAlignment() {
-	SYSTEM_INFO si;
-	memset(&si, 0, sizeof(si));
-	GetSystemInfo(&si);
-	return si.dwAllocationGranularity;
+    SYSTEM_INFO si;
+    memset(&si, 0, sizeof(si));
+    GetSystemInfo(&si);
+    return si.dwAllocationGranularity;
 }
 
 size_t getPageSize() {
-	SYSTEM_INFO sysInfo;
-	GetSystemInfo(&sysInfo);
-	return static_cast<size_t>(sysInfo.dwPageSize);
+    SYSTEM_INFO sysInfo;
+    GetSystemInfo(&sysInfo);
+    return static_cast<size_t>(sysInfo.dwPageSize);
 }
 
 #elif DYNO_PLATFORM_LINUX
 
 bool boundedAllocSupported() {
-	return true;
+    return true;
 }
 
 uintptr_t boundAlloc(uintptr_t min, uintptr_t max, size_t size) {
-	return boundAllocLegacy(min, max, size);
+    return boundAllocLegacy(min, max, size);
 }
 
 uintptr_t boundAllocLegacy(uintptr_t start, uintptr_t end, size_t size) {
-	void* hint = (void*)((end - 1) / 2 + start / 2);
-	uintptr_t res = (uintptr_t)mmap(hint, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    void* hint = (void*)((end - 1) / 2 + start / 2);
+    uintptr_t res = (uintptr_t)mmap(hint, size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
-	if (res == (uintptr_t)MAP_FAILED)
-		return 0;
+    if (res == (uintptr_t)MAP_FAILED)
+        return 0;
 
-	if (res < start || res >= end) {
-		boundAllocFree(res, size);
-		return 0;
-	}
+    if (res < start || res >= end) {
+        boundAllocFree(res, size);
+        return 0;
+    }
 
-	return res;
+    return res;
 }
 
 void boundAllocFree(uintptr_t address, size_t size) {
-	munmap((void*)address, size);
+    munmap((void*)address, size);
 }
 
 size_t getAllocationAlignment() {
@@ -210,54 +210,54 @@ From malloc-internal.h and malloc-alignment.h
 #define MALLOC_ALIGNMENT (2 * SIZE_SZ < __alignof__ (long double) \
                           ? __alignof__ (long double) : 2 * SIZE_SZ)
 */
-	//return (2 * sizeof(size_t) < __alignof__ (long double) ? __alignof__ (long double) : 2 * sizeof(size_t));
+    //return (2 * sizeof(size_t) < __alignof__ (long double) ? __alignof__ (long double) : 2 * sizeof(size_t));
 
-	return getPageSize();
+    return getPageSize();
 }
 
 size_t getPageSize() {
-	return static_cast<size_t>(sysconf(_SC_PAGESIZE));
+    return static_cast<size_t>(sysconf(_SC_PAGESIZE));
 }
 #elif DYNO_PLATFORM_APPLE
 
 bool boundedAllocSupported() {
-	return false;
+    return false;
 }
 
 uintptr_t boundAlloc(uintptr_t min, uintptr_t max, size_t size) {
-	return boundAllocLegacy(min, max, size);
+    return boundAllocLegacy(min, max, size);
 }
 
 uintptr_t boundAllocLegacy(uintptr_t start, uintptr_t end, size_t size) {
-	// VM_FLAGS_ANYWHERE allows for better compatibility as the Kernel will find a place for us.
-	//int flags = (address_hint == nullptr ? VM_FLAGS_ANYWHERE : VM_FLAGS_FIXED);
-	int flags = VM_FLAGS_FIXED;
+    // VM_FLAGS_ANYWHERE allows for better compatibility as the Kernel will find a place for us.
+    //int flags = (address_hint == nullptr ? VM_FLAGS_ANYWHERE : VM_FLAGS_FIXED);
+    int flags = VM_FLAGS_FIXED;
 
-	uintptr_t increment = getAllocationAlignment();
-	for (uintptr_t address = start; address < (end - 1); address += increment) {
-		void* res = (void*)address;
-		if (mach_vm_allocate(task, &res, (mach_vm_size_t)size, flags) == KERN_SUCCESS) {
-			address = (uintptr_t)res;
-			if (address >= start && address < end)
-				return address;
+    uintptr_t increment = getAllocationAlignment();
+    for (uintptr_t address = start; address < (end - 1); address += increment) {
+        void* res = (void*)address;
+        if (mach_vm_allocate(task, &res, (mach_vm_size_t)size, flags) == KERN_SUCCESS) {
+            address = (uintptr_t)res;
+            if (address >= start && address < end)
+                return address;
 
-			boundAllocFree(address, size);
-		}
-	}
-	
-	return 0;
+            boundAllocFree(address, size);
+        }
+    }
+    
+    return 0;
 }
 
 void boundAllocFree(uintptr_t address, size_t size) {
-	mach_vm_deallocate(mach_task_self(), (mach_vm_address_t)address, (mach_vm_size_t)size);
+    mach_vm_deallocate(mach_task_self(), (mach_vm_address_t)address, (mach_vm_size_t)size);
 }
 
 size_t getAllocationAlignment() {
-	return getPageSize();
+    return getPageSize();
 }
 
 size_t getPageSize() {
-	return static_cast<size_t>(sysconf(_SC_PAGESIZE));
+    return static_cast<size_t>(sysconf(_SC_PAGESIZE));
 }
 
 #endif

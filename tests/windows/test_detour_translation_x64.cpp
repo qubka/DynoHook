@@ -89,11 +89,11 @@ DYNO_NOINLINE dyno::ReturnAction postCallback(dyno::CallbackType type, dyno::Hoo
 }
 
 TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
-	// Immediate
-	typedef int (* IntFn)();
+    // Immediate
+    typedef int (* IntFn)();
 
-	dyno::ConvFunc callConvRetInt = []{ return new dyno::x64MsFastCall({}, dyno::DataType::Int32); };
-	dyno::ConvFunc callConvRetVoid = []{ return new dyno::x64MsFastCall({}, dyno::DataType::Void); };
+    dyno::ConvFunc callConvRetInt = []{ return new dyno::x64MsFastCall({}, dyno::DataType::Int32); };
+    dyno::ConvFunc callConvRetVoid = []{ return new dyno::x64MsFastCall({}, dyno::DataType::Void); };
 
     SECTION("cmp qword & imm") {
         dyno::StackCanary canary;
@@ -105,13 +105,13 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 
         REQUIRE(detour.hook());
 
-		detour.addCallback(dyno::CallbackType::Pre, &preCallback);
-		detour.addCallback(dyno::CallbackType::Post, &postCallback);
+        detour.addCallback(dyno::CallbackType::Pre, &preCallback);
+        detour.addCallback(dyno::CallbackType::Post, &postCallback);
 
         ripEffects.push();
 
         IntFn fn = (IntFn) &cmpQwordImm;
-		int result = fn();
+        int result = fn();
 
         REQUIRE(ripEffects.pop().didExecute(2));
         REQUIRE(result == 0x1337);
@@ -156,14 +156,14 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 
         REQUIRE(detour.hook());
 
-		detour.addCallback(dyno::CallbackType::Pre, &preCallback);
-		detour.addCallback(dyno::CallbackType::Post, &postCallback);
+        detour.addCallback(dyno::CallbackType::Pre, &preCallback);
+        detour.addCallback(dyno::CallbackType::Post, &postCallback);
 
         ripEffects.push();
 
         IntFn fn = (IntFn) &cmpQwordRegR10;
-		int result = fn();
-		
+        int result = fn();
+        
         REQUIRE(ripEffects.pop().didExecute(2));
         REQUIRE(result == 0x1337);
 

@@ -5,7 +5,7 @@
 using namespace dyno;
 
 VTable::VTable(void* pClass, VHookCache& hookCache) : m_class{(void***)pClass}, m_hookCache{hookCache} {
-	MemProtector protector{(uintptr_t)m_class, sizeof(void*), ProtFlag::R | ProtFlag::W, *this};
+    MemProtector protector{(uintptr_t)m_class, sizeof(void*), ProtFlag::R | ProtFlag::W, *this};
 
     m_origVtable = *m_class;
     m_vFuncCount = getVFuncCount(m_origVtable);
@@ -15,7 +15,7 @@ VTable::VTable(void* pClass, VHookCache& hookCache) : m_class{(void***)pClass}, 
 }
 
 VTable::~VTable() {
-	MemProtector protector{(uintptr_t)m_class, sizeof(void*), ProtFlag::R | ProtFlag::W, *this};
+    MemProtector protector{(uintptr_t)m_class, sizeof(void*), ProtFlag::R | ProtFlag::W, *this};
 
     *m_class = m_origVtable;
 }
@@ -40,12 +40,12 @@ std::shared_ptr<Hook> VTable::hook(size_t index, const ConvFunc& convention) {
     if (it != m_hooked.end())
         return it->second;
 
-	auto vhook = m_hookCache.get(m_origVtable[index], convention);
-	if (!vhook) {
-		DYNO_LOG("Invalid virtual hook", ErrorLevel::SEV);
-		return nullptr;
-	}
-	
+    auto vhook = m_hookCache.get(m_origVtable[index], convention);
+    if (!vhook) {
+        DYNO_LOG("Invalid virtual hook", ErrorLevel::SEV);
+        return nullptr;
+    }
+    
     m_hooked.emplace(index, vhook);
     m_newVtable[index] = (void*) vhook->getBridge();
     return vhook;

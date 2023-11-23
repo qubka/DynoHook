@@ -205,7 +205,7 @@ namespace dyno {
         int           m_register;        // Register operand when displacement is present
         bool          m_isIndirect;      // Does this instruction get its destination via an indirect mem read (ff 25 ... jmp [jmp_dest]) (only filled for jmps / calls)
         bool          m_isCalling;       // Does this instruction is of a CALL type.
-        bool		  m_isBranching;     // Does this instruction jmp/call or otherwise change control flow
+        bool          m_isBranching;     // Does this instruction jmp/call or otherwise change control flow
         bool          m_isRelative;      // Does the displacement need to be added to the address to retrieve where it points too?
         bool          m_hasDisplacement; // Does this instruction have the displacement fields filled (only rip/eip relative types are filled)
         bool          m_hasImmediate;    // Does this instruction have the immediate field filled?
@@ -225,7 +225,7 @@ namespace dyno {
         std::string m_mnemonic;
         std::string m_opStr;
 
-		inline static std::atomic_uint32_t s_counter = { 0 };
+        inline static std::atomic_uint32_t s_counter = { 0 };
     };
     static_assert(std::is_nothrow_move_constructible<Instruction>::value, "dyno::Instruction should be noexcept move constructable");
 

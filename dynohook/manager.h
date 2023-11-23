@@ -91,6 +91,6 @@ namespace dyno {
         std::unordered_map<void*, std::shared_ptr<NatDetour>> m_detours;
         std::unordered_map<void*, std::unique_ptr<VTable>> m_vtables;
         VHookCache m_cache;
-		std::mutex m_mutex;
+        std::mutex m_mutex;
     };
 }

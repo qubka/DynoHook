@@ -112,26 +112,26 @@ void ALLOC_Free(ALLOC_HANDLE hAlloc, void* pBlock) {
 using namespace dyno; 
 
 FBAllocator::FBAllocator(uintptr_t min, uintptr_t max, uint8_t blockSize, uint8_t blockCount) :
-	m_min{min},
-	m_max{max},
-	m_dataPool{0},
-	m_maxBlocks{blockCount},
-	m_usedBlocks{0},
-	m_blockSize{blockSize},
-	m_alloc2Supported{boundedAllocSupported()} {
+    m_min{min},
+    m_max{max},
+    m_dataPool{0},
+    m_maxBlocks{blockCount},
+    m_usedBlocks{0},
+    m_blockSize{blockSize},
+    m_alloc2Supported{boundedAllocSupported()} {
 }
 
 FBAllocator::~FBAllocator() {
-	size_t freeSize = 0;
+    size_t freeSize = 0;
 
-	if (m_allocator) {
-		freeSize = m_allocator->blockSize * m_allocator->maxBlocks;
-	}
+    if (m_allocator) {
+        freeSize = m_allocator->blockSize * m_allocator->maxBlocks;
+    }
 
-	if (m_dataPool) {
-		boundAllocFree(m_dataPool, freeSize);
-		m_dataPool = 0;
-	}
+    if (m_dataPool) {
+        boundAllocFree(m_dataPool, freeSize);
+        m_dataPool = 0;
+    }
 }
 
 bool FBAllocator::initialize() {
@@ -142,12 +142,12 @@ bool FBAllocator::initialize() {
     uintptr_t start = AlignUpwards(m_min, alignment);
     uintptr_t end = AlignDownwards(m_max, alignment);
 
-	if (m_alloc2Supported) {
-		// alignment shrinks area by aligning both towards middle so we don't allocate beyond the given bounds
-		m_dataPool = boundAlloc(start, end, ALLOC_BLOCK_SIZE(m_blockSize) * m_maxBlocks);
-	} else {
-		m_dataPool = boundAllocLegacy(start, end, ALLOC_BLOCK_SIZE(m_blockSize) * m_maxBlocks);
-	}
+    if (m_alloc2Supported) {
+        // alignment shrinks area by aligning both towards middle so we don't allocate beyond the given bounds
+        m_dataPool = boundAlloc(start, end, ALLOC_BLOCK_SIZE(m_blockSize) * m_maxBlocks);
+    } else {
+        m_dataPool = boundAllocLegacy(start, end, ALLOC_BLOCK_SIZE(m_blockSize) * m_maxBlocks);
+    }
 
     if (!m_dataPool)
         return false;
@@ -161,45 +161,45 @@ bool FBAllocator::initialize() {
         nullptr,
         0, 0, 0, 0, 0} );
 
-	return true;
+    return true;
 }
 
 char* FBAllocator::allocate() {
-	if (m_usedBlocks + 1 == m_maxBlocks)
-		return nullptr;
+    if (m_usedBlocks + 1 == m_maxBlocks)
+        return nullptr;
 
-	m_usedBlocks++;
-	return (char*) ALLOC_Alloc(m_allocator.get(), m_blockSize);
+    m_usedBlocks++;
+    return (char*) ALLOC_Alloc(m_allocator.get(), m_blockSize);
 }
 
 char* FBAllocator::callocate(uint8_t num) {
-	m_usedBlocks += num;
-	return (char*) ALLOC_Calloc(m_allocator.get(), num, m_blockSize);
+    m_usedBlocks += num;
+    return (char*) ALLOC_Calloc(m_allocator.get(), num, m_blockSize);
 }
 
 void FBAllocator::deallocate(char* mem) {
-	m_usedBlocks--;
-	ALLOC_Free(m_allocator.get(), mem);
+    m_usedBlocks--;
+    ALLOC_Free(m_allocator.get(), mem);
 }
 
 bool FBAllocator::inRange(uintptr_t addr) const {
-	if (addr >= m_min && addr < m_max)
-		return true;
-	return false;
+    if (addr >= m_min && addr < m_max)
+        return true;
+    return false;
 }
 
 bool FBAllocator::intersectsRange(uintptr_t min, uintptr_t max) const {
     uintptr_t _min = std::max(m_min, min);
     uintptr_t _max = std::min(m_max, max);
-	if (_min <= _max)
-		return true;
-	return false;
+    if (_min <= _max)
+        return true;
+    return false;
 }
 
 uint8_t FBAllocator::intersectionLoadFactor(uintptr_t min, uintptr_t max) const {
-	assert(intersectsRange(min, max));
+    assert(intersectsRange(min, max));
     uintptr_t _min = std::max(m_min, min);
     uintptr_t _max = std::min(m_max, max);
-	double intersectLength = (double)(_max - _min);
-	return (uint8_t)((intersectLength / (double)(max - min)) * 100.0);
+    double intersectLength = (double)(_max - _min);
+    return (uint8_t)((intersectLength / (double)(max - min)) * 100.0);
 }

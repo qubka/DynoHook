@@ -12,9 +12,9 @@ std::shared_ptr<Hook> HookManager::hook(void* pFunc, const ConvFunc& convention)
     if (it != m_detours.end())
         return it->second;
 
-	auto detour = std::make_shared<NatDetour>((uintptr_t)pFunc, convention);
-	if (!detour->hook())
-		return nullptr;
+    auto detour = std::make_shared<NatDetour>((uintptr_t)pFunc, convention);
+    if (!detour->hook())
+        return nullptr;
 
     m_detours.emplace(pFunc, detour);
     return detour;
@@ -40,7 +40,7 @@ bool HookManager::unhook(void* pFunc) {
     if (!pFunc)
         return false;
 
-	std::lock_guard<std::mutex> m_lock{m_mutex};
+    std::lock_guard<std::mutex> m_lock{m_mutex};
 
     auto it = m_detours.find(pFunc);
     if (it != m_detours.end()) {
@@ -55,7 +55,7 @@ bool HookManager::unhook(void* pClass, size_t index) {
     if (!pClass)
         return false;
 
-	std::lock_guard<std::mutex> m_lock{m_mutex};
+    std::lock_guard<std::mutex> m_lock{m_mutex};
 
     auto it = m_vtables.find(pClass);
     if (it != m_vtables.end()) {
@@ -83,7 +83,7 @@ std::shared_ptr<Hook> HookManager::find(void* pClass, size_t index) const {
 }
 
 void HookManager::unhookAll() {
-	std::lock_guard<std::mutex> m_lock{m_mutex};
+    std::lock_guard<std::mutex> m_lock{m_mutex};
 
     m_detours.clear();
     m_vtables.clear();
@@ -102,7 +102,7 @@ void HookManager::unhookAll(void* pClass) {
 }
 
 void HookManager::clearCache() {
-	std::lock_guard<std::mutex> m_lock{m_mutex};
+    std::lock_guard<std::mutex> m_lock{m_mutex};
 
     m_cache.remove();
 }

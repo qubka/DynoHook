@@ -33,10 +33,10 @@ namespace dyno {
     using ConvFunc = std::function<CallingConvention*()>;
 
     /**
-	 * @brief Creates and manages hooks at the beginning of a function.
-	 *
-	 * This hooking method requires knowledge of parameters and calling convention of the target function.
-	 */
+     * @brief Creates and manages hooks at the beginning of a function.
+     *
+     * This hooking method requires knowledge of parameters and calling convention of the target function.
+     */
     class Hook : public MemAccessor {
     public:
         /**

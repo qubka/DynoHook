@@ -1,12 +1,12 @@
 namespace dyno {
-	class StackCanary {
-	public:
-		StackCanary();
-		~StackCanary() noexcept(false);
+    class StackCanary {
+    public:
+        StackCanary();
+        ~StackCanary() noexcept(false);
 
         bool isStackGood();
-		
-	private:
-		uint8_t buf[100];
-	};
+        
+    private:
+        uint8_t buf[100];
+    };
 }

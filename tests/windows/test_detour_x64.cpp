@@ -14,7 +14,7 @@ DYNO_NOINLINE void hookMe1() {
     var2 = var + var2;
     var2 *= 30 / 3;
     var = 2;
-	std::cout << var << " " << var2 << std::endl;
+    std::cout << var << " " << var2 << std::endl;
     REQUIRE(var == 2);
     REQUIRE(var2 == 40);
 }
@@ -65,24 +65,24 @@ uint8_t hookMe6[] = {
 dyno::EffectTracker effects;
 
 TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
-	dyno::ConvFunc callConvVoid = []{ return new dyno::x64MsFastCall({}, dyno::DataType::Void); };
-	
+    dyno::ConvFunc callConvVoid = []{ return new dyno::x64MsFastCall({}, dyno::DataType::Void); };
+    
     SECTION("Normal function") {
-		auto PostHook1 = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto PostHook1 = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);
             DYNO_UNUSED(hook);
-			dyno::StackCanary canary;
-			std::cout << "Post Hook 1 Called!" << std::endl;
-			effects.peak().trigger();
-			return dyno::ReturnAction::Handled;
-		};
-		
+            dyno::StackCanary canary;
+            std::cout << "Post Hook 1 Called!" << std::endl;
+            effects.peak().trigger();
+            return dyno::ReturnAction::Handled;
+        };
+        
         dyno::StackCanary canary;
         dyno::x64Detour detour{(uintptr_t) &hookMe1, callConvVoid};
         REQUIRE(detour.hook() == true);
-		
+        
         detour.addCallback(dyno::CallbackType::Post, PostHook1);
-		
+        
         effects.push();
         hookMe1();
         REQUIRE(effects.pop().didExecute(1));
@@ -90,20 +90,20 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
     }
 
     SECTION("Normal function rehook") {
-		auto PreHook1 = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto PreHook1 = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);
             DYNO_UNUSED(hook);
-			dyno::StackCanary canary;
-			std::cout << "Pre Hook 1 Called!" << std::endl;
-			effects.peak().trigger();
-			return dyno::ReturnAction::Handled;
-		};
-		
+            dyno::StackCanary canary;
+            std::cout << "Pre Hook 1 Called!" << std::endl;
+            effects.peak().trigger();
+            return dyno::ReturnAction::Handled;
+        };
+        
         dyno::StackCanary canary;
         dyno::x64Detour detour{(uintptr_t) &hookMe1, callConvVoid};
         REQUIRE(detour.hook() == true);
 
-		detour.addCallback(dyno::CallbackType::Pre, PreHook1);
+        detour.addCallback(dyno::CallbackType::Pre, PreHook1);
 
         effects.push();
         REQUIRE(detour.rehook() == true); // can only really test this doesn't cause memory corruption easily
@@ -124,40 +124,40 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
             ... the goods ...
         */
     SECTION("WinApi Indirection") {
-		dyno::ConvFunc callConvWinApi = []{ return new dyno::x64MsFastCall({dyno::DataType::Pointer, dyno::DataType::Pointer, dyno::DataType::Int32, dyno::DataType::Int32}, dyno::DataType::Pointer); };
-		
-		auto PostCreateMutexExA = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        dyno::ConvFunc callConvWinApi = []{ return new dyno::x64MsFastCall({dyno::DataType::Pointer, dyno::DataType::Pointer, dyno::DataType::Int32, dyno::DataType::Int32}, dyno::DataType::Pointer); };
+        
+        auto PostCreateMutexExA = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);
-			dyno::StackCanary canary;
+            dyno::StackCanary canary;
             LPCSTR lpName = hook.getArgument<LPCSTR>(1);
-			std::cout << "kernel32!CreateMutexExA - Name: " << lpName << std::endl;
-			return dyno::ReturnAction::Ignored;
-		};
-		
+            std::cout << "kernel32!CreateMutexExA - Name: " << lpName << std::endl;
+            return dyno::ReturnAction::Ignored;
+        };
+        
         dyno::StackCanary canary;
         dyno::x64Detour detour{(uintptr_t) &CreateMutexExA, callConvWinApi};
-		
+        
         detour.addCallback(dyno::CallbackType::Post, PostCreateMutexExA);
-		
+        
         REQUIRE(detour.hook() == true);
         REQUIRE(detour.unhook() == true);
     }
 
     SECTION("Loop function") {
-		auto PostHook2 = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto PostHook2 = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);
             DYNO_UNUSED(hook);
-			dyno::StackCanary canary;
-			std::cout << "Post Hook 2 Called!" << std::endl;
-			effects.peak().trigger();
-			return dyno::ReturnAction::Handled;
-		};
-		
+            dyno::StackCanary canary;
+            std::cout << "Post Hook 2 Called!" << std::endl;
+            effects.peak().trigger();
+            return dyno::ReturnAction::Handled;
+        };
+        
         dyno::StackCanary canary;
         dyno::x64Detour detour{(uintptr_t) &hookMe2, callConvVoid};
         REQUIRE(detour.hook() == true);
-	
-		detour.addCallback(dyno::CallbackType::Post, PostHook2);
+    
+        detour.addCallback(dyno::CallbackType::Post, PostHook2);
 
         effects.push();
         hookMe2();
@@ -198,23 +198,23 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
     }
 
     /*SECTION("hook malloc") {
-		dyno::ConvFunc callConvWinApi = []{ return new dyno::x64MsFastCall({dyno::DataType::UInt64}, dyno::DataType::Pointer); };
-		
-		auto PreMalloc = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        dyno::ConvFunc callConvWinApi = []{ return new dyno::x64MsFastCall({dyno::DataType::UInt64}, dyno::DataType::Pointer); };
+        
+        auto PreMalloc = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);
-			dyno::StackCanary canary;
+            dyno::StackCanary canary;
             size_t size = hook.getArgument<size_t>(0);
-			std::cout << "malloc - size: " << size << std::endl;
-			return dyno::ReturnAction::Ignored;
-		};
-		
+            std::cout << "malloc - size: " << size << std::endl;
+            return dyno::ReturnAction::Ignored;
+        };
+        
         dyno::StackCanary canary;
         dyno::x64Detour detour{(uintptr_t) &malloc, callConvWinApi};
         effects.push(); // catch does some allocations, push effect first so peak works
 
         REQUIRE(detour.hook());
-		
-		detour.addCallback(dyno::CallbackType::Pre, PreMalloc);
+        
+        detour.addCallback(dyno::CallbackType::Pre, PreMalloc);
 
         void* pMem = malloc(16);
         free(pMem);
@@ -223,22 +223,22 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
     }
 
     SECTION("queue apc thread") {
-		dyno::ConvFunc callConvWinApi = []{ return new dyno::x64MsFastCall({dyno::DataType::Pointer, dyno::DataType::Pointer, dyno::DataType::Pointer, dyno::DataType::Pointer, dyno::DataType::UInt32}, dyno::DataType::UInt32); };
+        dyno::ConvFunc callConvWinApi = []{ return new dyno::x64MsFastCall({dyno::DataType::Pointer, dyno::DataType::Pointer, dyno::DataType::Pointer, dyno::DataType::Pointer, dyno::DataType::UInt32}, dyno::DataType::UInt32); };
 
         typedef void(*PKNORMAL_ROUTINE)(void* NormalContext, void* SystemArgument1, void* SystemArgument2);
         typedef unsigned long(__stdcall* tNtQueueApcThread)(void* ThreadHandle, PKNORMAL_ROUTINE ApcRoutine, void* NormalContext, void* SystemArgument1, void* SystemArgument2);
         tNtQueueApcThread pNtQueueApcthread = (tNtQueueApcThread)GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtQueueApcThread");
 
-		auto PostNtQueueApcthread = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto PostNtQueueApcthread = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);
-			std::cout << "hkNtQueueApcThread!" << std::endl;
-			return dyno::ReturnAction::Ignored;
-		};
-		
+            std::cout << "hkNtQueueApcThread!" << std::endl;
+            return dyno::ReturnAction::Ignored;
+        };
+        
         dyno::x64Detour detour{(uintptr_t)pNtQueueApcthread, callConvWinApi};
         effects.push(); // catch does some allocations, push effect first so peak works
         REQUIRE(detour.hook() == true);
-		
-		detour.addCallback(dyno::CallbackType::Post, PostNtQueueApcthread);
+        
+        detour.addCallback(dyno::CallbackType::Post, PostNtQueueApcthread);
     }*/
 }
