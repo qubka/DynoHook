@@ -334,6 +334,8 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
         REQUIRE(effectsNTD64.pop().didExecute(1));
         REQUIRE(detour.unhook());
     }
+
+    SECTION("Longs arguments, long ret, host") {
         dyno::StackCanary canary;
         dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64}, dyno::DataType::Int64); };
 
