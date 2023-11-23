@@ -200,6 +200,27 @@ DYNO_NOINLINE void rw_void(double a, double b, double c, double d, double e, dou
     std::cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << g << " " << h << " " << i << " " << k << " " << ans << std::endl;
 }
 
+DYNO_NOINLINE long rw_long(long a, long b, long c, long d, long e, long f, long g, long h, long i, long k) {
+    dyno::StackCanary canary;
+    volatile long ans = 0;
+    ans += a;
+    ans += b;
+    ans += c;
+    ans += d;
+    ans += e;
+    ans += f;
+    ans += g;
+    ans += h;
+    ans += i;
+    ans += k;
+    if (ans == 136) {
+        effectsNTD64.peak().trigger();
+    }
+
+    std::cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << g << " " << h << " " << i << " " << k << " " << ans << std::endl;
+    return ans;
+}
+
 TEST_CASE("Callback Argument re-writing", "[Convention]") {
     SECTION("Int, float, double arguments overwrite, int ret, host") {
         dyno::StackCanary canary;
@@ -313,6 +334,43 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
         REQUIRE(effectsNTD64.pop().didExecute(1));
         REQUIRE(detour.unhook());
     }
+        dyno::StackCanary canary;
+        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64}, dyno::DataType::Int64); };
+
+        auto pre_rw_long = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
+            dyno::StackCanary canary;
+
+            hook.setArgument(9, 100);
+
+            std::cout << "pre_rw_long called" << std::endl;
+
+            return dyno::ReturnAction::Handled;
+        };
+
+        auto post_rw_long = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
+            dyno::StackCanary canary;
+
+            hook.setReturnValue<long>(1337);
+
+            std::cout << "post_rw_long called" << std::endl;
+
+            return dyno::ReturnAction::Handled;
+        };
+
+        dyno::x64Detour detour{(uintptr_t) &rw_long, callConv};
+        REQUIRE(detour.hook() == true);
+
+        detour.addCallback(dyno::CallbackType::Pre, pre_rw_long);
+        detour.addCallback(dyno::CallbackType::Post, post_rw_long);
+
+        effectsNTD64.push();
+        long l = rw_long(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+        REQUIRE(l == 1337);
+        REQUIRE(effectsNTD64.pop().didExecute(1));
+        REQUIRE(detour.unhook());
+    }
 }
 
 TEST_CASE("Callback Return re-writing", "[Convention]") {
@@ -411,27 +469,6 @@ DYNO_NOINLINE bool rw_bool(int a, float b, double c, int type) {
 	return true;
 }
 
-DYNO_NOINLINE long rw_long(long a, long b, long c, long d, long e, long f, long g, long h, long i, long k) {
-    dyno::StackCanary canary;
-	volatile long ans = 0;
-	ans += a;
-	ans += b;
-	ans += c;
-	ans += d;
-	ans += e;
-	ans += f;
-	ans += g;
-	ans += h;
-	ans += i;
-	ans += k;
-	if (ans == 136) {
-		effectsNTD64.peak().trigger();
-	}
-	
-	std::cout << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << g << " " << h << " " << i << " " << k << " " << ans << std::endl;
-	return ans;
-}
-
 TEST_CASE("Callback Skip original function", "[Convention]") {
 	SECTION("Int, float, double arguments, bool ret, supercede host") {
 		dyno::StackCanary canary;
@@ -468,45 +505,6 @@ TEST_CASE("Callback Skip original function", "[Convention]") {
         bool b = rw_bool(1337, 1337.1337f, 1337.1337, 1);
         REQUIRE(b == false);
         REQUIRE(effectsNTD64.pop().didExecute(0));
-        REQUIRE(detour.unhook());
-	}
-	
-	SECTION("Longs arguments, long ret, host") {
-		dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64}, dyno::DataType::Int64); };
-	
-		auto pre_rw_long = +[](dyno::CallbackType type, dyno::Hook& hook) {
-            DYNO_UNUSED(type);
-            dyno::StackCanary canary;
-
-			hook.setArgument(9, 100);
-			
-			std::cout << "pre_rw_long called" << std::endl;
-			
-            return dyno::ReturnAction::Handled;
-        };
-		
-		auto post_rw_long = +[](dyno::CallbackType type, dyno::Hook& hook) {
-            DYNO_UNUSED(type);
-            dyno::StackCanary canary;
-
-			hook.setReturnValue<long>(1337);
-
-			std::cout << "post_rw_long called" << std::endl;
-			
-            return dyno::ReturnAction::Handled;
-        };
-	
-        dyno::x64Detour detour{(uintptr_t) &rw_long, callConv};
-        REQUIRE(detour.hook() == true);
-		
-		detour.addCallback(dyno::CallbackType::Pre, pre_rw_long);
-		detour.addCallback(dyno::CallbackType::Post, post_rw_long);
-
-        effectsNTD64.push();
-        long l = rw_long(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
-        REQUIRE(l == 1337);
-        REQUIRE(effectsNTD64.pop().didExecute(1));
         REQUIRE(detour.unhook());
 	}
 }

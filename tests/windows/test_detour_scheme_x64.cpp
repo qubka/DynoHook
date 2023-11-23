@@ -29,7 +29,7 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
 
         return fn;
     };
-	
+
 	dyno::ConvFunc call_conv_ret_i32 = []{ return new dyno::x64MsFastCall({}, dyno::DataType::Int32); };
 	dyno::ConvFunc call_conv_ret_i64 = []{ return new dyno::x64MsFastCall({}, dyno::DataType::Int64); };
 
@@ -215,6 +215,7 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
 
 			return dyno::ReturnAction::Ignored;
 		};
+
         dyno::x64Detour detour{(uintptr_t) rip_function, call_conv_ret_i32};
         detour.setDetourScheme(dyno::x64Detour::detour_scheme_t::INPLACE_SHORT);
         REQUIRE(detour.hook());
@@ -252,7 +253,7 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
         // TODO: Dyno is not guaranteed to find a cave, hence this test will often fail.
         // We need to find a way to deliberately reserve code cave.
 
-        // dyno::x64Detour detour2((uintptr_t) small_function, call_conv_ret_i32);
+        // dyno::x64Detour detour2{(uintptr_t) small_function, call_conv_ret_i32};
         // detour2.setDetourScheme(dyno::x64Detour::detour_scheme_t::CODE_CAVE);
         // REQUIRE(detour2.hook());
         // schemeEffects.push();

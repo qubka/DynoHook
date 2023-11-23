@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #if DYNO_ARCH_X86 == 32
-#include "dynohook/conventions/x86/x86MsThiscall.h"
+#include "dynohook/conventions/x86_ms_thiscall.h"
 #define DEFAULT_CALLCONV dyno::x86MsThiscall
 #elif DYNO_ARCH_X86 == 64
 #include "dynohook/conventions/x64_ms_fastcall.h"
@@ -34,7 +34,7 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
     dyno::VHookCache cache;
     dyno::VTable table{ClassToHook.get(), cache};
 
-    /*SECTION("Verify vtable hook") {
+    SECTION("Verify vtable hook") {
         dyno::ConvFunc callConvInt = []{ return new DEFAULT_CALLCONV({}, dyno::DataType::Int32); };
 
         auto PreNoParamVirt = +[](dyno::CallbackType type, dyno::Hook& hook) {
@@ -67,13 +67,13 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
         typedef int(DYNO_THISCALL *NoParamVirt)(void*);
 
         vTblSwapEffects.push();
-        Force virtual table call
-        void** vtable = *(void***)ClassToHook.get();
+        //Force virtual table call
+        void** vtable = *(void***) ClassToHook.get();
         auto noParamVirt = (NoParamVirt) vtable[1];
         int ret = noParamVirt(ClassToHook.get());
 
         REQUIRE(ret == 1337);
         REQUIRE(vTblSwapEffects.pop().didExecute(2));
         REQUIRE(table.unhook(1));
-    }*/
+    }
 }

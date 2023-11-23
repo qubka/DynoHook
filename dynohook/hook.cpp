@@ -178,7 +178,7 @@ bool Hook::createBridge() {
     if (address) {
         a.jmp(address);
     } else {
-        // if address not available yet, load later
+        // if address not available yet, load from
         uintptr_t addr = (uintptr_t)&address;
 #if DYNO_ARCH_X86 == 64
         a.push(rax);
