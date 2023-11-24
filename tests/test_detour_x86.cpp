@@ -1,11 +1,18 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "dynohook/detours/x86_detour.h"
-#include "dynohook/conventions/x86_ms_cdecl.h"
 #include "dynohook/tests/stack_canary.h"
 #include "dynohook/tests/effect_tracker.h"
 #include "dynohook/os.h"
 
+#if DYNO_PLATFORM_WINDOWS
+#include "dynohook/conventions/x86_ms_cdecl.h"
+#define DEFAULT_CALLCONV dyno::x86MsCdecl
+#else
+#include "dynohook/conventions/x86_gcc_cdecl.h"
+#define DEFAULT_CALLCONV dyno::x86GccCdecl
+#endif
+	
 dyno::EffectTracker effects;
 
 DYNO_NOINLINE int DYNO_CDECL hookMe1() {
@@ -87,8 +94,8 @@ DYNO_NOINLINE void DYNO_NAKED hookMeLoop() {
 }
 
 TEST_CASE("Testing x86 detours", "[x86Detour][Detour]") {
-    dyno::ConvFunc callConvInt = []{ return new dyno::x86MsCdecl({}, dyno::DataType::Int32); };
-    dyno::ConvFunc callConvVoid = []{ return new dyno::x86MsCdecl({}, dyno::DataType::Void); };
+    dyno::ConvFunc callConvInt = []{ return new DEFAULT_CALLCONV({}, dyno::DataType::Int32); };
+    dyno::ConvFunc callConvVoid = []{ return new DEFAULT_CALLCONV({}, dyno::DataType::Void); };
 
     auto PostHook1 = +[](dyno::CallbackType type, dyno::Hook& hook) {
         DYNO_UNUSED(type);

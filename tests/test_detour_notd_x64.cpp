@@ -1,10 +1,17 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "dynohook/detours/x64_detour.h"
-#include "dynohook/conventions/x64_ms_fastcall.h"
 #include "dynohook/tests/stack_canary.h"
 #include "dynohook/tests/effect_tracker.h"
 #include "dynohook/os.h"
+
+#if DYNO_PLATFORM_WINDOWS
+#include "dynohook/conventions/x64_ms_fastcall.h"
+#define DEFAULT_CALLCONV dyno::x64MsFastCall
+#else
+#include "dynohook/conventions/x64_systemV_call.h"
+#define DEFAULT_CALLCONV dyno::x64SystemVcall
+#endif
 
 dyno::EffectTracker effectsNTD64;
 
@@ -38,7 +45,7 @@ TEST_CASE("Simple Callback", "[AsmJit][Callback]") {
    
     SECTION("Integer argument") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int32}, dyno::DataType::Void); };
+        dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int32}, dyno::DataType::Void); };
 
         auto preHookMeInt = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);
@@ -65,7 +72,7 @@ TEST_CASE("Simple Callback", "[AsmJit][Callback]") {
 
     SECTION("Floating argument") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Float}, dyno::DataType::Void); };
+        dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Float}, dyno::DataType::Void); };
 
         auto preHookMeFloat = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);
@@ -92,7 +99,7 @@ TEST_CASE("Simple Callback", "[AsmJit][Callback]") {
 
     SECTION("Int, float, double arguments, string parsing types") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double}, dyno::DataType::Void); };
+        dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double}, dyno::DataType::Void); };
 
         auto preHookMeIntFloatDouble = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);
@@ -224,7 +231,7 @@ DYNO_NOINLINE long rw_long(long a, long b, long c, long d, long e, long f, long 
 TEST_CASE("Callback Argument re-writing", "[Convention]") {
     SECTION("Int, float, double arguments overwrite, int ret, host") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Int32); };
+        dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Int32); };
 
         auto pre_rw_int = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);
@@ -253,7 +260,7 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
 
     SECTION("Int, float, double arguments overwrite, float ret, host") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Float); };
+        dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Float); };
     
         auto pre_rw_float = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);
@@ -282,7 +289,7 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
 
     SECTION("Int, float, double arguments overwrite, double ret, host") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Double); };
+        dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Double); };
 
         auto pre_rw_double = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);
@@ -311,7 +318,7 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
 
     SECTION("Doubles arguments overwrite, void ret, host") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double}, dyno::DataType::Void); };
+        dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double}, dyno::DataType::Void); };
 
         auto pre_rw_void = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);
@@ -337,7 +344,7 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
 
     SECTION("Longs arguments, long ret, host") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64}, dyno::DataType::Int64); };
+        dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64}, dyno::DataType::Int64); };
 
         auto pre_rw_long = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);
@@ -378,7 +385,7 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
 TEST_CASE("Callback Return re-writing", "[Convention]") {
     SECTION("Int, float, double arguments, int ret overwrite, host") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Int32); };
+        dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Int32); };
 
         auto post_rw_int = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);
@@ -405,7 +412,7 @@ TEST_CASE("Callback Return re-writing", "[Convention]") {
 
     SECTION("Int, float, double arguments, float ret overwrite, host") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Float); };
+        dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Float); };
     
         auto post_rw_float = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);
@@ -432,7 +439,7 @@ TEST_CASE("Callback Return re-writing", "[Convention]") {
 
     SECTION("Int, float, double arguments, double ret overwrite, host") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Double); };
+        dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Double); };
 
         auto post_rw_double = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);
@@ -474,7 +481,7 @@ DYNO_NOINLINE bool rw_bool(int a, float b, double c, int type) {
 TEST_CASE("Callback Skip original function", "[Convention]") {
     SECTION("Int, float, double arguments, bool ret, supercede host") {
         dyno::StackCanary canary;
-        dyno::ConvFunc callConv = []{ return new dyno::x64MsFastCall({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Bool); };
+        dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Bool); };
     
         auto pre_rw_bool = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);

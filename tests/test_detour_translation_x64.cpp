@@ -1,12 +1,18 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "dynohook/detours/x64_detour.h"
-#include "dynohook/conventions/x64_ms_fastcall.h"
 #include "dynohook/tests/stack_canary.h"
 #include "dynohook/tests/effect_tracker.h"
+#include "dynohook/mem_accessor.h"
 #include "dynohook/os.h"
 
-#include <memoryapi.h>
+#if DYNO_PLATFORM_WINDOWS
+#include "dynohook/conventions/x64_ms_fastcall.h"
+#define DEFAULT_CALLCONV dyno::x64MsFastCall
+#else
+#include "dynohook/conventions/x64_systemV_call.h"
+#define DEFAULT_CALLCONV dyno::x64SystemVcall
+#endif
 
 uint8_t cmpQwordImm[] = {
     0x48, 0x81, 0x3D, 0xF5, 0xFF, 0xFF, 0xFF, 0x78, 0x56, 0x34, 0x12, // cmp qword ptr ds:[rip - 11], 0x12345678
@@ -92,14 +98,17 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
     // Immediate
     typedef int (* IntFn)();
 
-    dyno::ConvFunc callConvRetInt = []{ return new dyno::x64MsFastCall({}, dyno::DataType::Int32); };
-    dyno::ConvFunc callConvRetVoid = []{ return new dyno::x64MsFastCall({}, dyno::DataType::Void); };
+    dyno::ConvFunc callConvRetInt = []{ return new DEFAULT_CALLCONV({}, dyno::DataType::Int32); };
+    dyno::ConvFunc callConvRetVoid = []{ return new DEFAULT_CALLCONV({}, dyno::DataType::Void); };
 
+	dyno::MemAccessor accessor;
+	
     SECTION("cmp qword & imm") {
         dyno::StackCanary canary;
 
-        DWORD flOldProtect;
-        VirtualProtect((void*) cmpQwordImm, (SIZE_T) sizeof(cmpQwordImm), PAGE_EXECUTE_READWRITE, &flOldProtect);
+        bool status = true;
+		accessor.mem_protect((void*) cmpQwordImm, sizeof(cmpQwordImm), ProtFlag::RWX, status);
+		REQUIRE(status == true);
 
         dyno::x64Detour detour{(uintptr_t) cmpQwordImm, callConvRetInt};
 
@@ -149,8 +158,9 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
     SECTION("cmp qword & reg") {
         dyno::StackCanary canary;
 
-        DWORD flOldProtect;
-        VirtualProtect((void*) cmpQwordRegR10, (SIZE_T) sizeof(cmpQwordRegR10), PAGE_EXECUTE_READWRITE, &flOldProtect);
+		bool status = false;
+		accessor.mem_protect((void*) cmpQwordRegR10, sizeof(cmpQwordRegR10), ProtFlag::RWX, status);
+		REQUIRE(status == true);
 
         dyno::x64Detour detour{(uintptr_t) cmpQwordRegR10, callConvRetInt};
 

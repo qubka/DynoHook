@@ -1,16 +1,27 @@
 #include <catch2/catch_test_macros.hpp>
 
-#if DYNO_ARCH_X86 == 32
-#include "dynohook/conventions/x86_ms_thiscall.h"
-#define DEFAULT_CALLCONV dyno::x86MsThiscall
-#elif DYNO_ARCH_X86 == 64
-#include "dynohook/conventions/x64_ms_fastcall.h"
-#define DEFAULT_CALLCONV dyno::x64MsFastCall
-#endif
 #include "dynohook/virtuals/vtable.h"
 #include "dynohook/tests/stack_canary.h"
 #include "dynohook/tests/effect_tracker.h"
 #include "dynohook/os.h"
+
+#if DYNO_ARCH_X86 == 32
+#if DYNO_PLATFORM_WINDOWS
+#include "dynohook/conventions/x86_ms_thiscall.h"
+#define DEFAULT_CALLCONV dyno::x86MsThiscall
+#else
+#include "dynohook/conventions/x86_gcc_thiscall.h"
+#define DEFAULT_CALLCONV dyno::x86GccThiscall
+#endif
+#elif DYNO_ARCH_X86 == 64
+#if DYNO_PLATFORM_WINDOWS
+#include "dynohook/conventions/x64_ms_fastcall.h"
+#define DEFAULT_CALLCONV dyno::x64MsFastCall
+#else
+#include "dynohook/conventions/x64_systemV_call.h"
+#define DEFAULT_CALLCONV dyno::x64SystemVcall
+#endif
+#endif
 
 class VirtualTest {
 public:

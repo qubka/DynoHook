@@ -7,16 +7,16 @@ using namespace dyno;
 MemProtector::MemProtector(uintptr_t address, size_t length, ProtFlag prot, MemAccessor& accessor, bool unsetOnDestroy) :
     m_address{address},
     m_length{length},
-    unsetLater{unsetOnDestroy},
+    m_unsetLater{unsetOnDestroy},
     m_accessor{accessor} {
-    m_origProtection = m_accessor.mem_protect(address, length, prot, status);
+    m_origProtection = m_accessor.mem_protect(address, length, prot, m_status);
 }
 
 MemProtector::~MemProtector() {
     if (m_origProtection == ProtFlag::UNSET || !unsetLater)
         return;
 
-    m_accessor.mem_protect(m_address, m_length, m_origProtection, status);
+    m_accessor.mem_protect(m_address, m_length, m_origProtection, m_status);
 }
 
 namespace dyno {

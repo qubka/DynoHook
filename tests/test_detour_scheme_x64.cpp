@@ -1,10 +1,17 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "dynohook/detours/x64_detour.h"
-#include "dynohook/conventions/x64_ms_fastcall.h"
 #include "dynohook/tests/stack_canary.h"
 #include "dynohook/tests/effect_tracker.h"
 #include "dynohook/os.h"
+
+#if DYNO_PLATFORM_WINDOWS
+#include "dynohook/conventions/x64_ms_fastcall.h"
+#define DEFAULT_CALLCONV dyno::x64MsFastCall
+#else
+#include "dynohook/conventions/x64_systemV_call.h"
+#define DEFAULT_CALLCONV dyno::x64SystemVcall
+#endif
 
 dyno::EffectTracker schemeEffects;
 
@@ -30,8 +37,8 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
         return fn;
     };
 
-    dyno::ConvFunc call_conv_ret_i32 = []{ return new dyno::x64MsFastCall({}, dyno::DataType::Int32); };
-    dyno::ConvFunc call_conv_ret_i64 = []{ return new dyno::x64MsFastCall({}, dyno::DataType::Int64); };
+    dyno::ConvFunc call_conv_ret_i32 = []{ return new DEFAULT_CALLCONV({}, dyno::DataType::Int32); };
+    dyno::ConvFunc call_conv_ret_i64 = []{ return new DEFAULT_CALLCONV({}, dyno::DataType::Int64); };
 
     SECTION("Validate valloc2 scheme in function with translation and back-references") {
         dyno::StackCanary canary;

@@ -1,10 +1,17 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "dynohook/detours/x64_detour.h"
-#include "dynohook/conventions/x64_ms_fastcall.h"
 #include "dynohook/tests/stack_canary.h"
 #include "dynohook/tests/effect_tracker.h"
 #include "dynohook/os.h"
+
+#if DYNO_PLATFORM_WINDOWS
+#include "dynohook/conventions/x64_ms_fastcall.h"
+#define DEFAULT_CALLCONV dyno::x64MsFastCall
+#else
+#include "dynohook/conventions/x64_systemV_call.h"
+#define DEFAULT_CALLCONV dyno::x64SystemVcall
+#endif
 
 DYNO_NOINLINE void hookMe1() {
     dyno::StackCanary canary;
@@ -65,7 +72,7 @@ uint8_t hookMe6[] = {
 dyno::EffectTracker effects;
 
 TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
-    dyno::ConvFunc callConvVoid = []{ return new dyno::x64MsFastCall({}, dyno::DataType::Void); };
+    dyno::ConvFunc callConvVoid = []{ return new DEFAULT_CALLCONV({}, dyno::DataType::Void); };
     
     SECTION("Normal function") {
         auto PostHook1 = +[](dyno::CallbackType type, dyno::Hook& hook) {
@@ -124,7 +131,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
             ... the goods ...
         */
     SECTION("WinApi Indirection") {
-        dyno::ConvFunc callConvWinApi = []{ return new dyno::x64MsFastCall({dyno::DataType::Pointer, dyno::DataType::Pointer, dyno::DataType::Int32, dyno::DataType::Int32}, dyno::DataType::Pointer); };
+        dyno::ConvFunc callConvWinApi = []{ return new DEFAULT_CALLCONV({dyno::DataType::Pointer, dyno::DataType::Pointer, dyno::DataType::Int32, dyno::DataType::Int32}, dyno::DataType::Pointer); };
         
         auto PostCreateMutexExA = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);
@@ -198,7 +205,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
     }
 
     /*SECTION("hook malloc") {
-        dyno::ConvFunc callConvWinApi = []{ return new dyno::x64MsFastCall({dyno::DataType::UInt64}, dyno::DataType::Pointer); };
+        dyno::ConvFunc callConvWinApi = []{ return new DEFAULT_CALLCONV({dyno::DataType::UInt64}, dyno::DataType::Pointer); };
         
         auto PreMalloc = +[](dyno::CallbackType type, dyno::Hook& hook) {
             DYNO_UNUSED(type);
@@ -223,7 +230,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
     }
 
     SECTION("queue apc thread") {
-        dyno::ConvFunc callConvWinApi = []{ return new dyno::x64MsFastCall({dyno::DataType::Pointer, dyno::DataType::Pointer, dyno::DataType::Pointer, dyno::DataType::Pointer, dyno::DataType::UInt32}, dyno::DataType::UInt32); };
+        dyno::ConvFunc callConvWinApi = []{ return new DEFAULT_CALLCONV({dyno::DataType::Pointer, dyno::DataType::Pointer, dyno::DataType::Pointer, dyno::DataType::Pointer, dyno::DataType::UInt32}, dyno::DataType::UInt32); };
 
         typedef void(*PKNORMAL_ROUTINE)(void* NormalContext, void* SystemArgument1, void* SystemArgument2);
         typedef unsigned long(__stdcall* tNtQueueApcThread)(void* ThreadHandle, PKNORMAL_ROUTINE ApcRoutine, void* NormalContext, void* SystemArgument1, void* SystemArgument2);

@@ -5,7 +5,7 @@
 namespace dyno {
     class MemAccessor;
 
-    int    TranslateProtection(ProtFlag flags);
+    int TranslateProtection(ProtFlag flags);
     ProtFlag TranslateProtection(int prot);
 
     class MemProtector {
@@ -19,7 +19,7 @@ namespace dyno {
         }
 
         bool isGood() const {
-            return status;
+            return m_status;
         }
 
     private:
@@ -27,8 +27,8 @@ namespace dyno {
 
         uintptr_t m_address;
         size_t m_length;
-        bool status;
-        bool unsetLater;
+        bool m_status;
+        bool m_unsetLater;
         
         ProtFlag m_origProtection{ ProtFlag::UNSET };
     };
