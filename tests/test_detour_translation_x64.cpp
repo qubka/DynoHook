@@ -107,7 +107,7 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
         dyno::StackCanary canary;
 
         bool status = true;
-		accessor.mem_protect((void*) cmpQwordImm, sizeof(cmpQwordImm), ProtFlag::RWX, status);
+		accessor.mem_protect((uintptr_t) cmpQwordImm, sizeof(cmpQwordImm), dyno::ProtFlag::RWX, status);
 		REQUIRE(status == true);
 
         dyno::x64Detour detour{(uintptr_t) cmpQwordImm, callConvRetInt};
@@ -159,7 +159,7 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
         dyno::StackCanary canary;
 
 		bool status = false;
-		accessor.mem_protect((void*) cmpQwordRegR10, sizeof(cmpQwordRegR10), ProtFlag::RWX, status);
+		accessor.mem_protect((uintptr_t) cmpQwordRegR10, sizeof(cmpQwordRegR10), dyno::ProtFlag::RWX, status);
 		REQUIRE(status == true);
 
         dyno::x64Detour detour{(uintptr_t) cmpQwordRegR10, callConvRetInt};

@@ -306,13 +306,13 @@ if(DYNOHOOK_FEATURE_DETOURS)
 	if(NOT DYNOHOOK_BUILD_DLL)
         if(DYNOHOOK_BUILD_64)
             target_sources(${PROJECT_NAME} PRIVATE
-                ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_translation_x64.cpp
-                ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_scheme_x64.cpp
-                ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_notd_x64.cpp
-                ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_x64.cpp)
+                ${PROJECT_SOURCE_DIR}/tests/test_detour_translation_x64.cpp
+                ${PROJECT_SOURCE_DIR}/tests/test_detour_scheme_x64.cpp
+                ${PROJECT_SOURCE_DIR}/tests/test_detour_notd_x64.cpp
+                ${PROJECT_SOURCE_DIR}/tests/test_detour_x64.cpp)
         elseif(DYNOHOOK_BUILD_32)
             target_sources(${PROJECT_NAME} PRIVATE
-                    ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_detour_x86.cpp)
+                    ${PROJECT_SOURCE_DIR}/tests/test_detour_x86.cpp)
         endif()
 	endif()
 endif()
@@ -331,7 +331,7 @@ if(DYNOHOOK_FEATURE_VIRTUALS)
 	# only build tests if making exe
 	if(NOT DYNOHOOK_BUILD_DLL)
 		target_sources(${PROJECT_NAME} PRIVATE
-			${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_virtual.cpp)
+			${PROJECT_SOURCE_DIR}/tests/test_virtual.cpp)
 	endif()
 endif()
 
@@ -377,7 +377,7 @@ if(NOT DYNOHOOK_BUILD_DLL)
     target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/catch2/src/catch2>)
 	target_sources(${PROJECT_NAME} PRIVATE
 		${PROJECT_SOURCE_DIR}/tests/main_tests.cpp
-	    ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_disassembler.cpp
+	    ${PROJECT_SOURCE_DIR}/tests/test_disassembler.cpp
 		${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_mem_protector.cpp)
 endif()
 

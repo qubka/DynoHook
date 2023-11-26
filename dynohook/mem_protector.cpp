@@ -13,7 +13,7 @@ MemProtector::MemProtector(uintptr_t address, size_t length, ProtFlag prot, MemA
 }
 
 MemProtector::~MemProtector() {
-    if (m_origProtection == ProtFlag::UNSET || !unsetLater)
+    if (m_origProtection == ProtFlag::UNSET || !m_unsetLater)
         return;
 
     m_accessor.mem_protect(m_address, m_length, m_origProtection, m_status);
