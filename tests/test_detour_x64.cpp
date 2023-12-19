@@ -119,6 +119,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
         REQUIRE(detour.unhook() == true);
     }
 
+#if DYNO_PLATFORM_WINDOWS
         // In release mode win apis usually go through two levels of jmps
         /*
         0xe9 ... jmp iat_thunk
@@ -149,6 +150,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
         REQUIRE(detour.hook() == true);
         REQUIRE(detour.unhook() == true);
     }
+#endif
 
     SECTION("Loop function") {
         auto PostHook2 = +[](dyno::CallbackType type, dyno::Hook& hook) {
