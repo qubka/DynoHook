@@ -36,13 +36,13 @@ int __fastcall MyFunc(int x, int y) {
 	assert(x == 3);
 	assert(y == 10);
 
-	int result = x + y;
+	volatile int result = x + y;
 	assert(result == 13);
 
 	return result;
 }
 
-ReturnAction PreMyFunc(CallbackType hookType, Hook& hook) {
+ReturnAction PreMyFunc(CallbackType type, Hook& hook) {
 	g_PreMyFuncCallCount++;
 	int x = hook.getArgument<int>(0);
 	assert(x == 3);
@@ -53,7 +53,7 @@ ReturnAction PreMyFunc(CallbackType hookType, Hook& hook) {
 	return ReturnAction::Ignored;
 }
 
-ReturnAction PostMyFunc(CallbackType hookType, Hook& hook) {
+ReturnAction PostMyFunc(CallbackType type, Hook& hook) {
 	g_PostMyFuncCallCount++;
 	int x = hook.getArgument<int>(0);
 	assert(x == 3);
@@ -73,11 +73,11 @@ void main() {
 	HookManager& manager = HookManager::Get();
 
 	// Hook the function
-	Hook* hook = manager.hook((void*) &MyFunc, [] { return new x64MsFastCall({DataType::Int, DataType::Int}, DataType::Int); });
+	Hook* hook = manager.hook((uintptr_t) &MyFunc, [] { return new x64MsFastCall({DataType::Int, DataType::Int}, DataType::Int); });
 
 	// Add the callbacks
-	hook->addCallback(CallbackType::Pre, (HookHandler*) &PreMyFunc);
-	hook->addCallback(CallbackType::Post, (HookHandler*) &PostMyFunc);
+	hook->addCallback(CallbackType::Pre, (CallbackHandler) PreMyFunc);
+	hook->addCallback(CallbackType::Post, (CallbackHandler) PostMyFunc);
 
 	// Call the function
 	int ret = MyFunc(3, 10);
@@ -105,13 +105,13 @@ class MyClass {
 public:
 	MyClass() : m_iData{0} {}
 
-	int __fastcall myFunc(int x, int y) {
+	int myFunc(int x, int y) {
 		g_MyFuncCallCount++;
 		assert(this == g_pMyClass);
 		assert(x == 3);
 		assert(y == 10);
 
-		int result = x + y;
+		volatile int result = x + y;
 		assert(result == 13);
 
 		m_iData++;
@@ -122,9 +122,9 @@ private:
 	int m_iData;
 };
 
-ReturnAction PreMyFunc(CallbackType hookType, Hook& hook) {
+ReturnAction PreMyFunc(CallbackType type, Hook& hook) {
 	g_PreMyFuncCallCount++;
-	MyClass* pMyClass = hook.getArgument<MyClass *>(0);
+	MyClass* pMyClass = hook.getArgument<MyClass*>(0);
 	assert(pMyClass == g_pMyClass);
 
 	int x = hook.getArgument<int>(1);
@@ -136,9 +136,9 @@ ReturnAction PreMyFunc(CallbackType hookType, Hook& hook) {
 	return ReturnAction::Ignored;
 }
 
-ReturnAction PostMyFunc(CallbackType hookType, Hook& hook) {
+ReturnAction PostMyFunc(CallbackType type, Hook& hook) {
 	g_PostMyFuncCallCount++;
-	MyClass* pMyClass = hook.getArgument<MyClass *>(0);
+	MyClass* pMyClass = hook.getArgument<MyClass*>(0);
 	assert(pMyClass == g_pMyClass);
 
 	int x = hook.getArgument<int>(1);
@@ -158,14 +158,14 @@ ReturnAction PostMyFunc(CallbackType hookType, Hook& hook) {
 void main() {
 	HookManager& manager = HookManager::Get();
 
-	int (__fastcall MyClass::*myFunc)(int, int) = &MyClass::myFunc;
+	int (MyClass::*myFunc)(int, int) = &MyClass::myFunc;
 
 	// Hook the function
-	Hook* hook = manager.hook((void*) &myFunc, [] { return new x64MsFastCall({DataType::Pointer, DataType::Int, DataType::Int}, DataType::Int); });
+	Hook* hook = manager.hook((uintptr_t) &myFunc, [] { return new x64MsFastCall({DataType::Pointer, DataType::Int, DataType::Int}, DataType::Int); });
 
 	// Add the callbacks
-	hook->addCallback(CallbackType::Pre, (HookHandler*) &PreMyFunc);
-	hook->addCallback(CallbackType::Post, (HookHandler*) &PostMyFunc);
+	hook->addCallback(CallbackType::Pre, (CallbackHandler) &PreMyFunc);
+	hook->addCallback(CallbackType::Post, (CallbackHandler) &PostMyFunc);
 
 	MyClass a;
 	g_pMyClass = &a;
@@ -196,13 +196,13 @@ class MyClass {
 public:
     MyClass() : m_iData{0} {}
 
-    virtual DYNO_NOINLINE int DYNOHOOK_TEST_CONV myFunc(int x, int y) {
+    virtual int myFunc(int x, int y) {
         g_MyFuncCallCount++;
         assert(this == g_pMyClass);
         assert(x == 3);
         assert(y == 10);
 
-        int result = x + y;
+        volatile int result = x + y;
         assert(result == 13);
 
         m_iData++;
@@ -213,9 +213,9 @@ private:
     int m_iData;
 };
 
-ReturnAction PreMyFunc(CallbackType hookType, Hook& hook) {
+ReturnAction PreMyFunc(CallbackType type, Hook& hook) {
     g_PreMyFuncCallCount++;
-    MyClass* pMyClass = hook.getArgument<MyClass *>(0);
+    MyClass* pMyClass = hook.getArgument<MyClass*>(0);
     assert(pMyClass == g_pMyClass);
 
     int x = hook.getArgument<int>(1);
@@ -227,9 +227,9 @@ ReturnAction PreMyFunc(CallbackType hookType, Hook& hook) {
     return ReturnAction::Ignored;
 }
 
-ReturnAction PostMyFunc(CallbackType hookType, Hook& hook) {
+ReturnAction PostMyFunc(CallbackType type, Hook& hook) {
     g_PostMyFuncCallCount++;
-    MyClass* pMyClass = hook.getArgument<MyClass *>(0);
+    MyClass* pMyClass = hook.getArgument<MyClass*>(0);
     assert(pMyClass == g_pMyClass);
 
     int x = hook.getArgument<int>(1);
@@ -258,8 +258,8 @@ void test() {
     Hook* hook = manager.hook(&a, 0, [] { return new x64MsFastCall({DataType::Pointer, DataType::Int, DataType::Int}, DataType::Int); });
 
     // add the callbacks
-    hook->addCallback(CallbackType::Pre, (HookHandler*) &PreMyFunc);
-    hook->addCallback(CallbackType::Post, (HookHandler*) &PostMyFunc);
+    hook->addCallback(CallbackType::Pre, (CallbackHandler) &PreMyFunc);
+    hook->addCallback(CallbackType::Post, (CallbackHandler) &PostMyFunc);
 
     // call the function
     void** vtable = *(void***)&a;
@@ -288,7 +288,7 @@ cmake -G "Visual Studio 15 2017" ..
 ## Credits
 - [Ayuto](https://github.com/Ayuto/) - DynamicHooks library
 - [peace-maker](https://github.com/peace-maker) - DHooks with detour support
-- [Fahersto](https://github.com/Fahersto/hookFTW) - hookFTW's range allocation, trampoline creation and disassembling
+- [stevemk14ebr](https://github.com/stevemk14ebr/PolyHook_2_0) - PolyHook_2_0's range allocation, trampoline creation and disassembling
 - [Kailo](https://github.com/Kailo97) - Help with assembly porting from x32 to x64 and fixing crashes
 
 ## Links
