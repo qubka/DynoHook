@@ -37,9 +37,6 @@ dyno::EffectTracker vTblSwapEffects;
 
 class VirtualTest {
 public:
-    VirtualTest() = default;
-    virtual ~VirtualTest() = default;
-
     virtual int DYNO_THISCALL NoParamVirt() {
         return 4;
     }
@@ -62,6 +59,20 @@ public:
         return ans;
     }
 };
+
+#include <cmath>
+
+template<typename T>
+bool isApproximatelyEqual(T a, T b, T tolerance = std::numeric_limits<T>::epsilon()) {
+    T diff = std::fabs(a - b);
+    if (diff <= tolerance)
+        return true;
+
+    if (diff < std::fmax(std::fabs(a), std::fabs(b)) * tolerance)
+        return true;
+
+    return false;
+}
 
 TEST_CASE("VTableSwap tests", "[VTableSwap]") {
     std::unique_ptr<VirtualTest> ClassToHook = std::make_unique<VirtualTest>();
@@ -94,7 +105,7 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
         };
 
         dyno::StackCanary canary;
-        auto hook = table.hook(1, callConvInt);
+        auto hook = table.hook(0, callConvInt);
         REQUIRE(hook);
         hook->addCallback(dyno::CallbackType::Pre, PreNoParamVirt);
         hook->addCallback(dyno::CallbackType::Post, PostNoParamVirt);
@@ -104,12 +115,12 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
         vTblSwapEffects.push();
         //Force virtual table call
         void** vtable = *(void***) ClassToHook.get();
-        auto noParamVirt = (NoParamVirt) vtable[1];
+        auto noParamVirt = (NoParamVirt) vtable[0];
         int ret = noParamVirt(ClassToHook.get());
 
         REQUIRE(ret == 1337);
         REQUIRE(vTblSwapEffects.pop().didExecute(2));
-        REQUIRE(table.unhook(1));
+        REQUIRE(table.unhook(0));
     }
 
     SECTION("Verify multiple callbacks") {
@@ -141,19 +152,32 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             std::cout << "PostMultParamVirt 3 Called!" << std::endl;
-            int return_value = hook.getReturnValue<int>();
-            if (return_value == 4) {
+            float return_value = hook.getReturnValue<float>();
+            if (isApproximatelyEqual(return_value, 12.0f)) {
                 vTblSwapEffects.peak().trigger();
             }
-            hook.setReturnValue<int>(1337);
+            hook.setReturnValue<float>(13.37f);
+            return dyno::ReturnAction::Handled;
+        };
+
+        auto PostMultParamVirt2 = +[](dyno::CallbackType type, dyno::Hook& hook) {
+            DYNO_UNUSED(type);
+            dyno::StackCanary canary;
+            std::cout << "PostMultParamVirt(2) 3 Called!" << std::endl;
+            float return_value = hook.getReturnValue<float>();
+            if (isApproximatelyEqual(return_value, 13.37f)) {
+                vTblSwapEffects.peak().trigger();
+            }
+            hook.setReturnValue<float>(7.0f);
             return dyno::ReturnAction::Handled;
         };
 
         dyno::StackCanary canary;
-        auto hook = table.hook(3, callConvFloat);
+        auto hook = table.hook(2, callConvFloat);
         REQUIRE(hook);
         hook->addCallback(dyno::CallbackType::Pre, PreMultParamVirt);
         hook->addCallback(dyno::CallbackType::Post, PostMultParamVirt);
+        hook->addCallback(dyno::CallbackType::Post, PostMultParamVirt2);
 
         typedef float(DYNO_THISCALL *MultParamVirt)(void*, int, float, double, TestStruct, std::string, float, void*);
 
@@ -162,11 +186,11 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
         vTblSwapEffects.push();
         //Force virtual table call
         void** vtable = *(void***) ClassToHook.get();
-        auto noParamVirt = (MultParamVirt) vtable[3];
+        auto noParamVirt = (MultParamVirt) vtable[2];
         float ret = noParamVirt(ClassToHook.get(), 1, 2.0f, 3.0f, test, "test", 4.0f, &canary);
 
-        REQUIRE(ret == 7.0f);
+        REQUIRE(isApproximatelyEqual(ret, 7.0f));
         REQUIRE(vTblSwapEffects.pop().didExecute(3));
-        REQUIRE(table.unhook(3));
+        REQUIRE(table.unhook(2));
     }
 }
