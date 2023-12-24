@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.9 FATAL_ERROR)
 project(dynohook)
 
-# Force all compilers to use the correct C and C++ standard versions.
-# Needed to allow for CheckCXXSourceCompiles to work correctly.
-set(CMAKE_REQUIRED_FLAGS "-std=c++20 -std=c11")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -154,9 +151,6 @@ else()
     add_executable(${PROJECT_NAME})
 endif()
 
-set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 20)
-set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD_REQUIRED ON)
-set_target_properties(${PROJECT_NAME} PROPERTIES CXX_EXTENSIONS ON)
 target_link_libraries(${PROJECT_NAME} PRIVATE git-info)
 
 if(MSVC)
@@ -164,16 +158,6 @@ if(MSVC)
         set_target_properties(${PROJECT_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     else()
         set_target_properties(${PROJECT_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-    endif()
-
-    if(MSVC)
-        set(COMPILE_FLAGS_PLH "/W4 /Z7")
-        if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-            set(COMPILE_FLAGS_PLH "/MP ${COMPILE_FLAGS_PLH}")
-        endif()
-
-        set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS ${COMPILE_FLAGS_PLH})
-        target_link_libraries(${PROJECT_NAME} PRIVATE optimized -DEBUG)
     endif()
 endif()
 
