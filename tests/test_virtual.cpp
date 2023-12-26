@@ -125,7 +125,22 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
 
     SECTION("Verify multiple callbacks") {
         dyno::ConvFunc callConvFloat = []{
+#if DYNO_ARCH_X86 == 64
             return new DEFAULT_CALLCONV({dyno::DataType::Pointer, dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Pointer, dyno::DataType::String, dyno::DataType::Float, dyno::DataType::Pointer}, dyno::DataType::Float);
+#elif DYNO_ARCH_X86 == 32
+            /* Inlined objects into stack */
+            dyno::DataObject testStruct {
+                dyno::DataType::Object,
+                dyno::RegisterType::NONE,
+                32
+            };
+            dyno::DataObject strStruct {
+                dyno::DataType::Object,
+                dyno::RegisterType::NONE,
+                28
+            };
+            return new DEFAULT_CALLCONV({dyno::DataType::Pointer, dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, testStruct, strStruct, dyno::DataType::Float, dyno::DataType::Pointer}, dyno::DataType::Float);
+#endif // DYNO_ARCH_X86
         };
 
         auto PreMultParamVirt = +[](dyno::CallbackType type, dyno::Hook& hook) {
@@ -133,14 +148,38 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
             DYNO_UNUSED(hook);
             dyno::StackCanary canary;
 
+#if DYNO_ARCH_X86 == 64
             auto arg0 = hook.getArgument<VirtualTest*>(0);
             auto arg1 = hook.getArgument<int>(1);
             auto arg2 = hook.getArgument<float>(2);
             auto arg3 = hook.getArgument<double>(3);
-            auto arg4 = hook.getArgument<TestStruct*>(4);
-            auto arg5 = hook.getArgument<std::string*>(5);
+            auto arg4 = *hook.getArgument<TestStruct*>(4);
+            auto arg5 = *hook.getArgument<std::string*>(5);
             auto arg6 = hook.getArgument<float>(6);
             auto arg7 = hook.getArgument<uintptr_t>(7);
+#elif DYNO_ARCH_X86 == 32
+            auto arg0 = hook.getArgument<VirtualTest*>(0);
+            auto arg1 = hook.getArgument<int>(1);
+            auto arg2 = hook.getArgument<float>(2);
+            auto arg3 = hook.getArgument<double>(3);
+            auto arg4 = hook.getArgument<TestStruct>(4);
+            auto arg5 = hook.getArgument<std::string>(5);
+            auto arg6 = hook.getArgument<float>(6);
+            auto arg7 = hook.getArgument<uintptr_t>(7);
+#endif // DYNO_ARCH_X86
+            // Check arguments
+            REQUIRE(arg4.a == 1);
+            REQUIRE(arg4.b == 2);
+            REQUIRE(arg4.c == 3);
+            REQUIRE(arg4.d == 4);
+            REQUIRE(arg4.e == 5);
+            REQUIRE(arg4.f == 6.0f);
+            REQUIRE(arg4.g == 7.0);
+            REQUIRE(arg1 == 1);
+            REQUIRE(arg2 == 2.0f);
+            REQUIRE(arg3 == 3.0);
+            REQUIRE(arg5 == "test");
+            REQUIRE(arg6 == 4.0f);
 
             std::cout << "PreMultParamVirt 3 Called!" << std::endl;
             vTblSwapEffects.peak().trigger();
@@ -186,8 +225,8 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
         vTblSwapEffects.push();
         //Force virtual table call
         void** vtable = *(void***) ClassToHook.get();
-        auto noParamVirt = (MultParamVirt) vtable[2];
-        float ret = noParamVirt(ClassToHook.get(), 1, 2.0f, 3.0f, test, "test", 4.0f, &canary);
+        auto MultParamVirt3 = (MultParamVirt) vtable[2];
+        float ret = MultParamVirt3(ClassToHook.get(), 1, 2.0f, 3.0, test, "test", 4.0f, &canary);
 
         REQUIRE(isApproximatelyEqual(ret, 7.0f));
         REQUIRE(vTblSwapEffects.pop().didExecute(3));
