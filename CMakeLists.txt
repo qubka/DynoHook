@@ -1,4 +1,9 @@
 cmake_minimum_required(VERSION 3.9 FATAL_ERROR)
+
+if(POLICY CMP0092)
+    cmake_policy(SET CMP0092 NEW) # Don't add -W3 warning level by default.
+endif()
+
 project(dynohook)
 
 set(CMAKE_CXX_STANDARD 20)
