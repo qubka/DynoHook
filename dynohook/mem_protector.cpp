@@ -53,7 +53,7 @@ namespace dyno {
         return os;
     }*/
 
-#ifdef DYNO_PLATFORM_WINDOWS
+#if DYNO_PLATFORM_WINDOWS
 
     int TranslateProtection(ProtFlag flags) {
         int nativeFlag = 0;

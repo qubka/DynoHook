@@ -134,7 +134,7 @@ namespace dyno {
         XMM13,
         XMM14,
         XMM15,
-#ifdef DYNO_PLATFORM_AVX512
+#if DYNO_PLATFORM_AVX512
         XMM16,
         XMM17,
         XMM18,
@@ -174,7 +174,7 @@ namespace dyno {
         YMM13,
         YMM14,
         YMM15,
-#ifdef DYNO_PLATFORM_AVX512
+#if DYNO_PLATFORM_AVX512
         YMM16,
         YMM17,
         YMM18,
@@ -197,7 +197,7 @@ namespace dyno {
         // ========================================================================
         // >> 512-bit ZMM registers
         // ========================================================================
-#ifdef DYNO_PLATFORM_AVX512
+#if DYNO_PLATFORM_AVX512
         ZMM0,
         ZMM1,
         ZMM2,

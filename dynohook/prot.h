@@ -14,16 +14,16 @@ namespace dyno {
         RWX = R | W | X
     };
 
-    inline dyno::ProtFlag operator|(dyno::ProtFlag lhs, dyno::ProtFlag rhs) {
-        using underlying = typename std::underlying_type<dyno::ProtFlag>::type;
-        return static_cast<dyno::ProtFlag> (
+    inline ProtFlag operator|(ProtFlag lhs, ProtFlag rhs) {
+        using underlying = typename std::underlying_type<ProtFlag>::type;
+        return static_cast<ProtFlag> (
             static_cast<underlying>(lhs) |
             static_cast<underlying>(rhs)
         );
     }
 
-    inline bool operator&(dyno::ProtFlag lhs, dyno::ProtFlag rhs) {
-        using underlying = typename std::underlying_type<dyno::ProtFlag>::type;
+    inline bool operator&(ProtFlag lhs, ProtFlag rhs) {
+        using underlying = typename std::underlying_type<ProtFlag>::type;
         return static_cast<underlying>(lhs) &
                static_cast<underlying>(rhs);
     }

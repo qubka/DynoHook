@@ -5,7 +5,7 @@ using namespace dyno;
 Register Registers::s_none{NONE, SIZE_INVALID};
 regs_t Registers::s_scratch = {
 #if DYNO_ARCH_X86 == 64
-#ifdef DYNO_PLATFORM_WINDOWS
+#if DYNO_PLATFORM_WINDOWS
     RAX,
     RCX,
     RDX,
@@ -46,7 +46,7 @@ Register::Register(RegisterType type, RegisterSize size, uint8_t alignment) : m_
     if (m_size == 0)
         m_address = nullptr;
     else if (m_alignment > 0)
-#ifdef DYNO_PLATFORM_WINDOWS
+#if DYNO_PLATFORM_WINDOWS
         m_address = _aligned_malloc(m_size, m_alignment);
 #else
         m_address = aligned_alloc(alignment, size);
@@ -57,7 +57,7 @@ Register::Register(RegisterType type, RegisterSize size, uint8_t alignment) : m_
 
 Register::~Register() {
     if (m_address) {
-#ifdef DYNO_PLATFORM_WINDOWS
+#if DYNO_PLATFORM_WINDOWS
         if (m_alignment > 0)
             _aligned_free(m_address);
         else
@@ -73,7 +73,7 @@ Register::Register(const Register& other) {
     m_size = other.m_size;
     m_alignment = other.m_alignment;
     if (m_alignment > 0)
-#ifdef DYNO_PLATFORM_WINDOWS
+#if DYNO_PLATFORM_WINDOWS
         m_address = _aligned_malloc(m_size, m_alignment);
 #else
         m_address = aligned_alloc(m_alignment, m_size);
@@ -223,7 +223,7 @@ const static std::array<RegisterInfo, REG_COUNT> reg_table = {{
     {"XMM13", SIZE_XMMWORD, SIZE_XMMWORD},
     {"XMM14", SIZE_XMMWORD, SIZE_XMMWORD},
     {"XMM15", SIZE_XMMWORD, SIZE_XMMWORD},
-#ifdef DYNO_PLATFORM_AVX512
+#if DYNO_PLATFORM_AVX512
     {"XMM16", SIZE_XMMWORD, SIZE_XMMWORD},
     {"XMM17", SIZE_XMMWORD, SIZE_XMMWORD},
     {"XMM18", SIZE_XMMWORD, SIZE_XMMWORD},
@@ -263,7 +263,7 @@ const static std::array<RegisterInfo, REG_COUNT> reg_table = {{
     {"YMM13", SIZE_YMMWORD, SIZE_YMMWORD},
     {"YMM14", SIZE_YMMWORD, SIZE_YMMWORD},
     {"YMM15", SIZE_YMMWORD, SIZE_YMMWORD},
-#ifdef DYNO_PLATFORM_AVX512
+#if DYNO_PLATFORM_AVX512
     {"YMM16", SIZE_YMMWORD, SIZE_YMMWORD},
     {"YMM17", SIZE_YMMWORD, SIZE_YMMWORD},
     {"YMM18", SIZE_YMMWORD, SIZE_YMMWORD},
@@ -286,7 +286,7 @@ const static std::array<RegisterInfo, REG_COUNT> reg_table = {{
     // ========================================================================
     // >> 512-bit ZMM registers
     // ========================================================================
-#ifdef DYNO_PLATFORM_AVX512
+#if DYNO_PLATFORM_AVX512
     {"ZMM0", SIZE_ZMMWORD, SIZE_ZMMWORD},
     {"ZMM1", SIZE_ZMMWORD, SIZE_ZMMWORD},
     {"ZMM2", SIZE_ZMMWORD, SIZE_ZMMWORD},
@@ -400,7 +400,7 @@ size_t dyno::RegisterTypeToSSEIndex(RegisterType reg) {
         case XMM13: return 13;
         case XMM14: return 14;
         case XMM15: return 15;
-#ifdef DYNO_PLATFORM_AVX512
+#if DYNO_PLATFORM_AVX512
         case XMM16: return 16;
         case XMM17: return 17;
         case XMM18: return 18;
@@ -440,7 +440,7 @@ size_t dyno::RegisterTypeToSSEIndex(RegisterType reg) {
         case YMM13: return 13;
         case YMM14: return 14;
         case YMM15: return 15;
-#ifdef DYNO_PLATFORM_AVX512
+#if DYNO_PLATFORM_AVX512
         case YMM16: return 16;
         case YMM17: return 17;
         case YMM18: return 18;
@@ -463,7 +463,7 @@ size_t dyno::RegisterTypeToSSEIndex(RegisterType reg) {
         // ========================================================================
         // >> 512-bit ZMM registers
         // ========================================================================
-#ifdef DYNO_PLATFORM_AVX512
+#if DYNO_PLATFORM_AVX512
         case ZMM0: return 0;
         case ZMM1: return 1;
         case ZMM2: return 2;
@@ -525,7 +525,7 @@ RegisterType dyno::SSEIndexToRegisterType(size_t index, size_t size) {
                 case 13: return XMM13;
                 case 14: return XMM14;
                 case 15: return XMM15;
-#ifdef DYNO_PLATFORM_AVX512
+#if DYNO_PLATFORM_AVX512
                 case 16: return XMM16;
                 case 17: return XMM17;
                 case 18: return XMM18;
@@ -569,7 +569,7 @@ RegisterType dyno::SSEIndexToRegisterType(size_t index, size_t size) {
                 case 13: return YMM13;
                 case 14: return YMM14;
                 case 15: return YMM15;
-#ifdef DYNO_PLATFORM_AVX512
+#if DYNO_PLATFORM_AVX512
                 case 16: return YMM16;
                 case 17: return YMM17;
                 case 18: return YMM18;
@@ -594,7 +594,7 @@ RegisterType dyno::SSEIndexToRegisterType(size_t index, size_t size) {
             // ========================================================================
             // >> 512-bit ZMM registers
             // ========================================================================
-#ifdef DYNO_PLATFORM_AVX512
+#if DYNO_PLATFORM_AVX512
         case SIZE_ZMMWORD:
             switch (index) {
                 case 0: return ZMM0;

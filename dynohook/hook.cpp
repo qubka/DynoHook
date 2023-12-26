@@ -224,7 +224,7 @@ void Hook::writeModifyReturnAddress(Assembler& a) {
     void (DYNO_CDECL Hook::*setReturnAddress)(void*, void*) = &Hook::setReturnAddress;
 
 #if DYNO_ARCH_X86 == 64
-#ifdef DYNO_PLATFORM_WINDOWS
+#if DYNO_PLATFORM_WINDOWS
     a.mov(r8, rsp);
     a.mov(rdx, qword_ptr(rsp));
     a.mov(rcx, this);
@@ -296,7 +296,7 @@ bool Hook::createPostCallback() {
     void* (DYNO_CDECL Hook::*getReturnAddress)(void*) = &Hook::getReturnAddress;
 
 #if DYNO_ARCH_X86 == 64
-#ifdef DYNO_PLATFORM_WINDOWS
+#if DYNO_PLATFORM_WINDOWS
     a.mov(rdx, rsp);
     a.mov(rcx, this);
     a.sub(rsp, 40);
@@ -352,7 +352,7 @@ void Hook::writeCallHandler(Assembler& a, CallbackType type) const {
 
     // call the global hook handler
 #if DYNO_ARCH_X86 == 64
-#ifdef DYNO_PLATFORM_WINDOWS
+#if DYNO_PLATFORM_WINDOWS
     a.mov(rdx, type);
     a.mov(rcx, this);
     a.sub(rsp, 40);
@@ -569,7 +569,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, CallbackType) const 
         case XMM13: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm13); break;
         case XMM14: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm14); break;
         case XMM15: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm15); break;
-#ifdef DYNO_PLATFORM_AVX512
+#if DYNO_PLATFORM_AVX512
         case XMM16: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm16); break;
         case XMM17: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm17); break;
         case XMM18: a.mov(rax, addr); a.movaps(xmmword_ptr(rax), xmm18); break;
@@ -607,7 +607,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, CallbackType) const 
         case YMM13: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm13); break;
         case YMM14: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm14); break;
         case YMM15: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm15); break;
-#ifdef DYNO_PLATFORM_AVX512
+#if DYNO_PLATFORM_AVX512
         case YMM16: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm16); break;
         case YMM17: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm17); break;
         case YMM18: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm18); break;
@@ -629,7 +629,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, CallbackType) const 
         // ========================================================================
         // >> 512-bit ZMM registers
         // ========================================================================
-#ifdef DYNO_PLATFORM_AVX512
+#if DYNO_PLATFORM_AVX512
         case ZMM0: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm0); break;
         case ZMM1: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm1); break;
         case ZMM2: a.mov(rax, addr); a.vmovaps(zmmword_ptr(rax), zmm2); break;
@@ -806,7 +806,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, CallbackType) const 
         case XMM13: a.mov(rax, addr); a.movaps(xmm13, xmmword_ptr(rax)); break;
         case XMM14: a.mov(rax, addr); a.movaps(xmm14, xmmword_ptr(rax)); break;
         case XMM15: a.mov(rax, addr); a.movaps(xmm15, xmmword_ptr(rax)); break;
-#ifdef DYNO_PLATFORM_AVX512
+#if DYNO_PLATFORM_AVX512
         case XMM16: a.mov(rax, addr); a.movaps(xmm16, xmmword_ptr(rax)); break;
         case XMM17: a.mov(rax, addr); a.movaps(xmm17, xmmword_ptr(rax)); break;
         case XMM18: a.mov(rax, addr); a.movaps(xmm18, xmmword_ptr(rax)); break;
@@ -844,7 +844,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, CallbackType) const 
         case YMM13: a.mov(rax, addr); a.vmovaps(ymm13, ymmword_ptr(rax)); break;
         case YMM14: a.mov(rax, addr); a.vmovaps(ymm14, ymmword_ptr(rax)); break;
         case YMM15: a.mov(rax, addr); a.vmovaps(ymm15, ymmword_ptr(rax)); break;
-#ifdef DYNO_PLATFORM_AVX512
+#if DYNO_PLATFORM_AVX512
         case YMM16: a.mov(rax, addr); a.vmovaps(ymm16, ymmword_ptr(rax)); break;
         case YMM17: a.mov(rax, addr); a.vmovaps(ymm17, ymmword_ptr(rax)); break;
         case YMM18: a.mov(rax, addr); a.vmovaps(ymm18, ymmword_ptr(rax)); break;
@@ -866,7 +866,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, CallbackType) const 
         // ========================================================================
         // >> 512-bit ZMM registers
         // ========================================================================
-#ifdef DYNO_PLATFORM_AVX512
+#if DYNO_PLATFORM_AVX512
         case ZMM0: a.mov(rax, addr); a.vmovaps(zmm0, zmmword_ptr(rax)); break;
         case ZMM1: a.mov(rax, addr); a.vmovaps(zmm1, zmmword_ptr(rax)); break;
         case ZMM2: a.mov(rax, addr); a.vmovaps(zmm2, zmmword_ptr(rax)); break;
