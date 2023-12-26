@@ -52,7 +52,7 @@ namespace dyno {
 
     //Credit to Dogmatt on unknowncheats.me for IsValidPtr
     // and https://docs.microsoft.com/en-us/windows-hardware/drivers/gettingstarted/virtual-address-spaces
-    #if DYNO_PLATFORM_WINDOWS
+    #if DYNO_PLATFORM_WINDOWS && DYNO_ARCH_X86 == 64
     #define _PTR_MAX_VALUE ((void*)0x000F000000000000)
     #else
     #define _PTR_MAX_VALUE ((void*)0xFFF00000)
