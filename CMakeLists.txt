@@ -40,14 +40,14 @@ include(git.cmake)
 
 option(DYNOHOOK_BUILD_DLL "Build dll & lib instead of tests" OFF)
 
-option(DYNOHOOK_BUILD_SHARED_LIB "Build dynohook as shared libary" OFF)
-option(DYNOHOOK_BUILD_SHARED_ASMTK "Build asmtk as shared libary" OFF)
-option(DYNOHOOK_BUILD_SHARED_ASMJIT "Build asmjit as shared libary" ${DYNOHOOK_BUILD_SHARED_ASMTK})
-option(DYNOHOOK_BUILD_SHARED_ZYDIS "Build zydis as shared libary" OFF)
+option(DYNOHOOK_BUILD_SHARED_LIB "Build dynohook as shared library" OFF)
+option(DYNOHOOK_BUILD_SHARED_ASMTK "Build asmtk as shared library" OFF)
+option(DYNOHOOK_BUILD_SHARED_ASMJIT "Build asmjit as shared library" ${DYNOHOOK_BUILD_SHARED_ASMTK})
+option(DYNOHOOK_BUILD_SHARED_ZYDIS "Build zydis as shared library" OFF)
 
-option(DYNOHOOK_USE_EXTERNAL_ASMTK "Use external asmtk libary" OFF)
-option(DYNOHOOK_USE_EXTERNAL_ASMJIT "Use external asmjit libary" ${DYNOHOOK_USE_EXTERNAL_ASMTK})
-option(DYNOHOOK_USE_EXTERNAL_ZYDIS "Use external zydis libary" OFF)
+option(DYNOHOOK_USE_EXTERNAL_ASMTK "Use external asmtk library" OFF)
+option(DYNOHOOK_USE_EXTERNAL_ASMJIT "Use external asmjit library" ${DYNOHOOK_USE_EXTERNAL_ASMTK})
+option(DYNOHOOK_USE_EXTERNAL_ZYDIS "Use external zydis library" OFF)
 
 if(MSVC)
     option(DYNOHOOK_BUILD_STATIC_RUNTIME "Use static runtime" ON)
