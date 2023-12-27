@@ -8,7 +8,7 @@ MemProtector::MemProtector(uintptr_t address, size_t length, ProtFlag prot, MemA
     m_address{address},
     m_length{length},
     m_unsetLater{unsetOnDestroy},
-    m_accessor{accessor}
+    m_accessor{accessor},
     m_status{false} {
     m_origProtection = m_accessor.mem_protect(address, length, prot, m_status);
 }
