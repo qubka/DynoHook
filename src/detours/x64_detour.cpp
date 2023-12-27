@@ -1,4 +1,4 @@
-#include "x64_detour.h"
+#include <dynohook/detours/x64_detour.h>
 
 #include <asmtk/asmtk.h>
 #include <Zydis/Register.h>

@@ -1,4 +1,4 @@
-#include "hook.h"
+#include <dynohook/hook.h>
 
 using namespace std::string_literals;
 

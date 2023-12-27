@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dynohook/convention.h"
+#include <dynohook/convention.h>
 
 /*
     Source: DynCall manual and Windows docs
@@ -23,7 +23,7 @@
         - floating pointer types are returned via the xmm0 register
 */
 namespace dyno {
-    class x64MsFastCall : public CallingConvention {
+    class x64MsFastCall : public ICallingConvention {
     public:
         x64MsFastCall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = SIZE_QWORD);
         ~x64MsFastCall() override = default;

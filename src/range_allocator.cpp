@@ -1,5 +1,5 @@
-#include "range_allocator.h"
-#include "fb_allocator.h"
+#include <dynohook/range_allocator.h>
+#include <dynohook/fb_allocator.h>
 
 using namespace dyno;
 

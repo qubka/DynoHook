@@ -83,7 +83,7 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
     SECTION("Verify vtable hook") {
         dyno::ConvFunc callConvInt = []{ return new DEFAULT_CALLCONV({}, dyno::DataType::Int32); };
 
-        auto PreNoParamVirt = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto PreNoParamVirt = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             DYNO_UNUSED(hook);
             dyno::StackCanary canary;
@@ -92,7 +92,7 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
             return dyno::ReturnAction::Handled;
         };
 
-        auto PostNoParamVirt = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto PostNoParamVirt = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             std::cout << "PostNoParamVirt 1 Called!" << std::endl;
@@ -143,7 +143,7 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
 #endif // DYNO_ARCH_X86
         };
 
-        auto PreMultParamVirt = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto PreMultParamVirt = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             DYNO_UNUSED(hook);
             dyno::StackCanary canary;
@@ -187,7 +187,7 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
         };
 
 
-        auto PostMultParamVirt = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto PostMultParamVirt = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             std::cout << "PostMultParamVirt 3 Called!" << std::endl;
@@ -199,7 +199,7 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
             return dyno::ReturnAction::Handled;
         };
 
-        auto PostMultParamVirt2 = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto PostMultParamVirt2 = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             std::cout << "PostMultParamVirt(2) 3 Called!" << std::endl;

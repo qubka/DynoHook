@@ -1,7 +1,7 @@
 #pragma once
 
 #include "convention.h"
-#include "hook.h"
+#include "_hook.h"
 #include "virtuals/vtable.h"
 #include "detours/nat_detour.h"
 
@@ -24,7 +24,7 @@ namespace dyno {
          * @param convention
          * @return NULL or the Hook instance.
          */
-        std::shared_ptr<Hook> hook(void* pFunc, const ConvFunc& convention);
+        std::shared_ptr<IHook> hook(void* pFunc, const ConvFunc& convention);
 
         /**
          * @brief Creates a function hook inside the virtual function table.
@@ -34,7 +34,7 @@ namespace dyno {
          * @param convention
          * @return NULL or the Hook instance.
          */
-        std::shared_ptr<Hook> hook(void* pClass, size_t index, const ConvFunc& convention);
+        std::shared_ptr<IHook> hook(void* pClass, size_t index, const ConvFunc& convention);
 
         /**
          * @brief Removes all callbacks and restores the original function.
@@ -56,7 +56,7 @@ namespace dyno {
          * @param pFunc address to apply the hook to.
          * @return NULL or the found Hook instance.
          */
-        std::shared_ptr<Hook> find(void* pFunc) const;
+        std::shared_ptr<IHook> find(void* pFunc) const;
 
         /**
          * @brief Finds the hook for a given class and virtual function index.
@@ -64,7 +64,7 @@ namespace dyno {
          * @param index index of the function to hook inside the virtual function table. (starting at 0)
          * @return NULL or the found Hook instance.
          */
-        std::shared_ptr<Hook> find(void* pClass, size_t index) const;
+        std::shared_ptr<IHook> find(void* pClass, size_t index) const;
 
         /**
          * @brief Removes all callbacks and restores all functions.

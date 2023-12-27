@@ -1,4 +1,4 @@
-#include "log.h"
+#include <dynohook/log.h>
 
 using namespace dyno;
 

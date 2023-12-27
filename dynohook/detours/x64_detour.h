@@ -1,7 +1,7 @@
 #pragma once
 
-#include "dynohook/detours/detour.h"
-#include "dynohook/range_allocator.h"
+#include <dynohook/detours/detour.h>
+#include <dynohook/range_allocator.h>
 
 namespace dyno {
     class x64Detour final : public Detour {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dynohook/convention.h"
+#include <dynohook/convention.h>
 
 /*
     Source: DynCall manual and System V docs
@@ -25,7 +25,7 @@
         - floating pointer types are returned via the xmm0 and xmm1 register
 */
 namespace dyno {
-    class x64SystemVcall : public CallingConvention {
+    class x64SystemVcall : public ICallingConvention {
     public:
         x64SystemVcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = SIZE_QWORD);
         ~x64SystemVcall() override;

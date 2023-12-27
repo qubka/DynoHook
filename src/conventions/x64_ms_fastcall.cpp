@@ -1,9 +1,9 @@
-#include "x64_ms_fastcall.h"
+#include <dynohook/conventions/x64_ms_fastcall.h>
 
 using namespace dyno;
 
 x64MsFastCall::x64MsFastCall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
-    CallingConvention{std::move(arguments), returnType, alignment} {
+    ICallingConvention{std::move(arguments), returnType, alignment} {
     // don't force the register on the user
 
     RegisterType registers[] = { RCX, RDX, R8, R9 };

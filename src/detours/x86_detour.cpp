@@ -1,4 +1,4 @@
-#include "x86_detour.h"
+#include <dynohook/x86_detour.h>
 
 using namespace dyno;
 

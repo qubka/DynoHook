@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dynohook/hook.h"
+#include <dynohook/hook.h>
 
 namespace dyno {
     class VHook final : public Hook {

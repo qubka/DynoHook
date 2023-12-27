@@ -1,5 +1,5 @@
-#include "instruction.h"
-#include "mem_accessor.h"
+#include <dynohook/instruction.h>
+#include <dynohook/mem_accessor.h>
 
 using namespace dyno;
 

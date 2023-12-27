@@ -1,6 +1,6 @@
-#include "mem_protector.h"
-#include "mem_accessor.h"
-#include "os.h"
+#include <dynohook/mem_protector.h>
+#include <dynohook/mem_accessor.h>
+#include <dynohook/os.h>
 
 using namespace dyno;
 

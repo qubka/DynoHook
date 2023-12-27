@@ -1,6 +1,5 @@
-#include "vtable.h"
-
-#include "dynohook/mem_protector.h"
+#include <dynohook/virtuals/vtable.h>
+#include <dynohook/mem_protector.h>
 
 using namespace dyno;
 

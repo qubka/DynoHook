@@ -1,8 +1,8 @@
-#include "manager.h"
+#include <dynohook/manager.h>
 
 using namespace dyno;
 
-std::shared_ptr<Hook> HookManager::hook(void* pFunc, const ConvFunc& convention) {
+std::shared_ptr<IHook> HookManager::hook(void* pFunc, const ConvFunc& convention) {
     if (!pFunc)
         return nullptr;
 
@@ -20,7 +20,7 @@ std::shared_ptr<Hook> HookManager::hook(void* pFunc, const ConvFunc& convention)
     return detour;
 }
 
-std::shared_ptr<Hook> HookManager::hook(void* pClass, size_t index, const ConvFunc& convention) {
+std::shared_ptr<IHook> HookManager::hook(void* pClass, size_t index, const ConvFunc& convention) {
     if (!pClass)
         return nullptr;
 
@@ -72,12 +72,12 @@ bool HookManager::unhook(void* pClass, size_t index) {
     return false;
 }
 
-std::shared_ptr<Hook> HookManager::find(void* pFunc) const {
+std::shared_ptr<IHook> HookManager::find(void* pFunc) const {
     auto it = m_detours.find(pFunc);
     return it != m_detours.end() ? it->second : nullptr;
 }
 
-std::shared_ptr<Hook> HookManager::find(void* pClass, size_t index) const {
+std::shared_ptr<IHook> HookManager::find(void* pClass, size_t index) const {
     auto it = m_vtables.find(pClass);
     return it != m_vtables.end() ? it->second->find(index) : nullptr;
 }

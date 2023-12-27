@@ -1,4 +1,4 @@
-#include "x86_ms_stdcall.h"
+#include <dynohook/conventions/x86_ms_stdcall.h>
 
 using namespace dyno;
 

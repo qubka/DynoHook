@@ -1,10 +1,10 @@
 #pragma once
 
-#include "dynohook/disassembler.h"
-#include "dynohook/mem_accessor.h"
-#include "dynohook/mem_protector.h"
-#include "dynohook/instruction.h"
-#include "dynohook/hook.h"
+#include <dynohook/disassembler.h>
+#include <dynohook/mem_accessor.h>
+#include <dynohook/mem_protector.h>
+#include <dynohook/instruction.h>
+#include <dynohook/hook.h>
 
 namespace dyno {
     class Detour : public Hook {

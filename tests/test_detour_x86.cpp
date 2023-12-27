@@ -97,7 +97,7 @@ TEST_CASE("Testing x86 detours", "[x86Detour][Detour]") {
     dyno::ConvFunc callConvInt = []{ return new DEFAULT_CALLCONV({}, dyno::DataType::Int32); };
     dyno::ConvFunc callConvVoid = []{ return new DEFAULT_CALLCONV({}, dyno::DataType::Void); };
 
-    auto PostHook1 = +[](dyno::CallbackType type, dyno::Hook& hook) {
+    auto PostHook1 = +[](dyno::CallbackType type, dyno::IHook& hook) {
         DYNO_UNUSED(type);
         DYNO_UNUSED(hook);
         dyno::StackCanary canary;
@@ -161,7 +161,7 @@ TEST_CASE("Testing x86 detours", "[x86Detour][Detour]") {
     }
 
     SECTION("Loop") {
-        auto PreLoopHook = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto PreLoopHook = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             DYNO_UNUSED(hook);
             dyno::StackCanary canary;

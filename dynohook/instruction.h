@@ -237,7 +237,7 @@ namespace dyno {
 
     inline std::ostream& operator<<(std::ostream& os, const Instruction& obj) {
         std::stringstream byteStream;
-        for (std::size_t i = 0; i < obj.size(); i++)
+        for (size_t i = 0; i < obj.size(); i++)
             byteStream << std::hex << std::setfill('0') << std::setw(2) << (unsigned)obj.getBytes()[i] << " ";
 
         os << std::hex << obj.getAddress() << " [" << obj.size() << "]: ";

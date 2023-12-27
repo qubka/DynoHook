@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dynohook/detours/detour.h"
+#include <dynohook/detours/detour.h>
 
 namespace dyno {
     class x86Detour final : public Detour {

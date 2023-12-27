@@ -1,43 +1,16 @@
 #pragma once
 
-#include "registers.h"
-#include "convention.h"
 #include "mem_accessor.h"
-
+#include <dynohook/_hook.h>
 #include <asmjit/asmjit.h>
 
 namespace dyno {
-    enum class HookMode : uint8_t {
-        UNKNOWN,
-        Detour,
-        VEHHOOK,
-        VTableSwap,
-        IAT,
-        EAT
-    };
-
-    enum class CallbackType : bool {
-        Pre,  // callback will be executed before the original function
-        Post  // callback will be executed after the original function
-    };
-
-    enum class ReturnAction : uint8_t {
-        Ignored,  // handler didn't take any action
-        Handled,  // we did something, but real function should still be called
-        Override, // call real function, but use my return value
-        Supercede // skip real function; use my return value
-    };
-
-    class Hook;
-    typedef ReturnAction (*CallbackHandler)(CallbackType, Hook&);
-    using ConvFunc = std::function<CallingConvention*()>;
-
     /**
      * @brief Creates and manages hooks at the beginning of a function.
      *
      * This hooking method requires knowledge of parameters and calling convention of the target function.
      */
-    class Hook : public MemAccessor {
+    class Hook : public MemAccessor, public IHook {
     public:
         /**
          * @brief Creates a new function hook.
@@ -47,79 +20,26 @@ namespace dyno {
         ~Hook() override = default;
         DYNO_NONCOPYABLE(Hook);
 
-        /**
-         * @brief Adds a callback handler to the hook.
-         * @param type The callback type.
-         * @param handler The callback handler that should be added.
-         * @return True on success, false otherwise.
-         */
-        bool addCallback(CallbackType type, CallbackHandler handler);
+        bool addCallback(CallbackType type, CallbackHandler handler) override;
+        bool removeCallback(CallbackType type, CallbackHandler handler) override;
+        bool isCallbackRegistered(CallbackType type, CallbackHandler handler) const override;
+        bool areCallbacksRegistered() const override;
 
-        /**
-         * @brief Removes a callback handler to the hook.
-         * @param type The callback type.
-         * @param handler The callback handler that should be removed.
-         * @return True on success, false otherwise.
-         */
-        bool removeCallback(CallbackType type, CallbackHandler handler);
-
-        /**
-         * @brief Checks if a callback handler is already added.
-         * @param type The callback type.
-         * @param handler The callback handler that should be checked.
-         * @return True on success, false otherwise.
-         */
-        bool isCallbackRegistered(CallbackType type, CallbackHandler handler) const;
-
-        /**
-         * @brief Checks if there are any callback handlers added to this hook.
-         * @return True on success, false otherwise.
-         */
-        bool areCallbacksRegistered() const;
-
-        template<class T>
-        T getArgument(size_t index) const {
-            return *(T*) m_callingConvention->getArgumentPtr(index, m_registers);
-        }
-
-        template<class T>
-        void setArgument(size_t index, T value) {
-            void* argumentPtr = m_callingConvention->getArgumentPtr(index, m_registers);
-            *(T*) argumentPtr = value;
-            m_callingConvention->onArgumentPtrChanged(index, m_registers, argumentPtr);
-        }
-
-        template<class T>
-        T getReturnValue() const {
-            return *(T*) m_callingConvention->getReturnPtr(m_registers);
-        }
-
-        template<class T>
-        void setReturnValue(T value) {
-            void* returnPtr = m_callingConvention->getReturnPtr(m_registers);
-            *(T*) returnPtr = value;
-            m_callingConvention->onReturnPtrChanged(m_registers, returnPtr);
-        }
-
-        virtual bool hook() = 0;
-        virtual bool unhook() = 0;
-        virtual bool rehook() {
+        bool rehook() override {
             return true;
         }
 
-        bool setHooked(bool state) {
+        bool setHooked(bool state) override {
             if (m_hooked == state)
                 return true;
 
             return state ? hook() : unhook();
         }
 
-        bool isHooked() const {
+        bool isHooked() const override {
             return m_hooked;
         }
 
-        virtual const uintptr_t& getAddress() const = 0;
-        virtual HookMode getMode() const = 0;
         const uintptr_t& getBridge() const {
             return m_fnBridge;
         }
@@ -127,6 +47,13 @@ namespace dyno {
     protected:
         bool createBridge();
         bool createPostCallback();
+
+        ICallingConvention& getCallingConvention() override {
+            return *m_callingConvention;
+        }
+        Registers& getRegisters() override {
+            return m_registers;
+        }
 
     private:
         typedef asmjit::x86::Assembler Assembler;
@@ -154,7 +81,7 @@ DYNO_OPTS_ON
         uintptr_t m_newRetAddr{ 0 };
 
         // interface if the calling convention
-        std::unique_ptr<CallingConvention> m_callingConvention;
+        std::unique_ptr<ICallingConvention> m_callingConvention;
 
         // register storage
         Registers m_registers;

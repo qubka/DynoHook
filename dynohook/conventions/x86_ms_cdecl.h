@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dynohook/convention.h"
+#include <dynohook/convention.h>
 
 /*
     Source: DynCall manual and Windows docs
@@ -23,7 +23,7 @@
         - floating pointer types are returned via the st0 register
 */
 namespace dyno {
-    class x86MsCdecl : public CallingConvention {
+    class x86MsCdecl : public ICallingConvention {
     public:
         x86MsCdecl(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = 4);
         ~x86MsCdecl() override;

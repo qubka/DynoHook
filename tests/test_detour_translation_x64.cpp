@@ -71,7 +71,7 @@ uint8_t cmpR15bByte[] = {
 
 dyno::EffectTracker ripEffects;
 
-DYNO_NOINLINE dyno::ReturnAction preCallback(dyno::CallbackType type, dyno::Hook& hook) {
+DYNO_NOINLINE dyno::ReturnAction preCallback(dyno::CallbackType type, dyno::IHook& hook) {
     DYNO_UNUSED(type);
     DYNO_UNUSED(hook);
     dyno::StackCanary canary;
@@ -81,7 +81,7 @@ DYNO_NOINLINE dyno::ReturnAction preCallback(dyno::CallbackType type, dyno::Hook
     return dyno::ReturnAction::Handled;
 }
 
-DYNO_NOINLINE dyno::ReturnAction postCallback(dyno::CallbackType type, dyno::Hook& hook) {
+DYNO_NOINLINE dyno::ReturnAction postCallback(dyno::CallbackType type, dyno::IHook& hook) {
     DYNO_UNUSED(type);
     dyno::StackCanary canary;
     std::cout << "postCallback: called" << std::endl;

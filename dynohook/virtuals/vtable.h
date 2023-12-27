@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dynohook/virtuals/vhook.h"
+#include <dynohook/virtuals/vhook.h>
 
 namespace dyno {
     class VHookCache;

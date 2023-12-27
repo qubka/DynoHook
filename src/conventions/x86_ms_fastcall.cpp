@@ -1,4 +1,4 @@
-#include "x86_ms_fastcall.h"
+#include <dynohook/conventions/x86_ms_fastcall.h>
 
 using namespace dyno;
 

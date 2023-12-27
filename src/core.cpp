@@ -1,5 +1,5 @@
-#include "core.h"
-#include "os.h"
+#include <dynohook/core.h>
+#include <dynohook/os.h>
 
 namespace dyno {
 

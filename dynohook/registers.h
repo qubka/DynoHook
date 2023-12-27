@@ -268,7 +268,7 @@ namespace dyno {
         SIZE_WORD = 2,
         SIZE_DWORD = 4,
         SIZE_QWORD = 8,
-        SIZE_TWORD = 10,
+        size_tWORD = 10,
         SIZE_XMMWORD = 16,
         SIZE_YMMWORD = 32,
         SIZE_ZMMWORD = 64
@@ -281,7 +281,6 @@ namespace dyno {
     };
 
     const RegisterInfo& RegisterTypeInfo(RegisterType reg);
-
     size_t RegisterTypeToSSEIndex(RegisterType reg);
     RegisterType SSEIndexToRegisterType(size_t index, size_t size = 0);
 

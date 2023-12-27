@@ -59,7 +59,7 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
             a.ret();
         });
 
-        auto pre_hook_valloc_function = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto pre_hook_valloc_function = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             DYNO_UNUSED(hook);
             dyno::StackCanary canary;
@@ -69,7 +69,7 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
             return dyno::ReturnAction::Handled;
         };
 
-        auto post_hook_valloc_function = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto post_hook_valloc_function = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             std::cout << "post_hook_valloc_function called" << std::endl;
@@ -106,7 +106,7 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
             a.ret();
         });
 
-        auto pre_hook_large_function = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto pre_hook_large_function = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             DYNO_UNUSED(hook);
             dyno::StackCanary canary;
@@ -116,7 +116,7 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
             return dyno::ReturnAction::Handled;
         };
 
-        auto post_hook_large_function = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto post_hook_large_function = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             std::cout << "post_hook_large_function called" << std::endl;
@@ -151,7 +151,7 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
             a.ret();
         });
 
-        auto pre_hook_medium_function = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto pre_hook_medium_function = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             DYNO_UNUSED(hook);
             dyno::StackCanary canary;
@@ -161,7 +161,7 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
             return dyno::ReturnAction::Handled;
         };
 
-        auto post_hook_medium_function = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto post_hook_medium_function = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             std::cout << "post_hook_medium_function called" << std::endl;
@@ -200,7 +200,7 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
             a.ret();
         });
 
-        auto pre_hook_rip_function = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto pre_hook_rip_function = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             DYNO_UNUSED(hook);
             dyno::StackCanary canary;
@@ -210,7 +210,7 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
             return dyno::ReturnAction::Handled;
         };
 
-        auto post_hook_rip_function = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto post_hook_rip_function = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             std::cout << "post_hook_rip_function called" << std::endl;
@@ -244,7 +244,7 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
             a.ret();
         });
 
-        /*auto pre_tramp_small_function = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        /*auto pre_tramp_small_function = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             schemeEffects.peak().trigger();

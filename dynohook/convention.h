@@ -40,7 +40,7 @@ namespace dyno {
      *
      * Inherit from this class to create your own calling convention.
      */
-    class CallingConvention {
+    class ICallingConvention {
     public:
         /**
          * @brief Initializes the calling convention.
@@ -48,9 +48,9 @@ namespace dyno {
          * @param returnType The return type of the function.
          * @param alignment
          */
-        CallingConvention(std::vector<DataObject> arguments, DataObject returnType, size_t alignment);
-        virtual ~CallingConvention() = default;
-        DYNO_NONCOPYABLE(CallingConvention);
+        ICallingConvention(std::vector<DataObject> arguments, DataObject returnType, size_t alignment);
+        virtual ~ICallingConvention() = default;
+        DYNO_NONCOPYABLE(ICallingConvention);
 
         /**
          * @brief This should return a list of RegisterType values. These registers will be saved for later access.
@@ -134,7 +134,7 @@ namespace dyno {
          * Returns the number of bytes for the buffer to store all the arguments that are passed in a stack in.
          * @return
          */
-        size_t getArgStackSize() const {
+        virtual size_t getArgStackSize() const {
             return m_stackSize;
         }
 
@@ -142,19 +142,19 @@ namespace dyno {
          * @brief Returns the number of bytes for the buffer to store all the arguments that are passed in a register in.
          * @return
          */
-        size_t getArgRegisterSize() const {
+        virtual size_t getArgRegisterSize() const {
             return m_registerSize;
         }
 
-        const std::vector<DataObject>& getArguments() const {
+        virtual const std::vector<DataObject>& getArguments() const {
             return m_arguments;
         }
 
-        DataObject getReturn() const {
+        virtual DataObject getReturn() const {
             return m_return;
         }
 
-        size_t getAlignment() const {
+        virtual size_t getAlignment() const {
             return m_alignment;
         }
 
@@ -201,19 +201,19 @@ namespace dyno {
             case DataType::Bool:
                 return Align(sizeof(bool), alignment);
             case DataType::Int8:
-                return Align(sizeof(int8_t), alignment);
+                return Align(sizeof(std::int8_t), alignment);
             case DataType::UInt8:
                 return Align(sizeof(uint8_t), alignment);
             case DataType::Int16:
-                return Align(sizeof(int16_t), alignment);
+                return Align(sizeof(std::int16_t), alignment);
             case DataType::UInt16:
                 return Align(sizeof(uint16_t), alignment);
             case DataType::Int32:
-                return Align(sizeof(int32_t), alignment);
+                return Align(sizeof(std::int32_t), alignment);
             case DataType::UInt32:
                 return Align(sizeof(uint32_t), alignment);
             case DataType::Int64:
-                return Align(sizeof(int64_t), alignment);
+                return Align(sizeof(std::int64_t), alignment);
             case DataType::UInt64:
                 return Align(sizeof(uint64_t), alignment);
             case DataType::Float:

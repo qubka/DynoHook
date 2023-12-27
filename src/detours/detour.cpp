@@ -1,4 +1,4 @@
-#include "detour.h"
+#include <dynohook/detours/detour.h>
 
 #include <cmath>
 

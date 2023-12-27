@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dynohook/convention.h"
+#include <dynohook/convention.h>
 #include "x86_ms_cdecl.h"
 
 /*

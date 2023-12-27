@@ -75,7 +75,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
     dyno::ConvFunc callConvVoid = []{ return new DEFAULT_CALLCONV({}, dyno::DataType::Void); };
     
     SECTION("Normal function") {
-        auto PostHook1 = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto PostHook1 = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             DYNO_UNUSED(hook);
             dyno::StackCanary canary;
@@ -97,7 +97,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
     }
 
     SECTION("Normal function rehook") {
-        auto PreHook1 = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto PreHook1 = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             DYNO_UNUSED(hook);
             dyno::StackCanary canary;
@@ -134,7 +134,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
     SECTION("WinApi Indirection") {
         dyno::ConvFunc callConvWinApi = []{ return new DEFAULT_CALLCONV({dyno::DataType::Pointer, dyno::DataType::Pointer, dyno::DataType::Int32, dyno::DataType::Int32}, dyno::DataType::Pointer); };
         
-        auto PostCreateMutexExA = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto PostCreateMutexExA = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             LPCSTR lpName = hook.getArgument<LPCSTR>(1);
@@ -153,7 +153,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
 #endif
 
     SECTION("Loop function") {
-        auto PostHook2 = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto PostHook2 = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             DYNO_UNUSED(hook);
             dyno::StackCanary canary;
@@ -209,7 +209,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
     /*SECTION("hook malloc") {
         dyno::ConvFunc callConvWinApi = []{ return new DEFAULT_CALLCONV({dyno::DataType::UInt64}, dyno::DataType::Pointer); };
         
-        auto PreMalloc = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto PreMalloc = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             size_t size = hook.getArgument<size_t>(0);
@@ -238,7 +238,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
         typedef unsigned long(__stdcall* tNtQueueApcThread)(void* ThreadHandle, PKNORMAL_ROUTINE ApcRoutine, void* NormalContext, void* SystemArgument1, void* SystemArgument2);
         tNtQueueApcThread pNtQueueApcthread = (tNtQueueApcThread)GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtQueueApcThread");
 
-        auto PostNtQueueApcthread = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto PostNtQueueApcthread = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             std::cout << "hkNtQueueApcThread!" << std::endl;
             return dyno::ReturnAction::Ignored;

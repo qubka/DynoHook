@@ -1,4 +1,4 @@
-#include "dynohook/tests/stack_canary.h"
+#include <dynohook/tests/stack_canary.h>
 
 #include <exception>
 

@@ -1,8 +1,8 @@
-#include "convention.h"
+#include <dynohook/convention.h>
 
 using namespace dyno;
 
-CallingConvention::CallingConvention(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
+ICallingConvention::ICallingConvention(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
     m_arguments{std::move(arguments)},
     m_return{returnType},
     m_alignment{alignment},
@@ -10,7 +10,7 @@ CallingConvention::CallingConvention(std::vector<DataObject> arguments, DataObje
     m_registerSize{0} {
 }
 
-void CallingConvention::init() {
+void ICallingConvention::init() {
     m_stackSize = 0;
     m_registerSize = 0;
 
@@ -28,20 +28,20 @@ void CallingConvention::init() {
         m_return.size = static_cast<uint16_t>(getDataTypeSize(m_return.type, m_alignment));
 }
 
-void CallingConvention::saveReturnValue(const Registers& registers) {
+void ICallingConvention::saveReturnValue(const Registers& registers) {
     std::unique_ptr<uint8_t[]> savedReturnValue = std::make_unique<uint8_t[]>(m_return.size);
     std::memcpy(savedReturnValue.get(), getReturnPtr(registers), m_return.size);
     m_savedReturnBuffers.push_back(std::move(savedReturnValue));
 }
 
-void CallingConvention::restoreReturnValue(const Registers& registers) {
+void ICallingConvention::restoreReturnValue(const Registers& registers) {
     uint8_t* savedReturnValue = m_savedReturnBuffers.back().get();
     std::memcpy(getReturnPtr(registers), savedReturnValue, m_return.size);
     onReturnPtrChanged(registers, savedReturnValue);
     m_savedReturnBuffers.pop_back();
 }
 
-void CallingConvention::saveCallArguments(const Registers& registers) {
+void ICallingConvention::saveCallArguments(const Registers& registers) {
     size_t argTotalSize = getArgStackSize() + getArgRegisterSize();
     std::unique_ptr<uint8_t[]> savedCallArguments = std::make_unique<uint8_t[]>(argTotalSize);
     size_t offset = 0;
@@ -53,7 +53,7 @@ void CallingConvention::saveCallArguments(const Registers& registers) {
     m_savedCallArguments.push_back(std::move(savedCallArguments));
 }
 
-void CallingConvention::restoreCallArguments(const Registers& registers) {
+void ICallingConvention::restoreCallArguments(const Registers& registers) {
     uint8_t* savedCallArguments = m_savedCallArguments.back().get();
     size_t offset = 0;
     for (size_t i = 0; i < m_arguments.size(); i++) {

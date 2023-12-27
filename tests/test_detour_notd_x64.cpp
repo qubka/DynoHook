@@ -47,7 +47,7 @@ TEST_CASE("Simple Callback", "[AsmJit][Callback]") {
         dyno::StackCanary canary;
         dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int32}, dyno::DataType::Void); };
 
-        auto preHookMeInt = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto preHookMeInt = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
 
@@ -74,7 +74,7 @@ TEST_CASE("Simple Callback", "[AsmJit][Callback]") {
         dyno::StackCanary canary;
         dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Float}, dyno::DataType::Void); };
 
-        auto preHookMeFloat = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto preHookMeFloat = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
 
@@ -101,7 +101,7 @@ TEST_CASE("Simple Callback", "[AsmJit][Callback]") {
         dyno::StackCanary canary;
         dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double}, dyno::DataType::Void); };
 
-        auto preHookMeIntFloatDouble = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto preHookMeIntFloatDouble = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
 
@@ -233,7 +233,7 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
         dyno::StackCanary canary;
         dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Int32); };
 
-        auto pre_rw_int = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto pre_rw_int = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             
@@ -262,7 +262,7 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
         dyno::StackCanary canary;
         dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Float); };
     
-        auto pre_rw_float = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto pre_rw_float = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             
@@ -291,7 +291,7 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
         dyno::StackCanary canary;
         dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Double); };
 
-        auto pre_rw_double = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto pre_rw_double = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             
@@ -320,7 +320,7 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
         dyno::StackCanary canary;
         dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double, dyno::DataType::Double}, dyno::DataType::Void); };
 
-        auto pre_rw_void = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto pre_rw_void = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
 
@@ -346,7 +346,7 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
         dyno::StackCanary canary;
         dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64, dyno::DataType::Int64}, dyno::DataType::Int64); };
 
-        auto pre_rw_long = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto pre_rw_long = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
 
@@ -357,7 +357,7 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
             return dyno::ReturnAction::Handled;
         };
 
-        auto post_rw_long = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto post_rw_long = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
 
@@ -387,7 +387,7 @@ TEST_CASE("Callback Return re-writing", "[Convention]") {
         dyno::StackCanary canary;
         dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Int32); };
 
-        auto post_rw_int = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto post_rw_int = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             
@@ -414,7 +414,7 @@ TEST_CASE("Callback Return re-writing", "[Convention]") {
         dyno::StackCanary canary;
         dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Float); };
     
-        auto post_rw_float = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto post_rw_float = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             
@@ -441,7 +441,7 @@ TEST_CASE("Callback Return re-writing", "[Convention]") {
         dyno::StackCanary canary;
         dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Double); };
 
-        auto post_rw_double = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto post_rw_double = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             
@@ -483,7 +483,7 @@ TEST_CASE("Callback Skip original function", "[Convention]") {
         dyno::StackCanary canary;
         dyno::ConvFunc callConv = []{ return new DEFAULT_CALLCONV({dyno::DataType::Int32, dyno::DataType::Float, dyno::DataType::Double, dyno::DataType::Int32}, dyno::DataType::Bool); };
     
-        auto pre_rw_bool = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto pre_rw_bool = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             DYNO_UNUSED(hook);
             dyno::StackCanary canary;
@@ -493,7 +493,7 @@ TEST_CASE("Callback Skip original function", "[Convention]") {
             return dyno::ReturnAction::Supercede;
         };
         
-        auto post_rw_bool = +[](dyno::CallbackType type, dyno::Hook& hook) {
+        auto post_rw_bool = +[](dyno::CallbackType type, dyno::IHook& hook) {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
 
