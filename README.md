@@ -73,7 +73,7 @@ void main() {
 	HookManager& manager = HookManager::Get();
 
 	// Hook the function
-	Hook* hook = manager.hook((uintptr_t) &MyFunc, [] { return new x64MsFastCall({DataType::Int, DataType::Int}, DataType::Int); });
+	Hook* hook = manager.hook((uintptr_t) &MyFunc, [] { return new x64WindowsCall({DataType::Int, DataType::Int}, DataType::Int); });
 
 	// Add the callbacks
 	hook->addCallback(CallbackType::Pre, (CallbackHandler) PreMyFunc);
@@ -161,7 +161,7 @@ void main() {
 	int (MyClass::*myFunc)(int, int) = &MyClass::myFunc;
 
 	// Hook the function
-	Hook* hook = manager.hook((uintptr_t) &myFunc, [] { return new x64MsFastCall({DataType::Pointer, DataType::Int, DataType::Int}, DataType::Int); });
+	Hook* hook = manager.hook((uintptr_t) &myFunc, [] { return new x64WindowsCall({DataType::Pointer, DataType::Int, DataType::Int}, DataType::Int); });
 
 	// Add the callbacks
 	hook->addCallback(CallbackType::Pre, (CallbackHandler) &PreMyFunc);
@@ -255,7 +255,7 @@ void test() {
     g_pMyClass = &a;
 
     // hook the function
-    Hook* hook = manager.hook(&a, 0, [] { return new x64MsFastCall({DataType::Pointer, DataType::Int, DataType::Int}, DataType::Int); });
+    Hook* hook = manager.hook(&a, 0, [] { return new x64WindowsCall({DataType::Pointer, DataType::Int, DataType::Int}, DataType::Int); });
 
     // add the callbacks
     hook->addCallback(CallbackType::Pre, (CallbackHandler) &PreMyFunc);

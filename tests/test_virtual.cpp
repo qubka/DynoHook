@@ -15,8 +15,8 @@
 #endif
 #elif DYNO_ARCH_X86 == 64
 #if DYNO_PLATFORM_WINDOWS
-#include "dynohook/conventions/x64_ms_fastcall.h"
-#define DEFAULT_CALLCONV dyno::x64MsFastCall
+#include "dynohook/conventions/x64_windows_call.h"
+#define DEFAULT_CALLCONV dyno::x64WindowsCall
 #else
 #include "dynohook/conventions/x64_systemV_call.h"
 #define DEFAULT_CALLCONV dyno::x64SystemVcall

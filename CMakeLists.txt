@@ -328,12 +328,12 @@ endif()
 #Feature/CallConv
 if(DYNOHOOK_BUILD_64)
 	set(DYNOHOOK_CALLCONV_HEADERS
-            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x64_ms_fastcall.h
+            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x64_windows_call.h
             ${PROJECT_SOURCE_DIR}/dynohook/conventions/x64_systemV_call.h)
 	install(FILES ${DYNOHOOK_CALLCONV_HEADERS} DESTINATION include/dynohook/conventions)
 
 	target_sources(${PROJECT_NAME} PRIVATE
-            ${PROJECT_SOURCE_DIR}/src/conventions/x64_ms_fastcall.cpp
+            ${PROJECT_SOURCE_DIR}/src/conventions/x64_windows_call.cpp
             ${PROJECT_SOURCE_DIR}/src/conventions/x64_systemV_call.cpp)
 elseif(DYNOHOOK_BUILD_32)
 	set(DYNOHOOK_CALLCONV_HEADERS

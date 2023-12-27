@@ -1,8 +1,8 @@
-#include <dynohook/conventions/x64_ms_fastcall.h>
+#include <dynohook/conventions/x64_windows_call.h>
 
 using namespace dyno;
 
-x64MsFastCall::x64MsFastCall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
+x64WindowsCall::x64WindowsCall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
     ICallingConvention{std::move(arguments), returnType, alignment} {
     // don't force the register on the user
 
@@ -25,7 +25,7 @@ x64MsFastCall::x64MsFastCall(std::vector<DataObject> arguments, DataObject retur
     init();
 }
 
-regs_t x64MsFastCall::getRegisters() {
+regs_t x64WindowsCall::getRegisters() {
     regs_t registers;
 
     registers.push_back(RSP);
@@ -44,11 +44,11 @@ regs_t x64MsFastCall::getRegisters() {
     return registers;
 }
 
-void** x64MsFastCall::getStackArgumentPtr(const Registers& registers) {
+void** x64WindowsCall::getStackArgumentPtr(const Registers& registers) {
     return (void**) (registers[RSP].getValue<uintptr_t>() + 8);
 }
 
-void* x64MsFastCall::getArgumentPtr(size_t index, const Registers& registers) {
+void* x64WindowsCall::getArgumentPtr(size_t index, const Registers& registers) {
     if (index >= m_arguments.size())
         return nullptr;
 
@@ -72,17 +72,17 @@ void* x64MsFastCall::getArgumentPtr(size_t index, const Registers& registers) {
     return (void*) (registers[RSP].getValue<uintptr_t>() + offset);
 }
 
-void x64MsFastCall::onArgumentPtrChanged(size_t index, const Registers& registers, void* argumentPtr) {
+void x64WindowsCall::onArgumentPtrChanged(size_t index, const Registers& registers, void* argumentPtr) {
     DYNO_UNUSED(index);
     DYNO_UNUSED(registers);
     DYNO_UNUSED(argumentPtr);
 }
 
-void* x64MsFastCall::getReturnPtr(const Registers& registers) {
+void* x64WindowsCall::getReturnPtr(const Registers& registers) {
     return *registers.at(m_return.reg, true);
 }
 
-void x64MsFastCall::onReturnPtrChanged(const Registers& registers, void* returnPtr) {
+void x64WindowsCall::onReturnPtrChanged(const Registers& registers, void* returnPtr) {
     DYNO_UNUSED(registers);
     DYNO_UNUSED(returnPtr);
 }
