@@ -3,7 +3,7 @@
 using namespace dyno;
 
 x86Detour::x86Detour(uintptr_t fnAddress, const ConvFunc& convention)
-        : Detour{fnAddress, convention, getArchType()} {}
+        : Detour(fnAddress, convention, getArchType()) {}
 
 Mode x86Detour::getArchType() const {
     return Mode::x86;
@@ -76,7 +76,7 @@ bool x86Detour::hook() {
     m_hookSize = (uint32_t) roundProlSz;
     m_nopProlOffset = (uint16_t) minProlSz;
 
-    MemProtector prot{m_fnAddress, m_hookSize, ProtFlag::RWX, *this};
+    MemProtector prot(m_fnAddress, m_hookSize, ProtFlag::RWX, *this);
 
     m_hookInsts = makex86Jmp(m_fnAddress, m_fnBridge);
     DYNO_LOG("Hook instructions:\n" + instsToStr(m_hookInsts) + "\n", ErrorLevel::INFO);
@@ -132,7 +132,7 @@ bool x86Detour::makeTrampoline(insts_t& prologue, insts_t& trampolineOut) {
     } while (instsNeedingEntry.size() > neededEntryCount);
 
     const intptr_t delta = (intptr_t) (m_trampoline - prolStart);
-    MemProtector prot{m_trampoline, m_trampolineSz, ProtFlag::R | ProtFlag::W | ProtFlag::X, *this, false};
+    MemProtector prot(m_trampoline, m_trampolineSz, ProtFlag::R | ProtFlag::W | ProtFlag::X, *this, false);
 
     // Insert jmp from trampoline -> prologue after overwritten section
     const uintptr_t jmpToProlAddr = m_trampoline + prolSz;

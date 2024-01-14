@@ -156,7 +156,7 @@ bool Hook::createBridge() {
 
     CodeHolder code;
     code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpuFeatures());
-    Assembler a{&code};
+    Assembler a(&code);
 
     Label override = a.newLabel();
 
@@ -270,7 +270,7 @@ bool Hook::createPostCallback() {
 
     CodeHolder code;
     code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpuFeatures());
-    Assembler a{&code};
+    Assembler a(&code);
 
     // gets pop size + return address
     size_t popSize = m_callingConvention->getPopSize() + sizeof(void*);

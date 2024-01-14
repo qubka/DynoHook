@@ -110,7 +110,7 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 		accessor.mem_protect((uintptr_t) cmpQwordImm, sizeof(cmpQwordImm), dyno::ProtFlag::RWX, status);
 		REQUIRE(status == true);
 
-        dyno::x64Detour detour{(uintptr_t) cmpQwordImm, callConvRetInt};
+        dyno::x64Detour detour((uintptr_t) cmpQwordImm, callConvRetInt);
 
         REQUIRE(detour.hook());
 
@@ -130,7 +130,7 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 
     SECTION("cmp dword & imm") {
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) cmpDwordImm, callConvRetInt};
+        dyno::x64Detour detour((uintptr_t) cmpDwordImm, callConvRetInt);
 
         REQUIRE(detour.hook());
         REQUIRE(detour.unhook());
@@ -139,7 +139,7 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 
     SECTION("cmp word & imm") {
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) cmpWordImm, callConvRetInt};
+        dyno::x64Detour detour((uintptr_t) cmpWordImm, callConvRetInt);
 
         REQUIRE(detour.hook());
         REQUIRE(detour.unhook());
@@ -147,7 +147,7 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 
     SECTION("cmp byte & imm") {
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) cmpByteImm, callConvRetInt};
+        dyno::x64Detour detour((uintptr_t) cmpByteImm, callConvRetInt);
 
         REQUIRE(detour.hook());
         REQUIRE(detour.unhook());
@@ -162,7 +162,7 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 		accessor.mem_protect((uintptr_t) cmpQwordRegR10, sizeof(cmpQwordRegR10), dyno::ProtFlag::RWX, status);
 		REQUIRE(status == true);
 
-        dyno::x64Detour detour{(uintptr_t) cmpQwordRegR10, callConvRetInt};
+        dyno::x64Detour detour((uintptr_t) cmpQwordRegR10, callConvRetInt);
 
         REQUIRE(detour.hook());
 
@@ -184,7 +184,7 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 
     SECTION("cmp dword & reg") {
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) cmpRegADword, callConvRetVoid};
+        dyno::x64Detour detour((uintptr_t) cmpRegADword, callConvRetVoid);
 
         REQUIRE(detour.hook());
         REQUIRE(detour.unhook());
@@ -192,7 +192,7 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 
     SECTION("cmp word & reg") {
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) cmpWordRegB, callConvRetVoid};
+        dyno::x64Detour detour((uintptr_t) cmpWordRegB, callConvRetVoid);
 
         REQUIRE(detour.hook());
         REQUIRE(detour.unhook());
@@ -200,7 +200,7 @@ TEST_CASE("Testing Detours with Translations", "[Translation][x64Detour]") {
 
     SECTION("cmp byte & reg") {
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) cmpR15bByte, callConvRetVoid};
+        dyno::x64Detour detour((uintptr_t) cmpR15bByte, callConvRetVoid);
 
         REQUIRE(detour.hook());
         REQUIRE(detour.unhook());

@@ -2,7 +2,7 @@
 
 using namespace dyno;
 
-Register Registers::s_none{NONE, SIZE_INVALID};
+Register Registers::s_none(NONE, SIZE_INVALID);
 regs_t Registers::s_scratch = {
 #if DYNO_ARCH_X86 == 64
 #if DYNO_PLATFORM_WINDOWS

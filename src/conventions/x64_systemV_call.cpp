@@ -3,7 +3,7 @@
 using namespace dyno;
 
 x64SystemVcall::x64SystemVcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :
-    ICallingConvention{std::move(arguments), returnType, alignment} {
+    ICallingConvention(std::move(arguments), returnType, alignment) {
     // don't force the register on the user
 
     RegisterType registers[] = { RDI, RSI, RDX, RCX, R8, R9 };

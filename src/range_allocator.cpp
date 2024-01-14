@@ -27,7 +27,7 @@ char* RangeAllocator::allocate(uintptr_t min, uintptr_t max) {
     }
 #endif
 
-    std::lock_guard<std::mutex> m_lock{m_mutex};
+    std::lock_guard<std::mutex> m_lock(m_mutex);
     auto allocator = findOrInsertAllocator(min, max);
     if (!allocator)
         return nullptr;
@@ -38,7 +38,7 @@ char* RangeAllocator::allocate(uintptr_t min, uintptr_t max) {
 }
 
 void RangeAllocator::deallocate(uintptr_t addr) {
-    std::lock_guard<std::mutex> m_lock{m_mutex};
+    std::lock_guard<std::mutex> m_lock(m_mutex);
     if (auto it = m_allocMap.find(addr); it != m_allocMap.end()) {
         auto allocator = it->second;
         allocator->deallocate((char*)addr);

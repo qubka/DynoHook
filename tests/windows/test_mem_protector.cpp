@@ -33,30 +33,30 @@ TEST_CASE("Test setting page protections", "[MemProtector]") {
     dyno::MemAccessor accessor;
 
     {
-        dyno::MemProtector prot{(uintptr_t)page, 4 * 1024, dyno::ProtFlag::R, accessor};
+        dyno::MemProtector prot((uintptr_t)page, 4 * 1024, dyno::ProtFlag::R, accessor);
         REQUIRE(prot.isGood());
         REQUIRE(prot.originalProt() == dyno::ProtFlag::N);
 
-        dyno::MemProtector prot1{(uintptr_t)page, 4 * 1024, dyno::ProtFlag::W, accessor};
+        dyno::MemProtector prot1((uintptr_t)page, 4 * 1024, dyno::ProtFlag::W, accessor);
         REQUIRE(prot1.isGood());
         REQUIRE(prot1.originalProt() == dyno::ProtFlag::R);
 
-        dyno::MemProtector prot2{(uintptr_t)page, 4 * 1024, dyno::ProtFlag::X, accessor};
+        dyno::MemProtector prot2((uintptr_t)page, 4 * 1024, dyno::ProtFlag::X, accessor);
         REQUIRE(prot2.isGood());
         REQUIRE((prot2.originalProt() & dyno::ProtFlag::W));
     }
 
     // protection should now be NOACCESS if destructors worked
     {
-        dyno::MemProtector prot{(uintptr_t)page, 4 * 1024, dyno::ProtFlag::X | dyno::ProtFlag::R, accessor};
+        dyno::MemProtector prot((uintptr_t)page, 4 * 1024, dyno::ProtFlag::X | dyno::ProtFlag::R, accessor);
         REQUIRE(prot.isGood());
         REQUIRE(prot.originalProt() == dyno::ProtFlag::N);
 
-        dyno::MemProtector prot1{(uintptr_t)page, 4 * 1024, dyno::ProtFlag::X | dyno::ProtFlag::W, accessor};
+        dyno::MemProtector prot1((uintptr_t)page, 4 * 1024, dyno::ProtFlag::X | dyno::ProtFlag::W, accessor);
         REQUIRE(prot.isGood());
         REQUIRE((prot1.originalProt() == (dyno::ProtFlag::X | dyno::ProtFlag::R)));
 
-        dyno::MemProtector prot2{(uintptr_t)page, 4 * 1024, dyno::ProtFlag::X | dyno::ProtFlag::R | dyno::ProtFlag::W, accessor};
+        dyno::MemProtector prot2((uintptr_t)page, 4 * 1024, dyno::ProtFlag::X | dyno::ProtFlag::R | dyno::ProtFlag::W, accessor);
         REQUIRE(prot.isGood());
         REQUIRE(prot2.originalProt() == (dyno::ProtFlag::X | dyno::ProtFlag::R | dyno::ProtFlag::W));
     }

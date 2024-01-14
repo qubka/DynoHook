@@ -59,7 +59,7 @@ TEST_CASE("Simple Callback", "[AsmJit][Callback]") {
             return dyno::ReturnAction::Handled;
         };
 
-        dyno::x64Detour detour{(uintptr_t) &hookMeInt, callConv};
+        dyno::x64Detour detour((uintptr_t) &hookMeInt, callConv);
         REQUIRE(detour.hook() == true);
 
         detour.addCallback(dyno::CallbackType::Pre, preHookMeInt);
@@ -86,7 +86,7 @@ TEST_CASE("Simple Callback", "[AsmJit][Callback]") {
             return dyno::ReturnAction::Handled;
         };
 
-        dyno::x64Detour detour{(uintptr_t) &hookMeFloat, callConv};
+        dyno::x64Detour detour((uintptr_t) &hookMeFloat, callConv);
         REQUIRE(detour.hook() == true);
 
         detour.addCallback(dyno::CallbackType::Pre, preHookMeFloat);
@@ -119,7 +119,7 @@ TEST_CASE("Simple Callback", "[AsmJit][Callback]") {
             return dyno::ReturnAction::Handled;
         };
 
-        dyno::x64Detour detour{(uintptr_t) &hookMeIntFloatDouble, callConv};
+        dyno::x64Detour detour((uintptr_t) &hookMeIntFloatDouble, callConv);
         REQUIRE(detour.hook() == true);
 
         detour.addCallback(dyno::CallbackType::Pre, preHookMeIntFloatDouble);
@@ -246,7 +246,7 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
             return dyno::ReturnAction::Handled;
         };
         
-        dyno::x64Detour detour{(uintptr_t) &rw_int, callConv};
+        dyno::x64Detour detour((uintptr_t) &rw_int, callConv);
         REQUIRE(detour.hook() == true);
 
         detour.addCallback(dyno::CallbackType::Pre, pre_rw_int);
@@ -275,7 +275,7 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
             return dyno::ReturnAction::Handled;
         };
     
-        dyno::x64Detour detour{(uintptr_t) &rw_float, callConv};
+        dyno::x64Detour detour((uintptr_t) &rw_float, callConv);
         REQUIRE(detour.hook() == true);
         
         detour.addCallback(dyno::CallbackType::Pre, pre_rw_float);
@@ -304,7 +304,7 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
             return dyno::ReturnAction::Handled;
         };
 
-        dyno::x64Detour detour{(uintptr_t) &rw_double, callConv};
+        dyno::x64Detour detour((uintptr_t) &rw_double, callConv);
         REQUIRE(detour.hook() == true);
         
         detour.addCallback(dyno::CallbackType::Pre, pre_rw_double);
@@ -331,7 +331,7 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
             return dyno::ReturnAction::Handled;
         };
 
-        dyno::x64Detour detour{(uintptr_t) &rw_void, callConv};
+        dyno::x64Detour detour((uintptr_t) &rw_void, callConv);
         REQUIRE(detour.hook() == true);
 
         detour.addCallback(dyno::CallbackType::Pre, pre_rw_void);
@@ -368,7 +368,7 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
             return dyno::ReturnAction::Handled;
         };
 
-        dyno::x64Detour detour{(uintptr_t) &rw_long, callConv};
+        dyno::x64Detour detour((uintptr_t) &rw_long, callConv);
         REQUIRE(detour.hook() == true);
 
         detour.addCallback(dyno::CallbackType::Pre, pre_rw_long);
@@ -398,7 +398,7 @@ TEST_CASE("Callback Return re-writing", "[Convention]") {
             return dyno::ReturnAction::Handled;
         };
         
-        dyno::x64Detour detour{(uintptr_t) &rw_int, callConv};
+        dyno::x64Detour detour((uintptr_t) &rw_int, callConv);
         REQUIRE(detour.hook() == true);
 
         detour.addCallback(dyno::CallbackType::Post, post_rw_int);
@@ -425,7 +425,7 @@ TEST_CASE("Callback Return re-writing", "[Convention]") {
             return dyno::ReturnAction::Handled;
         };
     
-        dyno::x64Detour detour{(uintptr_t) &rw_float, callConv};
+        dyno::x64Detour detour((uintptr_t) &rw_float, callConv);
         REQUIRE(detour.hook() == true);
         
         detour.addCallback(dyno::CallbackType::Post, post_rw_float);
@@ -452,7 +452,7 @@ TEST_CASE("Callback Return re-writing", "[Convention]") {
             return dyno::ReturnAction::Handled;
         };
 
-        dyno::x64Detour detour{(uintptr_t) &rw_double, callConv};
+        dyno::x64Detour detour((uintptr_t) &rw_double, callConv);
         REQUIRE(detour.hook() == true);
         
         detour.addCallback(dyno::CallbackType::Post, post_rw_double);
@@ -504,7 +504,7 @@ TEST_CASE("Callback Skip original function", "[Convention]") {
             return dyno::ReturnAction::Handled;
         };
     
-        dyno::x64Detour detour{(uintptr_t) &rw_bool, callConv};
+        dyno::x64Detour detour((uintptr_t) &rw_bool, callConv);
         REQUIRE(detour.hook() == true);
         
         detour.addCallback(dyno::CallbackType::Pre, pre_rw_bool);

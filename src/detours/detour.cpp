@@ -4,7 +4,7 @@
 
 using namespace dyno;
 
-Detour::Detour(uintptr_t fnAddress, const ConvFunc& convention, Mode mode) : Hook{convention}, m_fnAddress{fnAddress}, m_disasm{mode} {
+Detour::Detour(uintptr_t fnAddress, const ConvFunc& convention, Mode mode) : Hook(convention), m_fnAddress{fnAddress}, m_disasm{mode} {
     assert(fnAddress != 0 && "Function address cannot be null");
 }
 
@@ -191,7 +191,7 @@ bool Detour::unhook() {
         return false;
     }
 
-    MemProtector prot{m_fnAddress, calcInstsSz(m_originalInsts), ProtFlag::R | ProtFlag::W | ProtFlag::X, *this};
+    MemProtector prot(m_fnAddress, calcInstsSz(m_originalInsts), ProtFlag::R | ProtFlag::W | ProtFlag::X, *this);
     writeEncoding(m_originalInsts);
 
     if (m_trampoline != 0) {
@@ -204,7 +204,7 @@ bool Detour::unhook() {
 }
 
 bool Detour::rehook() {
-    MemProtector prot{m_fnAddress, m_hookSize, ProtFlag::RWX, *this};
+    MemProtector prot(m_fnAddress, m_hookSize, ProtFlag::RWX, *this);
     writeEncoding(m_hookInsts);
 
     // Nop the space between jmp and end of prologue
@@ -227,7 +227,7 @@ insts_t Detour::make_nops(uintptr_t address, uint16_t size) const {
     const uint8_t max_nop_size = 9;
 
     const auto make_nop_inst = [&](std::vector<uint8_t>&& bytes) {
-        return Instruction{this, address, {0}, 0, false, false, std::move(bytes), "nop", "", getArchType()};
+        return Instruction(this, address, {0}, 0, false, false, std::move(bytes), "nop", "", getArchType());
     };
 
     // lambda updates the address for each created instruction

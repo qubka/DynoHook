@@ -82,7 +82,7 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
             return dyno::ReturnAction::Ignored;
         };
 
-        dyno::x64Detour detour{(uintptr_t) valloc_function, call_conv_ret_i32};
+        dyno::x64Detour detour((uintptr_t) valloc_function, call_conv_ret_i32);
         detour.setDetourScheme(dyno::x64Detour::detour_scheme_t::VALLOC2);
         REQUIRE(detour.hook());
 
@@ -129,7 +129,7 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
             return dyno::ReturnAction::Ignored;
         };
 
-        dyno::x64Detour detour{(uintptr_t) large_function, call_conv_ret_i64};
+        dyno::x64Detour detour((uintptr_t) large_function, call_conv_ret_i64);
         detour.setDetourScheme(dyno::x64Detour::detour_scheme_t::INPLACE);
         REQUIRE(detour.hook());
 
@@ -174,11 +174,11 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
             return dyno::ReturnAction::Ignored;
         };
 
-        dyno::x64Detour detour1{(uintptr_t) medium_function, call_conv_ret_i64};
+        dyno::x64Detour detour1((uintptr_t) medium_function, call_conv_ret_i64);
         detour1.setDetourScheme(dyno::x64Detour::detour_scheme_t::INPLACE);
         REQUIRE(detour1.hook() == false);
 
-        dyno::x64Detour detour2{(uintptr_t) medium_function, call_conv_ret_i64};
+        dyno::x64Detour detour2((uintptr_t) medium_function, call_conv_ret_i64);
         detour2.setDetourScheme(dyno::x64Detour::detour_scheme_t::INPLACE_SHORT);
         REQUIRE(detour2.hook());
 
@@ -223,7 +223,7 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
             return dyno::ReturnAction::Ignored;
         };
 
-        dyno::x64Detour detour{(uintptr_t) rip_function, call_conv_ret_i32};
+        dyno::x64Detour detour((uintptr_t) rip_function, call_conv_ret_i32);
         detour.setDetourScheme(dyno::x64Detour::detour_scheme_t::INPLACE_SHORT);
         REQUIRE(detour.hook());
 
@@ -253,14 +253,14 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
             return dyno::ReturnAction::Handled;
         };*/
 
-        dyno::x64Detour detour1{(uintptr_t) small_function, call_conv_ret_i32};
+        dyno::x64Detour detour1((uintptr_t) small_function, call_conv_ret_i32);
         detour1.setDetourScheme(dyno::x64Detour::detour_scheme_t::INPLACE_SHORT);
         REQUIRE(detour1.hook() == false);
 
         // TODO: Dyno is not guaranteed to find a cave, hence this test will often fail.
         // We need to find a way to deliberately reserve code cave.
 
-        // dyno::x64Detour detour2{(uintptr_t) small_function, call_conv_ret_i32};
+        // dyno::x64Detour detour2((uintptr_t) small_function, call_conv_ret_i32);
         // detour2.setDetourScheme(dyno::x64Detour::detour_scheme_t::CODE_CAVE);
         // REQUIRE(detour2.hook());
         // schemeEffects.push();

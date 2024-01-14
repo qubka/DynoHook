@@ -102,8 +102,8 @@ std::string filterJXX(const std::string& lhs) {
 
 uint8_t randByte() {
     static std::random_device dev;
-    static std::mt19937 rng{dev()};
-    static std::uniform_int_distribution<int> gen{0, 255};
+    static std::mt19937 rng(dev());
+    static std::uniform_int_distribution<int> gen(0, 255);
     return (uint8_t)gen(rng);
 }
 
@@ -114,7 +114,7 @@ TEST_CASE("Test Instruction UUID generator", "[Instruction],[UID]") {
 
     uint32_t lastID = 0;
     for (int i = 0; i < 30; i++) {
-        auto inst = dyno::Instruction{&accessor,
+        auto inst = dyno::Instruction(&accessor,
                                       0,
                                       displacement,
                                       0,
@@ -123,7 +123,7 @@ TEST_CASE("Test Instruction UUID generator", "[Instruction],[UID]") {
                                       {},
                                       "nothing",
                                       "nothing",
-                                      dyno::Mode::x86};
+                                      dyno::Mode::x86);
 
         auto instCopy = inst;
         REQUIRE(instCopy.getUID() == inst.getUID());
@@ -137,7 +137,7 @@ TEST_CASE("Test Instruction UUID generator", "[Instruction],[UID]") {
 TEST_CASE("Test Disassemblers x64", "[ZydisDisassembler]") {
 #if DYNO_ARCH_X86 == 64
     dyno::MemAccessor accessor;
-    dyno::ZydisDisassembler disasm{dyno::Mode::x64};
+    dyno::ZydisDisassembler disasm(dyno::Mode::x64);
     auto Instructions = disasm.disassemble((uintptr_t)&x64ASM.front(), (uintptr_t)&x64ASM.front(),
         (uintptr_t)&x64ASM.front() + x64ASM.size(), accessor);
 
@@ -248,7 +248,7 @@ TEST_CASE("Test Disassemblers x86 FF25", "[ZydisDisassembler]") {
     *(uint32_t*)(x86ASM_FF25.data() + 2) = (uint32_t)(x86ASM_FF25.data() + 6); // 0xFF25 <pMem> = &mem; (just fyi *mem == 0xAA0000AB)
 
     dyno::MemAccessor accessor;
-    dyno::ZydisDisassembler disasm{dyno::Mode::x86};
+    dyno::ZydisDisassembler disasm(dyno::Mode::x86)
     auto Instructions = disasm.disassemble((uintptr_t)&x86ASM_FF25.front(), (uintptr_t)&x86ASM_FF25.front(),
         (uintptr_t)&x86ASM_FF25.front() + x86ASM_FF25.size(), accessor);
 
@@ -270,8 +270,8 @@ TEST_CASE("Test Disassemblers x86 FF25", "[ZydisDisassembler]") {
 
 TEST_CASE("Test Disassemblers x86", "[ZydisDisassembler]") {
     dyno::MemAccessor accessor;
-    dyno::ZydisDisassembler disasm{dyno::Mode::x86};
-    auto                      Instructions = disasm.disassemble((uintptr_t)&x86ASM.front(), (uintptr_t)&x86ASM.front(),
+    dyno::ZydisDisassembler disasm(dyno::Mode::x86);
+    auto Instructions = disasm.disassemble((uintptr_t)&x86ASM.front(), (uintptr_t)&x86ASM.front(),
         (uintptr_t)&x86ASM.front() + x86ASM.size(), accessor);
 
     // TODO: full buffer isn't disassembled
@@ -370,7 +370,7 @@ TEST_CASE("Test Disassemblers x86", "[ZydisDisassembler]") {
 TEST_CASE("Test Disassemblers x64 Two", "[ZydisDisassembler]") {
 #if DYNO_ARCH_X86 == 64
     dyno::MemAccessor accessor;
-    dyno::ZydisDisassembler disasm{dyno::Mode::x64};
+    dyno::ZydisDisassembler disasm(dyno::Mode::x64);
     dyno::insts_t Instructions = disasm.disassemble((uintptr_t)&x64ASM2.front(), (uintptr_t)&x64ASM2.front(),
         (uintptr_t)&x64ASM2.front() + x64ASM2.size(), accessor);
 
@@ -396,11 +396,11 @@ TEST_CASE("Test Disassemblers x64 Two", "[ZydisDisassembler]") {
 
 TEST_CASE("Test Disassemblers NOPS", "[ZydisDisassembler]") {
     dyno::MemAccessor accessor;
-    dyno::ZydisDisassembler disasm{dyno::Mode::x64};
+    dyno::ZydisDisassembler disasm(dyno::Mode::x64);
     dyno::insts_t Instructions = disasm.disassemble((uintptr_t)&x86x64Nops.front(), (uintptr_t)&x86x64Nops.front(),
         (uintptr_t)&x86x64Nops.front() + x86x64Nops.size(), accessor);
 
-    dyno::ZydisDisassembler disasmx86{dyno::Mode::x86};
+    dyno::ZydisDisassembler disasmx86(dyno::Mode::x86);
     dyno::insts_t Instructionsx86 = disasmx86.disassemble((uintptr_t)&x86x64Nops.front(), (uintptr_t)&x86x64Nops.front(),
         (uintptr_t)&x86x64Nops.front() + x86x64Nops.size(), accessor);
 

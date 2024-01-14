@@ -85,7 +85,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
         };
         
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) &hookMe1, callConvVoid};
+        dyno::x64Detour detour((uintptr_t) &hookMe1, callConvVoid);
         REQUIRE(detour.hook() == true);
         
         detour.addCallback(dyno::CallbackType::Post, PostHook1);
@@ -107,7 +107,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
         };
         
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) &hookMe1, callConvVoid};
+        dyno::x64Detour detour((uintptr_t) &hookMe1, callConvVoid);
         REQUIRE(detour.hook() == true);
 
         detour.addCallback(dyno::CallbackType::Pre, PreHook1);
@@ -143,7 +143,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
         };
         
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) &CreateMutexExA, callConvWinApi};
+        dyno::x64Detour detour((uintptr_t) &CreateMutexExA, callConvWinApi);
         
         detour.addCallback(dyno::CallbackType::Post, PostCreateMutexExA);
         
@@ -163,7 +163,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
         };
         
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) &hookMe2, callConvVoid};
+        dyno::x64Detour detour((uintptr_t) &hookMe2, callConvVoid);
         REQUIRE(detour.hook() == true);
     
         detour.addCallback(dyno::CallbackType::Post, PostHook2);
@@ -176,7 +176,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
 
     SECTION("Jmp into prol w/src in range") {
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) &hookMe3, callConvVoid};
+        dyno::x64Detour detour((uintptr_t) &hookMe3, callConvVoid);
 
         REQUIRE(detour.hook() == true);
         REQUIRE(detour.unhook() == true);
@@ -184,7 +184,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
 
     SECTION("Jmp into prol w/src out of range") {
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) &hookMe4, callConvVoid};
+        dyno::x64Detour detour((uintptr_t) &hookMe4, callConvVoid);
 
         REQUIRE(detour.hook() == true);
         REQUIRE(detour.unhook() == true);
@@ -192,7 +192,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
 
     SECTION("Call instruction early in prologue") {
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) &hookMe5, callConvVoid};
+        dyno::x64Detour detour((uintptr_t) &hookMe5, callConvVoid);
 
         REQUIRE(detour.hook() == true);
         REQUIRE(detour.unhook() == true);
@@ -200,7 +200,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
 
     SECTION("Call with fs base") {
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t)&hookMe6, callConvVoid};
+        dyno::x64Detour detour((uintptr_t)&hookMe6, callConvVoid);
 
         REQUIRE(detour.hook() == true);
         REQUIRE(detour.unhook() == true);
@@ -218,7 +218,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
         };
         
         dyno::StackCanary canary;
-        dyno::x64Detour detour{(uintptr_t) &malloc, callConvWinApi};
+        dyno::x64Detour detour((uintptr_t) &malloc, callConvWinApi);
         effects.push(); // catch does some allocations, push effect first so peak works
 
         REQUIRE(detour.hook());
@@ -244,7 +244,7 @@ TEST_CASE("Testing x64 detours", "[x64Detour][Detour]") {
             return dyno::ReturnAction::Ignored;
         };
         
-        dyno::x64Detour detour{(uintptr_t)pNtQueueApcthread, callConvWinApi};
+        dyno::x64Detour detour((uintptr_t)pNtQueueApcthread, callConvWinApi);
         effects.push(); // catch does some allocations, push effect first so peak works
         REQUIRE(detour.hook() == true);
         

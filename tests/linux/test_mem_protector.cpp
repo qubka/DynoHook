@@ -34,30 +34,30 @@ TEST_CASE("Test setting page protections", "[MemProtector]") {
     dyno::MemAccessor accessor;
 
     {
-        dyno::MemoryProtector prot{(uintptr_t)page, 4 * 1024, dyno::ProtFlag::R, accessor};
+        dyno::MemoryProtector prot((uintptr_t)page, 4 * 1024, dyno::ProtFlag::R, accessor);
         REQUIRE(prot.isGood());
         REQUIRE(prot.originalProt() == dyno::ProtFlag::NONE);
 
-        dyno::MemoryProtector prot1{(uintptr_t)page, 4 * 1024, dyno::ProtFlag::W, accessor};
+        dyno::MemoryProtector prot1((uintptr_t)page, 4 * 1024, dyno::ProtFlag::W, accessor);
         REQUIRE(prot1.isGood());
         REQUIRE(prot1.originalProt() == dyno::ProtFlag::R);
 
-        dyno::MemoryProtector prot2{(uintptr_t)page, 4 * 1024, dyno::ProtFlag::X, accessor};
+        dyno::MemoryProtector prot2((uintptr_t)page, 4 * 1024, dyno::ProtFlag::X, accessor);
         REQUIRE(prot2.isGood());
         REQUIRE((prot2.originalProt() & dyno::ProtFlag::W));
     }
 
     // protection should now be NOACCESS if destructors worked
     {
-        dyno::MemoryProtector prot{(uintptr_t)page, 4 * 1024, dyno::ProtFlag::X | dyno::ProtFlag::R, accessor};
+        dyno::MemoryProtector prot((uintptr_t)page, 4 * 1024, dyno::ProtFlag::X | dyno::ProtFlag::R, accessor);
         REQUIRE(prot.isGood());
         REQUIRE(prot.originalProt() == dyno::ProtFlag::NONE);
 
-        dyno::MemoryProtector prot1{(uintptr_t)page, 4 * 1024, dyno::ProtFlag::X | dyno::ProtFlag::W, accessor};
+        dyno::MemoryProtector prot1((uintptr_t)page, 4 * 1024, dyno::ProtFlag::X | dyno::ProtFlag::W, accessor);
         REQUIRE(prot.isGood());
         REQUIRE((prot1.originalProt() == (dyno::ProtFlag::X | dyno::ProtFlag::R)));
 
-        dyno::MemoryProtector prot2{(uintptr_t)page, 4 * 1024, dyno::ProtFlag::X | dyno::ProtFlag::R | dyno::ProtFlag::W, accessor};
+        dyno::MemoryProtector prot2((uintptr_t)page, 4 * 1024, dyno::ProtFlag::X | dyno::ProtFlag::R | dyno::ProtFlag::W, accessor);
         REQUIRE(prot.isGood());
         REQUIRE(prot2.originalProt() == (dyno::ProtFlag::X | dyno::ProtFlag::W));
     }

@@ -51,7 +51,7 @@ ReturnAction PostMyFunc(CallbackType hookType, Hook& hook) {
 int main(int argc, char* argv[]) {
     auto yy = &MyFunc;
 
-    dyno::x64Detour detour{(uintptr_t)&MyFunc, [] { return new x64WindowsCall({DataType::Int, DataType::Int}, DataType::Int); }};
+    dyno::x64Detour detour((uintptr_t)&MyFunc, [] { return new x64WindowsCall({DataType::Int, DataType::Int}, DataType::Int); });
     detour.hook();
 
     // add the callbacks

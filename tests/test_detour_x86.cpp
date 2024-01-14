@@ -108,7 +108,7 @@ TEST_CASE("Testing x86 detours", "[x86Detour][Detour]") {
 
     SECTION("Normal function") {
         dyno::StackCanary canary;
-        dyno::x86Detour detour{(uintptr_t) &hookMe1, callConvInt};
+        dyno::x86Detour detour((uintptr_t) &hookMe1, callConvInt);
         REQUIRE(detour.hook() == true);
 
         detour.addCallback(dyno::CallbackType::Post, PostHook1);
@@ -122,7 +122,7 @@ TEST_CASE("Testing x86 detours", "[x86Detour][Detour]") {
 
     SECTION("Normal function rehook") {
         dyno::StackCanary canary;
-        dyno::x86Detour detour{(uintptr_t) &hookMe1, callConvInt};
+        dyno::x86Detour detour((uintptr_t) &hookMe1, callConvInt);
         REQUIRE(detour.hook() == true);
 
         detour.addCallback(dyno::CallbackType::Post, PostHook1);
@@ -136,26 +136,26 @@ TEST_CASE("Testing x86 detours", "[x86Detour][Detour]") {
     }
 
     SECTION("Jmp into prologue w/ src in range") {
-        dyno::x86Detour detour{(uintptr_t) &hookMe2, callConvVoid};
+        dyno::x86Detour detour((uintptr_t) &hookMe2, callConvVoid);
 
         REQUIRE(detour.hook() == true);
         REQUIRE(detour.unhook() == true);
     }
 
     SECTION("Jmp into prologue w/ src out of range") {
-        dyno::x86Detour detour{(uintptr_t) &hookMe3, callConvVoid};
+        dyno::x86Detour detour((uintptr_t) &hookMe3, callConvVoid);
         REQUIRE(detour.hook() == true);
         REQUIRE(detour.unhook() == true);
     }
 
     SECTION("Test instruction in prologue") {
-        dyno::x86Detour detour{(uintptr_t) &hookMe4, callConvVoid};
+        dyno::x86Detour detour((uintptr_t) &hookMe4, callConvVoid);
         REQUIRE(detour.hook() == true);
         REQUIRE(detour.unhook() == true);
     }
 
     SECTION("Call with fs base") {
-        dyno::x86Detour detour{(uintptr_t)&hookMe5, callConvVoid};
+        dyno::x86Detour detour((uintptr_t)&hookMe5, callConvVoid);
         REQUIRE(detour.hook() == true);
         REQUIRE(detour.unhook() == true);
     }
@@ -171,7 +171,7 @@ TEST_CASE("Testing x86 detours", "[x86Detour][Detour]") {
         };
 
         dyno::StackCanary canary;
-        dyno::x86Detour detour{(uintptr_t) &hookMeLoop, callConvVoid};
+        dyno::x86Detour detour((uintptr_t) &hookMeLoop, callConvVoid);
         REQUIRE(detour.hook() == true);
 
         detour.addCallback(dyno::CallbackType::Pre, PreLoopHook);
@@ -183,7 +183,7 @@ TEST_CASE("Testing x86 detours", "[x86Detour][Detour]") {
     }
 
     /*SECTION("hook printf") {
-        dyno::x86Detour detour{(uintptr_t) &printf, (uintptr_t) h_hookPrintf, &hookPrintfTramp);
+        dyno::x86Detour detour((uintptr_t) &printf, (uintptr_t) h_hookPrintf, &hookPrintfTramp);
         REQUIRE(detour.hook() == true);
 
         effects.push();
@@ -194,7 +194,7 @@ TEST_CASE("Testing x86 detours", "[x86Detour][Detour]") {
 
     // it's a pun...
     SECTION("hook pow") {
-        dyno::x86Detour detour{(uintptr_t) pFnPowDouble, (uintptr_t) h_hookPow, &hookPowTramp);
+        dyno::x86Detour detour((uintptr_t) pFnPowDouble, (uintptr_t) h_hookPow, &hookPowTramp);
         REQUIRE(detour.hook() == true);
 
         effects.push();
@@ -205,7 +205,7 @@ TEST_CASE("Testing x86 detours", "[x86Detour][Detour]") {
     }
 
     SECTION("hook malloc") {
-        dyno::x86Detour detour{(uintptr_t) &malloc, (uintptr_t) h_hookMalloc, &hookMallocTramp);
+        dyno::x86Detour detour((uintptr_t) &malloc, (uintptr_t) h_hookMalloc, &hookMallocTramp);
         effects.push(); // catch does some allocations, push effect first so peak works
         REQUIRE(detour.hook() == true);
 
@@ -216,12 +216,12 @@ TEST_CASE("Testing x86 detours", "[x86Detour][Detour]") {
     }
 
     SECTION("hook recv") {
-        dyno::x86Detour detour{(uintptr_t) &recv, (uintptr_t)h_hookRecv, &hookRecvTramp);
+        dyno::x86Detour detour((uintptr_t) &recv, (uintptr_t)h_hookRecv, &hookRecvTramp);
         REQUIRE(detour.hook() == true);
     }
 
     SECTION("queue apc thread") {
-        dyno::x86Detour detour{(uintptr_t)pNtQueueApcthread, (uintptr_t)h_NtQueueapcThread, &hkNtQueueapcThread);
+        dyno::x86Detour detour((uintptr_t)pNtQueueApcthread, (uintptr_t)h_NtQueueapcThread, &hkNtQueueapcThread);
         effects.push(); // catch does some allocations, push effect first so peak works
         REQUIRE(detour.hook() == true);
     }*/

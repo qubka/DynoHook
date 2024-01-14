@@ -52,7 +52,7 @@ struct region_t {
 static region_t get_region_from_addr(uintptr_t addr) {
     region_t res{};
 
-    std::ifstream f{"/proc/self/maps"};
+    std::ifstream f("/proc/self/maps");
     std::string s;
     while (std::getline(f, s)) {
         if (!s.empty() && s.find("vdso") == std::string::npos && s.find("vsyscall") == std::string::npos) {
@@ -169,7 +169,7 @@ insts_t MemAccessor::makex64PreferredJump(uintptr_t address, uintptr_t destinati
     uintptr_t curInstAddress = address;
 
     std::vector<uint8_t> raxBytes = { 0x50 };
-    Instruction pushRax{this,
+    Instruction pushRax(this,
                         curInstAddress,
                         zeroDisp,
                         0,
@@ -177,7 +177,7 @@ insts_t MemAccessor::makex64PreferredJump(uintptr_t address, uintptr_t destinati
                         false,
                         std::move(raxBytes),
                         "push",
-                        "rax", Mode::x64};
+                        "rax", Mode::x64);
     curInstAddress += pushRax.size();
 
     std::stringstream ss;
@@ -188,18 +188,18 @@ insts_t MemAccessor::makex64PreferredJump(uintptr_t address, uintptr_t destinati
     movRaxBytes[1] = 0xB8;
     std::memcpy(&movRaxBytes[2], &destination, 8);
 
-    Instruction movRax{this, curInstAddress, zeroDisp, 0, false, false,
-                       std::move(movRaxBytes), "mov", "rax, " + ss.str(), Mode::x64};
+    Instruction movRax(this, curInstAddress, zeroDisp, 0, false, false,
+                       std::move(movRaxBytes), "mov", "rax, " + ss.str(), Mode::x64);
     curInstAddress += movRax.size();
 
     std::vector<uint8_t> xchgBytes = { 0x48, 0x87, 0x04, 0x24 };
-    Instruction xchgRspRax{this, curInstAddress, zeroDisp, 0, false, false,
-                           std::move(xchgBytes), "xchg", "QWORD PTR [rsp],rax", Mode::x64};
+    Instruction xchgRspRax(this, curInstAddress, zeroDisp, 0, false, false,
+                           std::move(xchgBytes), "xchg", "QWORD PTR [rsp],rax", Mode::x64);
     curInstAddress += xchgRspRax.size();
 
     std::vector<uint8_t> retBytes = { 0xC3 };
-    Instruction ret{this, curInstAddress, zeroDisp, 0, false, false,
-                    std::move(retBytes), "ret", "", Mode::x64};
+    Instruction ret(this, curInstAddress, zeroDisp, 0, false, false,
+                    std::move(retBytes), "ret", "", Mode::x64);
 
     return { pushRax, movRax, xchgRspRax, ret };
 }
@@ -216,7 +216,7 @@ insts_t MemAccessor::makex64MinimumJump(uintptr_t address, uintptr_t destination
 
     std::vector<uint8_t> destBytes(8);
     std::memcpy(destBytes.data(), &destination, 8);
-    Instruction specialDest{this, destHolder, disp, 0, false, false, std::move(destBytes), "dest holder", "", Mode::x64};
+    Instruction specialDest(this, destHolder, disp, 0, false, false, std::move(destBytes), "dest holder", "", Mode::x64);
 
     std::vector<uint8_t> bytes(6);
     bytes[0] = 0xFF;
@@ -226,7 +226,7 @@ insts_t MemAccessor::makex64MinimumJump(uintptr_t address, uintptr_t destination
     std::stringstream ss;
     ss << std::hex << "[" << destHolder << "] ->" << destination;
 
-    return { Instruction{this, address, disp, 2, true, true, std::move(bytes), "jmp", ss.str(), Mode::x64}, specialDest };
+    return { Instruction(this, address, disp, 2, true, true, std::move(bytes), "jmp", ss.str(), Mode::x64), specialDest };
 }
 
 insts_t MemAccessor::makex86Jmp(uintptr_t address, uintptr_t destination) {
@@ -237,7 +237,7 @@ insts_t MemAccessor::makex86Jmp(uintptr_t address, uintptr_t destination) {
     bytes[0] = 0xE9;
     std::memcpy(&bytes[1], &disp.Relative, 4);
 
-    return { Instruction{this, address, disp, 1, true, false, std::move(bytes), "jmp", int_to_hex(destination), Mode::x86} };
+    return { Instruction(this, address, disp, 1, true, false, std::move(bytes), "jmp", int_to_hex(destination), Mode::x86) };
 }
 
 insts_t MemAccessor::makeAgnosticJmp(uintptr_t address, uintptr_t destination) {
@@ -251,7 +251,7 @@ insts_t MemAccessor::makeAgnosticJmp(uintptr_t address, uintptr_t destination) {
 insts_t MemAccessor::makex64DestHolder(uintptr_t destination, uintptr_t destHolder) {
     std::vector<uint8_t> destBytes(8);
     std::memcpy(destBytes.data(), &destination, 8);
-    return insts_t{ Instruction{this, destHolder, Instruction::Displacement{0}, 0, false, false, std::move(destBytes), "dest holder", "", Mode::x64} };
+    return insts_t{ Instruction(this, destHolder, Instruction::Displacement{0}, 0, false, false, std::move(destBytes), "dest holder", "", Mode::x64) };
 }
 
 void MemAccessor::writeEncoding(const insts_t& instructions) {

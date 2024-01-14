@@ -71,16 +71,16 @@ insts_t ZydisDisassembler::disassemble(
             break;
         }
 
-        Instruction inst{&accessor,
+        Instruction inst(&accessor,
                          address,
                          displacement,
                          0,
                          false,
                          false,
-                         std::vector<uint8_t>{ buffer, buffer + insInfo.length },
+                         std::vector<uint8_t>(buffer, buffer + insInfo.length),
                          ZydisMnemonicGetString(insInfo.mnemonic),
                          std::move(opStr),
-                         m_mode};
+                         m_mode);
 
         setDisplacementFields(inst, &insInfo, decoded_operands);
         if (endHit && !isPadBytes(inst)) {
@@ -112,7 +112,7 @@ bool ZydisDisassembler::getOpStr(ZydisDecodedInstruction* pInstruction, const Zy
     char buffer[256];
     if (ZYAN_SUCCESS(ZydisFormatterFormatInstruction(m_formatter, pInstruction, decoded_operands, pInstruction->operand_count, buffer, sizeof(buffer), (ZyanU64)addr, ZYAN_NULL))) {
         // remove mnemonic + space (op str is just the right hand side)
-        std::string wholeInstStr{buffer};
+        std::string wholeInstStr(buffer);
         *pOpStrOut = wholeInstStr.erase(0, wholeInstStr.find(' ') + 1);
         return true;
     }

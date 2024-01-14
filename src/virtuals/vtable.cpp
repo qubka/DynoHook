@@ -4,7 +4,7 @@
 using namespace dyno;
 
 VTable::VTable(void* pClass, VHookCache& hookCache) : m_class{(void***)pClass}, m_hookCache{hookCache} {
-    MemProtector protector{(uintptr_t)m_class, sizeof(void*), ProtFlag::R | ProtFlag::W, *this};
+    MemProtector protector((uintptr_t)m_class, sizeof(void*), ProtFlag::R | ProtFlag::W, *this);
 
     m_origVtable = *m_class;
     m_vFuncCount = getVFuncCount(m_origVtable);
@@ -14,7 +14,7 @@ VTable::VTable(void* pClass, VHookCache& hookCache) : m_class{(void***)pClass}, 
 }
 
 VTable::~VTable() {
-    MemProtector protector{(uintptr_t)m_class, sizeof(void*), ProtFlag::R | ProtFlag::W, *this};
+    MemProtector protector((uintptr_t)m_class, sizeof(void*), ProtFlag::R | ProtFlag::W, *this);
 
     *m_class = m_origVtable;
 }

@@ -78,7 +78,7 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
     std::unique_ptr<VirtualTest> ClassToHook = std::make_unique<VirtualTest>();
 
     dyno::VHookCache cache;
-    dyno::VTable table{ClassToHook.get(), cache};
+    dyno::VTable table(ClassToHook.get(), cache);
 
     SECTION("Verify vtable hook") {
         dyno::ConvFunc callConvInt = []{ return new DEFAULT_CALLCONV({}, dyno::DataType::Int32); };

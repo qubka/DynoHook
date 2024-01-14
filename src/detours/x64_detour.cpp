@@ -9,7 +9,7 @@ using namespace dyno;
 using namespace asmjit;
 
 x64Detour::x64Detour(uintptr_t fnAddress, const ConvFunc& convention) :
-    Detour{fnAddress, convention, getArchType()}, m_allocator{8, 100} {
+    Detour(fnAddress, convention, getArchType()), m_allocator{8, 100} {
 }
 
 x64Detour::~x64Detour() {
@@ -198,7 +198,7 @@ bool x64Detour::makeInplaceTrampoline(
 ) {
     CodeHolder code;
     code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpuFeatures(), base_address);
-    x86::Assembler a{&code};
+    x86::Assembler a(&code);
 
     builder(a);
 
@@ -247,7 +247,7 @@ bool x64Detour::allocateJumpToBridge() {
         } else {
             m_valloc2_region = region;
 
-            MemProtector region_protector{region, 8, ProtFlag::RWX, *this, false};
+            MemProtector region_protector(region, 8, ProtFlag::RWX, *this, false);
             m_hookInsts = makex64MinimumJump(m_fnAddress, m_fnBridge, region);
             m_chosenScheme = detour_scheme_t::VALLOC2;
             return true;
@@ -277,7 +277,7 @@ bool x64Detour::allocateJumpToBridge() {
     if (m_detourScheme & detour_scheme_t::CODE_CAVE) {
         auto cave = findNearestCodeCave<8>(m_fnAddress);
         if (cave) {
-            MemProtector cave_protector{*cave, 8, ProtFlag::RWX, *this, false};
+            MemProtector cave_protector(*cave, 8, ProtFlag::RWX, *this, false);
             m_hookInsts = makex64MinimumJump(m_fnAddress, m_fnBridge, *cave);
             m_chosenScheme = detour_scheme_t::CODE_CAVE;
             return true;
@@ -386,7 +386,7 @@ bool x64Detour::hook() {
     m_nopProlOffset = (uint16_t) minProlSz;
 
     DYNO_LOG("Hook instructions: \n" + instsToStr(m_hookInsts) + "\n", ErrorLevel::INFO);
-    MemProtector prot{m_fnAddress, m_hookSize, ProtFlag::RWX, *this};
+    MemProtector prot(m_fnAddress, m_hookSize, ProtFlag::RWX, *this);
     writeEncoding(m_hookInsts);
 
     DYNO_LOG("Hook size: " + std::to_string(m_hookSize) + "\n", ErrorLevel::INFO);
@@ -547,7 +547,7 @@ std::optional<TranslationResult> translateInstruction(const Instruction& instruc
     result.scratch_register = std::move(scratch_register_string);
     result.address_register = std::move(address_register_string);
 
-    return {result};
+    return { result };
 }
 
 /**
@@ -580,8 +580,8 @@ std::optional<uintptr_t> x64Detour::generateTranslationRoutine(const Instruction
     CodeHolder code;
     code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpuFeatures());
 
-    x86::Assembler assembler{&code};
-    asmtk::AsmParser parser{&assembler};
+    x86::Assembler assembler(&code);
+    asmtk::AsmParser parser(&assembler);
 
     // Stores vector of instruction strings that comprise translation routine
     std::vector<std::string> translation;
@@ -662,7 +662,7 @@ std::optional<uintptr_t> x64Detour::generateTranslationRoutine(const Instruction
 
     DYNO_LOG("Translation address: " + int_to_hex(translation_address) + "\n", ErrorLevel::INFO);
 
-    return {translation_address };
+    return { translation_address };
 }
 
 /**
@@ -672,9 +672,9 @@ std::optional<uintptr_t> x64Detour::generateTranslationRoutine(const Instruction
 Instruction x64Detour::makeRelJmpWithAbsDest(uintptr_t address, uintptr_t abs_destination) {
     Instruction::Displacement disp{0};
     disp.Absolute = abs_destination;
-    Instruction instruction {
+    Instruction instruction(
         this, address, disp, 1, true, false, { 0xE9, 0, 0, 0, 0 }, "jmp", int_to_hex(abs_destination), Mode::x64
-    };
+	);
     instruction.setDisplacementSize(4);
     instruction.setHasDisplacement(true);
 
@@ -766,7 +766,7 @@ bool x64Detour::makeTrampoline(insts_t& prologue, insts_t& outJmpTable) {
         }
     }
 
-    MemProtector prot{m_trampoline, m_trampolineSz, ProtFlag::R | ProtFlag::W | ProtFlag::X, *this, false};
+    MemProtector prot(m_trampoline, m_trampolineSz, ProtFlag::R | ProtFlag::W | ProtFlag::X, *this, false);
 
     // Insert jmp from trampoline -> prologue after overwritten section
     const uintptr_t jmpToProlAddr = m_trampoline + prolSz;
