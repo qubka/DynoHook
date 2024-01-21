@@ -17,6 +17,7 @@
 #include <mutex>
 #include <type_traits>
 
-#include "platform.h"
-#include "core.h"
-#include "log.h"
+#include <dynohook/platform.h>
+#include <dynohook/helpers.h>
+#include <dynohook/core.h>
+#include <dynohook/log.h>

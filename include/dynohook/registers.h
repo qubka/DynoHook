@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "platform.h"
+#include "helpers.h"
 
 namespace dyno {
     enum RegisterType : uint8_t {

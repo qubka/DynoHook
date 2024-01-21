@@ -1,6 +1,8 @@
 // This file is used to not include os specific functions that might break other projects
 // You should use it in sources
 
+#pragma once
+
 #if DYNO_PLATFORM_WINDOWS
 
 #ifndef WIN32_LEAN_AND_MEAN
