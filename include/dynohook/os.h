@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "platform.h"
+
 #if DYNO_PLATFORM_WINDOWS
 
 #ifndef WIN32_LEAN_AND_MEAN
