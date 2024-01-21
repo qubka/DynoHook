@@ -38,7 +38,7 @@ include(git.cmake)
 # Options
 #
 
-option(DYNOHOOK_BUILD_DLL "Build dll & lib instead of tests" OFF)
+option(DYNOHOOK_BUILD_TESTS "Build dll & lib instead of tests" OFF)
 
 option(DYNOHOOK_BUILD_SHARED_LIB "Build dynohook as shared library" OFF)
 option(DYNOHOOK_BUILD_SHARED_ASMTK "Build asmtk as shared library" OFF)
@@ -61,7 +61,7 @@ option(DYNOHOOK_FEATURE_LOGGING "Implement logging functionality" On)
 # Catch2
 #
 
-if(NOT DYNOHOOK_BUILD_DLL)
+if(DYNOHOOK_BUILD_TESTS)
 	add_subdirectory(catch2)
 	
 	if(MSVC)
@@ -145,7 +145,7 @@ endif()
 # Dynohook
 #
 
-if(DYNOHOOK_BUILD_DLL)
+if(NOT DYNOHOOK_BUILD_TESTS)
     if(DYNOHOOK_BUILD_SHARED_LIB)
         add_library(${PROJECT_NAME} SHARED)
         set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
@@ -226,7 +226,7 @@ target_sources(${PROJECT_NAME} PRIVATE
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/dynohook/pch.h)
 
-if(DYNOHOOK_BUILD_DLL)
+if(NOT DYNOHOOK_BUILD_TESTS)
     #include(GenerateExportHeader)
     #generate_export_header(${PROJECT_NAME} EXPORT_MACRO_NAME DYNO_EXPORT EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/exports/${PROJECT_NAME}_export.h)
     #target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_BINARY_DIR}/exports)
@@ -293,7 +293,7 @@ if(DYNOHOOK_FEATURE_DETOURS)
 	)
 
 	# only build tests if making exe
-	if(NOT DYNOHOOK_BUILD_DLL)
+	if(DYNOHOOK_BUILD_TESTS)
         if(DYNOHOOK_BUILD_64)
             target_sources(${PROJECT_NAME} PRIVATE
                 ${PROJECT_SOURCE_DIR}/tests/test_detour_translation_x64.cpp
@@ -319,7 +319,7 @@ if(DYNOHOOK_FEATURE_VIRTUALS)
             ${PROJECT_SOURCE_DIR}/src/virtuals/vhook.cpp)
 
 	# only build tests if making exe
-	if(NOT DYNOHOOK_BUILD_DLL)
+	if(DYNOHOOK_BUILD_TESTS)
 		target_sources(${PROJECT_NAME} PRIVATE
 			${PROJECT_SOURCE_DIR}/tests/test_virtual.cpp)
 	endif()
@@ -362,7 +362,7 @@ if(DYNOHOOK_FEATURE_LOGGING)
 endif()
 
 #Tests
-if(NOT DYNOHOOK_BUILD_DLL)
+if(DYNOHOOK_BUILD_TESTS)
 	target_link_libraries(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:Catch2>)
     target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/catch2/src/catch2>)
 	target_sources(${PROJECT_NAME} PRIVATE
