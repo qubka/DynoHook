@@ -98,8 +98,7 @@ namespace dyno {
         virtual bool isHooked() const = 0;
         virtual const uintptr_t& getAddress() const = 0;
         virtual HookMode getMode() const = 0;
-        
-    protected:
+
         virtual ICallingConvention& getCallingConvention() = 0;
         virtual Registers& getRegisters() = 0;
     };
