@@ -2,6 +2,7 @@
 
 #include "instruction.h"
 #include "mem_accessor.h"
+#include <unordered_map>
 
 extern "C" {
     typedef struct ZydisDecoder_ ZydisDecoder;

@@ -2,6 +2,7 @@
 
 #include "convention.h"
 #include "registers.h"
+#include <functional>
 
 namespace dyno {
     enum class HookMode : uint8_t {

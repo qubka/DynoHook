@@ -2,6 +2,7 @@
 
 #include "instruction.h"
 #include "prot.h"
+#include <memory>
 
 #define MEMORY_ROUND(_numToRound_, _multiple_) \
     (_numToRound_ & (((size_t)-1) ^ (_multiple_ - 1)))

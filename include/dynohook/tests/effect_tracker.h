@@ -1,3 +1,9 @@
+#pragma once
+
+#include <cstdint>
+#include <atomic>
+#include <vector>
+
 namespace dyno {
     class Effect {
     public:

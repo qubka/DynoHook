@@ -224,7 +224,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         ${PROJECT_SOURCE_DIR}/src/tests/stack_canary.cpp
 		)
 
-target_precompile_headers(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/include/dynohook/pch.h)
+target_precompile_headers(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/scr/pch.h)
 
 if(NOT DYNOHOOK_BUILD_TESTS)
     #include(GenerateExportHeader)

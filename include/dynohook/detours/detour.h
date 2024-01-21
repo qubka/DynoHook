@@ -5,6 +5,7 @@
 #include <dynohook/mem_protector.h>
 #include <dynohook/instruction.h>
 #include <dynohook/hook.h>
+#include <optional>
 
 namespace dyno {
     class Detour : public Hook {

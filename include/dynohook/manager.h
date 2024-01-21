@@ -6,6 +6,9 @@
 #include "detours/nat_detour.h"
 
 #include <asmjit/asmjit.h>
+#include <memory>
+#include <mutex>
+#include <unordered_map>
 
 namespace dyno {
 
