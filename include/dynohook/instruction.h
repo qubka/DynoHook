@@ -6,6 +6,7 @@
 #include <atomic>
 #include <iomanip>
 #include <sstream>
+#include <cassert>
 
 namespace dyno {
     enum class Mode : bool {
@@ -105,7 +106,6 @@ namespace dyno {
         bool isBranching() const {
             if (m_isBranching && m_isRelative) {
                 assert(m_hasDisplacement);
-				throw std::runtime_error("");
             }
             return m_isBranching;
         }

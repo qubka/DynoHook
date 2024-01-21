@@ -6,6 +6,7 @@
 #include <dynohook/instruction.h>
 #include <dynohook/hook.h>
 #include <optional>
+#include <cassert>
 
 namespace dyno {
     class Detour : public Hook {

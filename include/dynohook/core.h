@@ -3,6 +3,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <cassert>
 
 namespace dyno {
     template<typename T>
