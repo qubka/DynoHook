@@ -179,31 +179,31 @@ endif()
 
 target_include_directories(${PROJECT_NAME}
         PUBLIC
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>/include
         INTERFACE
         $<INSTALL_INTERFACE:include>
         )
 
 #Core
 set(DYNOHOOK_CORE_HEADERS
-        ${PROJECT_SOURCE_DIR}/dynohook/convention.h
-        ${PROJECT_SOURCE_DIR}/dynohook/core.h
-        ${PROJECT_SOURCE_DIR}/dynohook/fb_allocator.h
-        ${PROJECT_SOURCE_DIR}/dynohook/_hook.h
-        ${PROJECT_SOURCE_DIR}/dynohook/hook.h
-        ${PROJECT_SOURCE_DIR}/dynohook/instruction.h
-        ${PROJECT_SOURCE_DIR}/dynohook/manager.h
-        ${PROJECT_SOURCE_DIR}/dynohook/mem_accessor.h
-        ${PROJECT_SOURCE_DIR}/dynohook/mem_protector.h
-        ${PROJECT_SOURCE_DIR}/dynohook/range_allocator.h
-        ${PROJECT_SOURCE_DIR}/dynohook/registers.h
-        ${PROJECT_SOURCE_DIR}/dynohook/log.h
-        ${PROJECT_SOURCE_DIR}/dynohook/os.h
-        ${PROJECT_SOURCE_DIR}/dynohook/platform.h
-        ${PROJECT_SOURCE_DIR}/dynohook/prot.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/convention.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/core.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/fb_allocator.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/_hook.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/hook.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/instruction.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/manager.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/mem_accessor.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/mem_protector.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/range_allocator.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/registers.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/log.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/os.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/platform.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/prot.h
 
-        ${PROJECT_SOURCE_DIR}/dynohook/tests/effect_tracker.h
-        ${PROJECT_SOURCE_DIR}/dynohook/tests/stack_canary.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/tests/effect_tracker.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/tests/stack_canary.h
         )
 install(FILES ${DYNOHOOK_CORE_HEADERS} DESTINATION include/dynohook)
 
@@ -224,7 +224,7 @@ target_sources(${PROJECT_NAME} PRIVATE
         ${PROJECT_SOURCE_DIR}/src/tests/stack_canary.cpp
 		)
 
-target_precompile_headers(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/dynohook/pch.h)
+target_precompile_headers(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/include/dynohook/pch.h)
 
 if(NOT DYNOHOOK_BUILD_TESTS)
     #include(GenerateExportHeader)
@@ -249,7 +249,7 @@ else()
 endif()
 
 target_sources(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/src/disassembler.cpp")
-install(FILES ${PROJECT_SOURCE_DIR}/dynohook/disassembler.h DESTINATION include/dynohook)
+install(FILES ${PROJECT_SOURCE_DIR}/include/dynohook/disassembler.h DESTINATION include/dynohook)
 
 function(link_asmjit)
     if(DYNOHOOK_USE_EXTERNAL_ASMJIT)
@@ -281,11 +281,11 @@ if(DYNOHOOK_FEATURE_DETOURS)
     endif()
 
 	set(DYNOHOOK_DETOUR_HEADERS
-            ${PROJECT_SOURCE_DIR}/dynohook/detours/detour.h
-            ${PROJECT_SOURCE_DIR}/dynohook/detours/nat_detour.h
-            ${PROJECT_SOURCE_DIR}/dynohook/detours/${DYNOHOOK_BUILD_PREFIX}_detour.h)
+            ${PROJECT_SOURCE_DIR}/include/dynohook/detours/detour.h
+            ${PROJECT_SOURCE_DIR}/include/dynohook/detours/nat_detour.h
+            ${PROJECT_SOURCE_DIR}/include/dynohook/detours/${DYNOHOOK_BUILD_PREFIX}_detour.h)
 
-	install(FILES ${DYNOHOOK_DETOUR_HEADERS} DESTINATION include/dynohook/detours)
+	install(FILES ${DYNOHOOK_DETOUR_HEADERS} DESTINATION include/include/dynohook/detours)
 
 	target_sources(${PROJECT_NAME} PRIVATE
             ${PROJECT_SOURCE_DIR}/src/detours/detour.cpp
@@ -310,9 +310,9 @@ endif()
 #Feature/Virtuals
 if(DYNOHOOK_FEATURE_VIRTUALS)
 	set(DYNOHOOK_VIRTUAL_HEADERS
-            ${PROJECT_SOURCE_DIR}/dynohook/virtuals/vtable.h
-            ${PROJECT_SOURCE_DIR}/dynohook/virtuals/vhook.h)
-	install(FILES ${DYNOHOOK_VIRTUAL_HEADERS} DESTINATION include/dynohook/virtuals)
+            ${PROJECT_SOURCE_DIR}/include/dynohook/virtuals/vtable.h
+            ${PROJECT_SOURCE_DIR}/include/dynohook/virtuals/vhook.h)
+	install(FILES ${DYNOHOOK_VIRTUAL_HEADERS} DESTINATION include/include/dynohook/virtuals)
 
 	target_sources(${PROJECT_NAME} PRIVATE
             ${PROJECT_SOURCE_DIR}/src/virtuals/vtable.cpp
@@ -328,22 +328,22 @@ endif()
 #Feature/CallConv
 if(DYNOHOOK_BUILD_64)
 	set(DYNOHOOK_CALLCONV_HEADERS
-            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x64_windows_call.h
-            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x64_systemV_call.h)
-	install(FILES ${DYNOHOOK_CALLCONV_HEADERS} DESTINATION include/dynohook/conventions)
+            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x64_windows_call.h
+            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x64_systemV_call.h)
+	install(FILES ${DYNOHOOK_CALLCONV_HEADERS} DESTINATION include/include/dynohook/conventions)
 
 	target_sources(${PROJECT_NAME} PRIVATE
             ${PROJECT_SOURCE_DIR}/src/conventions/x64_windows_call.cpp
             ${PROJECT_SOURCE_DIR}/src/conventions/x64_systemV_call.cpp)
 elseif(DYNOHOOK_BUILD_32)
 	set(DYNOHOOK_CALLCONV_HEADERS
-            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x86_gcc_cdecl.h
-            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x86_gcc_thiscall.h
-            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x86_ms_cdecl.h
-            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x86_ms_fastcall.h
-            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x86_ms_stdcall.h
-            ${PROJECT_SOURCE_DIR}/dynohook/conventions/x86_ms_thiscall.h)
-	install(FILES ${DYNOHOOK_CALLCONV_HEADERS} DESTINATION include/dynohook/conventions)
+            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x86_gcc_cdecl.h
+            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x86_gcc_thiscall.h
+            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x86_ms_cdecl.h
+            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x86_ms_fastcall.h
+            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x86_ms_stdcall.h
+            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x86_ms_thiscall.h)
+	install(FILES ${DYNOHOOK_CALLCONV_HEADERS} DESTINATION include/include/dynohook/conventions)
 
 	target_sources(${PROJECT_NAME} PRIVATE
             ${PROJECT_SOURCE_DIR}/src/conventions/x86_ms_cdecl.cpp
