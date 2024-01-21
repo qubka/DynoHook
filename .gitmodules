@@ -7,3 +7,6 @@
 [submodule "catch2"]
 	path = catch2
 	url = https://github.com/catchorg/Catch2.git
+[submodule "zydis"]
+	path = zydis
+	url = https://github.com/zyantific/zydis.git
