@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdint>
+#include <type_traits>
+
 namespace dyno {
 
     // unsafe enum by design to allow binary OR

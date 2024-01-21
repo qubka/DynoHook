@@ -1,3 +1,11 @@
+#pragma once
+
+#include <cstdint>
+#include <memory>
+#include <mutex>
+#include <vector>
+#include <unordered_map>
+
 namespace dyno {
     class FBAllocator;
     class RangeAllocator {

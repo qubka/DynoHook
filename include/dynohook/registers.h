@@ -1,5 +1,9 @@
 #pragma once
 
+#include <cstdint>
+#include <string>
+#include <vector>
+
 namespace dyno {
     enum RegisterType : uint8_t {
         // no register at all.
