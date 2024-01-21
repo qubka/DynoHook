@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <array>
 #include "platform.h"
 #include "helpers.h"
 

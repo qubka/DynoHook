@@ -1,7 +1,8 @@
 #pragma once
 
 #include "mem_accessor.h"
-#include <dynohook/_hook.h>
+#include "_hook.h"
+#include "log.h"
 #include <asmjit/asmjit.h>
 
 namespace dyno {
