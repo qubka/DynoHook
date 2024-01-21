@@ -9,10 +9,11 @@
 #include <memory>
 #include <mutex>
 #include <unordered_map>
+#include <dynohook_export.h>
 
 namespace dyno {
 
-    class HookManager {
+    class DYNO_API HookManager {
     private:
         HookManager() = default;
         ~HookManager() = default;

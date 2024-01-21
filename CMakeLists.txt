@@ -38,7 +38,7 @@ include(git.cmake)
 # Options
 #
 
-option(DYNOHOOK_BUILD_TESTS "Build dll & lib instead of tests" ON)
+option(DYNOHOOK_BUILD_TESTS "Build dll & lib instead of tests" OFF)
 
 option(DYNOHOOK_BUILD_SHARED_LIB "Build dynohook as shared library" OFF)
 option(DYNOHOOK_BUILD_SHARED_ASMTK "Build asmtk as shared library" OFF)
@@ -148,7 +148,6 @@ endif()
 if(NOT DYNOHOOK_BUILD_TESTS)
     if(DYNOHOOK_BUILD_SHARED_LIB)
         add_library(${PROJECT_NAME} SHARED)
-        set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
     else()
         add_library(${PROJECT_NAME} STATIC)
     endif()
@@ -227,9 +226,9 @@ target_sources(${PROJECT_NAME} PRIVATE
 target_precompile_headers(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/src/pch.h)
 
 if(NOT DYNOHOOK_BUILD_TESTS)
-    #include(GenerateExportHeader)
-    #generate_export_header(${PROJECT_NAME} EXPORT_MACRO_NAME DYNO_EXPORT EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/exports/${PROJECT_NAME}_export.h)
-    #target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_BINARY_DIR}/exports)
+    include(GenerateExportHeader)
+    generate_export_header(${PROJECT_NAME} EXPORT_MACRO_NAME DYNO_API EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/exports/${PROJECT_NAME}_export.h)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_BINARY_DIR}/exports)
 else()
 	target_compile_options(${PROJECT_NAME} PRIVATE
 		$<$<BOOL:${UNIX}>:-fpermissive>
