@@ -38,7 +38,7 @@ include(git.cmake)
 # Options
 #
 
-option(DYNOHOOK_BUILD_TESTS "Build dll & lib instead of tests" ON)
+option(DYNOHOOK_BUILD_TESTS "Build dll & lib instead of tests" OFF)
 
 option(DYNOHOOK_BUILD_SHARED_LIB "Build dynohook as shared library" OFF)
 option(DYNOHOOK_BUILD_SHARED_ASMTK "Build asmtk as shared library" OFF)
@@ -145,141 +145,17 @@ endif()
 # Dynohook
 #
 
-set(DYNOHOOK_CORE_HEADERS
-        ${PROJECT_SOURCE_DIR}/include/dynohook/convention.h
-        ${PROJECT_SOURCE_DIR}/include/dynohook/core.h
-        ${PROJECT_SOURCE_DIR}/include/dynohook/fb_allocator.h
-        ${PROJECT_SOURCE_DIR}/include/dynohook/_hook.h
-        ${PROJECT_SOURCE_DIR}/include/dynohook/hook.h
-        ${PROJECT_SOURCE_DIR}/include/dynohook/instruction.h
-        ${PROJECT_SOURCE_DIR}/include/dynohook/manager.h
-        ${PROJECT_SOURCE_DIR}/include/dynohook/mem_accessor.h
-        ${PROJECT_SOURCE_DIR}/include/dynohook/mem_protector.h
-        ${PROJECT_SOURCE_DIR}/include/dynohook/range_allocator.h
-        ${PROJECT_SOURCE_DIR}/include/dynohook/registers.h
-        ${PROJECT_SOURCE_DIR}/include/dynohook/log.h
-        ${PROJECT_SOURCE_DIR}/include/dynohook/os.h
-        ${PROJECT_SOURCE_DIR}/include/dynohook/platform.h
-        ${PROJECT_SOURCE_DIR}/include/dynohook/prot.h
-        ${PROJECT_SOURCE_DIR}/include/dynohook/disassembler.h
-        ${PROJECT_SOURCE_DIR}/include/dynohook/tests/effect_tracker.h
-        ${PROJECT_SOURCE_DIR}/include/dynohook/tests/stack_canary.h
-        )
-install(FILES ${DYNOHOOK_CORE_HEADERS} DESTINATION include/dynohook)
-
-set(DYNOHOOK_CORE_SOURCES
-        ${PROJECT_SOURCE_DIR}/src/convention.cpp
-        ${PROJECT_SOURCE_DIR}/src/core.cpp
-        ${PROJECT_SOURCE_DIR}/src/fb_allocator.cpp
-        ${PROJECT_SOURCE_DIR}/src/hook.cpp
-        ${PROJECT_SOURCE_DIR}/src/instruction.cpp
-        ${PROJECT_SOURCE_DIR}/src/manager.cpp
-        ${PROJECT_SOURCE_DIR}/src/mem_accessor.cpp
-        ${PROJECT_SOURCE_DIR}/src/mem_protector.cpp
-        ${PROJECT_SOURCE_DIR}/src/range_allocator.cpp
-        ${PROJECT_SOURCE_DIR}/src/registers.cpp
-        ${PROJECT_SOURCE_DIR}/src/log.cpp
-        ${PROJECT_SOURCE_DIR}/src/disassembler.cpp
-        ${PROJECT_SOURCE_DIR}/src/tests/effect_tracker.cpp
-        ${PROJECT_SOURCE_DIR}/src/tests/stack_canary.cpp
-		)
-
-#Feature/Detours
-if(DYNOHOOK_FEATURE_DETOURS)
-	set(DYNOHOOK_DETOUR_HEADERS
-            ${PROJECT_SOURCE_DIR}/include/dynohook/detours/detour.h
-            ${PROJECT_SOURCE_DIR}/include/dynohook/detours/nat_detour.h
-            ${PROJECT_SOURCE_DIR}/include/dynohook/detours/${DYNOHOOK_BUILD_PREFIX}_detour.h)
-
-	install(FILES ${DYNOHOOK_DETOUR_HEADERS} DESTINATION include/dynohook/detours)
-
-	set(DYNOHOOK_CORE_SOURCES ${DYNOHOOK_CORE_SOURCES}
-            ${PROJECT_SOURCE_DIR}/src/detours/detour.cpp
-            ${PROJECT_SOURCE_DIR}/src/detours/${DYNOHOOK_BUILD_PREFIX}_detour.cpp
-	)
-
-	# only build tests if making exe
-	if(DYNOHOOK_BUILD_TESTS)
-        if(DYNOHOOK_BUILD_64)
-            set(DYNOHOOK_CORE_SOURCES ${DYNOHOOK_CORE_SOURCES}
-                    ${PROJECT_SOURCE_DIR}/tests/test_detour_translation_x64.cpp
-                    ${PROJECT_SOURCE_DIR}/tests/test_detour_scheme_x64.cpp
-                    ${PROJECT_SOURCE_DIR}/tests/test_detour_notd_x64.cpp
-                    ${PROJECT_SOURCE_DIR}/tests/test_detour_x64.cpp)
-        elseif(DYNOHOOK_BUILD_32)
-            set(DYNOHOOK_CORE_SOURCES ${DYNOHOOK_CORE_SOURCES}
-                    ${PROJECT_SOURCE_DIR}/tests/test_detour_x86.cpp)
-        endif()
-	endif()
-endif()
-
-#Feature/Virtuals
-if(DYNOHOOK_FEATURE_VIRTUALS)
-	set(DYNOHOOK_VIRTUAL_HEADERS
-            ${PROJECT_SOURCE_DIR}/include/dynohook/virtuals/vtable.h
-            ${PROJECT_SOURCE_DIR}/include/dynohook/virtuals/vhook.h)
-	install(FILES ${DYNOHOOK_VIRTUAL_HEADERS} DESTINATION include/dynohook/virtuals)
-
-	set(DYNOHOOK_CORE_SOURCES ${DYNOHOOK_CORE_SOURCES}
-            ${PROJECT_SOURCE_DIR}/src/virtuals/vtable.cpp
-            ${PROJECT_SOURCE_DIR}/src/virtuals/vhook.cpp)
-
-	# only build tests if making exe
-	if(DYNOHOOK_BUILD_TESTS)
-		set(DYNOHOOK_CORE_SOURCES ${DYNOHOOK_CORE_SOURCES}
-                ${PROJECT_SOURCE_DIR}/tests/test_virtual.cpp)
-	endif()
-endif()
-
-#Feature/CallConv
-if(DYNOHOOK_BUILD_64)
-	set(DYNOHOOK_CALLCONV_HEADERS
-            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x64_windows_call.h
-            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x64_systemV_call.h)
-	install(FILES ${DYNOHOOK_CALLCONV_HEADERS} DESTINATION include/dynohook/conventions)
-
-	set(DYNOHOOK_CORE_SOURCES ${DYNOHOOK_CORE_SOURCES}
-            ${PROJECT_SOURCE_DIR}/src/conventions/x64_windows_call.cpp
-            ${PROJECT_SOURCE_DIR}/src/conventions/x64_systemV_call.cpp)
-elseif(DYNOHOOK_BUILD_32)
-	set(DYNOHOOK_CALLCONV_HEADERS
-            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x86_gcc_cdecl.h
-            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x86_gcc_thiscall.h
-            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x86_ms_cdecl.h
-            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x86_ms_fastcall.h
-            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x86_ms_stdcall.h
-            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x86_ms_thiscall.h)
-	install(FILES ${DYNOHOOK_CALLCONV_HEADERS} DESTINATION include/dynohook/conventions)
-
-	set(DYNOHOOK_CORE_SOURCES ${DYNOHOOK_CORE_SOURCES}
-            ${PROJECT_SOURCE_DIR}/src/conventions/x86_ms_cdecl.cpp
-            ${PROJECT_SOURCE_DIR}/src/conventions/x86_ms_fastcall.cpp
-            ${PROJECT_SOURCE_DIR}/src/conventions/x86_ms_stdcall.cpp
-            ${PROJECT_SOURCE_DIR}/src/conventions/x86_ms_thiscall.cpp)
-endif()
-
-#Tests
-if(DYNOHOOK_BUILD_TESTS)
-	set(DYNOHOOK_CORE_SOURCES ${DYNOHOOK_CORE_SOURCES}
-            ${PROJECT_SOURCE_DIR}/tests/main_tests.cpp
-	        ${PROJECT_SOURCE_DIR}/tests/test_disassembler.cpp
-		    ${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_mem_protector.cpp)
-endif()
-
-#Main
 if(NOT DYNOHOOK_BUILD_TESTS)
     if(DYNOHOOK_BUILD_SHARED_LIB)
-        add_library(${PROJECT_NAME} SHARED ${DYNOHOOK_CORE_SOURCES})
+        add_library(${PROJECT_NAME} SHARED)
         set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
     else()
-        add_library(${PROJECT_NAME} STATIC ${DYNOHOOK_CORE_SOURCES})
+        add_library(${PROJECT_NAME} STATIC)
     endif()
 else()
-    add_executable(${PROJECT_NAME} ${DYNOHOOK_CORE_SOURCES})
+    add_executable(${PROJECT_NAME})
     target_link_libraries(${PROJECT_NAME} PRIVATE git-info)
 endif()
-
-target_precompile_headers(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/src/pch.h)
 
 if(MSVC)
     if(DYNOHOOK_BUILD_STATIC_RUNTIME)
@@ -308,6 +184,59 @@ target_include_directories(${PROJECT_NAME}
         $<INSTALL_INTERFACE:include>
         )
 
+#Core
+set(DYNOHOOK_CORE_HEADERS
+        ${PROJECT_SOURCE_DIR}/include/dynohook/convention.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/core.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/fb_allocator.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/_hook.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/hook.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/instruction.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/manager.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/mem_accessor.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/mem_protector.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/range_allocator.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/registers.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/log.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/os.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/platform.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/prot.h
+
+        ${PROJECT_SOURCE_DIR}/include/dynohook/tests/effect_tracker.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/tests/stack_canary.h
+        )
+install(FILES ${DYNOHOOK_CORE_HEADERS} DESTINATION include/dynohook)
+
+target_sources(${PROJECT_NAME} PRIVATE
+        ${PROJECT_SOURCE_DIR}/src/convention.cpp
+        ${PROJECT_SOURCE_DIR}/src/core.cpp
+        ${PROJECT_SOURCE_DIR}/src/fb_allocator.cpp
+        ${PROJECT_SOURCE_DIR}/src/hook.cpp
+        ${PROJECT_SOURCE_DIR}/src/instruction.cpp
+        ${PROJECT_SOURCE_DIR}/src/manager.cpp
+        ${PROJECT_SOURCE_DIR}/src/mem_accessor.cpp
+        ${PROJECT_SOURCE_DIR}/src/mem_protector.cpp
+        ${PROJECT_SOURCE_DIR}/src/range_allocator.cpp
+        ${PROJECT_SOURCE_DIR}/src/registers.cpp
+        ${PROJECT_SOURCE_DIR}/src/log.cpp
+
+        ${PROJECT_SOURCE_DIR}/src/tests/effect_tracker.cpp
+        ${PROJECT_SOURCE_DIR}/src/tests/stack_canary.cpp
+		)
+
+target_precompile_headers(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/src/pch.h)
+
+if(NOT DYNOHOOK_BUILD_TESTS)
+    #include(GenerateExportHeader)
+    #generate_export_header(${PROJECT_NAME} EXPORT_MACRO_NAME DYNO_EXPORT EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/exports/${PROJECT_NAME}_export.h)
+    #target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_BINARY_DIR}/exports)
+else()
+	target_compile_options(${PROJECT_NAME} PRIVATE
+		$<$<BOOL:${UNIX}>:-fpermissive>
+	)
+    #target_compile_definitions(${PROJECT_NAME} PRIVATE DYNO_EXPORT)
+endif()
+
 #Zydis
 if(DYNOHOOK_USE_EXTERNAL_ZYDIS)
     find_package(zydis REQUIRED)
@@ -318,6 +247,9 @@ else()
     target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/zydis/dependencies/zycore/include>)
     target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/zydis>)
 endif()
+
+target_sources(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/src/disassembler.cpp")
+install(FILES ${PROJECT_SOURCE_DIR}/include/dynohook/disassembler.h DESTINATION include/dynohook)
 
 function(link_asmjit)
     if(DYNOHOOK_USE_EXTERNAL_ASMJIT)
@@ -347,18 +279,128 @@ if(DYNOHOOK_FEATURE_DETOURS)
         target_link_libraries(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:asmtk>)
         target_include_directories(${PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:${ASMTK_SRC}>")
     endif()
+
+	set(DYNOHOOK_DETOUR_HEADERS
+            ${PROJECT_SOURCE_DIR}/include/dynohook/detours/detour.h
+            ${PROJECT_SOURCE_DIR}/include/dynohook/detours/nat_detour.h
+            ${PROJECT_SOURCE_DIR}/include/dynohook/detours/${DYNOHOOK_BUILD_PREFIX}_detour.h)
+
+	install(FILES ${DYNOHOOK_DETOUR_HEADERS} DESTINATION include/dynohook/detours)
+
+	target_sources(${PROJECT_NAME} PRIVATE
+            ${PROJECT_SOURCE_DIR}/src/detours/detour.cpp
+            ${PROJECT_SOURCE_DIR}/src/detours/${DYNOHOOK_BUILD_PREFIX}_detour.cpp
+	)
+
+	# only build tests if making exe
+	if(DYNOHOOK_BUILD_TESTS)
+        if(DYNOHOOK_BUILD_64)
+            target_sources(${PROJECT_NAME} PRIVATE
+                ${PROJECT_SOURCE_DIR}/tests/test_detour_translation_x64.cpp
+                ${PROJECT_SOURCE_DIR}/tests/test_detour_scheme_x64.cpp
+                ${PROJECT_SOURCE_DIR}/tests/test_detour_notd_x64.cpp
+                ${PROJECT_SOURCE_DIR}/tests/test_detour_x64.cpp)
+        elseif(DYNOHOOK_BUILD_32)
+            target_sources(${PROJECT_NAME} PRIVATE
+                    ${PROJECT_SOURCE_DIR}/tests/test_detour_x86.cpp)
+        endif()
+	endif()
+endif()
+
+#Feature/Virtuals
+if(DYNOHOOK_FEATURE_VIRTUALS)
+	set(DYNOHOOK_VIRTUAL_HEADERS
+            ${PROJECT_SOURCE_DIR}/include/dynohook/virtuals/vtable.h
+            ${PROJECT_SOURCE_DIR}/include/dynohook/virtuals/vhook.h)
+	install(FILES ${DYNOHOOK_VIRTUAL_HEADERS} DESTINATION include/dynohook/virtuals)
+
+	target_sources(${PROJECT_NAME} PRIVATE
+            ${PROJECT_SOURCE_DIR}/src/virtuals/vtable.cpp
+            ${PROJECT_SOURCE_DIR}/src/virtuals/vhook.cpp)
+
+	# only build tests if making exe
+	if(DYNOHOOK_BUILD_TESTS)
+		target_sources(${PROJECT_NAME} PRIVATE
+			${PROJECT_SOURCE_DIR}/tests/test_virtual.cpp)
+	endif()
+endif()
+
+#Feature/CallConv
+if(DYNOHOOK_BUILD_64)
+	set(DYNOHOOK_CALLCONV_HEADERS
+            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x64_windows_call.h
+            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x64_systemV_call.h)
+	install(FILES ${DYNOHOOK_CALLCONV_HEADERS} DESTINATION include/dynohook/conventions)
+
+	target_sources(${PROJECT_NAME} PRIVATE
+            ${PROJECT_SOURCE_DIR}/src/conventions/x64_windows_call.cpp
+            ${PROJECT_SOURCE_DIR}/src/conventions/x64_systemV_call.cpp)
+elseif(DYNOHOOK_BUILD_32)
+	set(DYNOHOOK_CALLCONV_HEADERS
+            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x86_gcc_cdecl.h
+            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x86_gcc_thiscall.h
+            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x86_ms_cdecl.h
+            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x86_ms_fastcall.h
+            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x86_ms_stdcall.h
+            ${PROJECT_SOURCE_DIR}/include/dynohook/conventions/x86_ms_thiscall.h)
+	install(FILES ${DYNOHOOK_CALLCONV_HEADERS} DESTINATION include/dynohook/conventions)
+
+	target_sources(${PROJECT_NAME} PRIVATE
+            ${PROJECT_SOURCE_DIR}/src/conventions/x86_ms_cdecl.cpp
+            ${PROJECT_SOURCE_DIR}/src/conventions/x86_ms_fastcall.cpp
+            ${PROJECT_SOURCE_DIR}/src/conventions/x86_ms_stdcall.cpp
+            ${PROJECT_SOURCE_DIR}/src/conventions/x86_ms_thiscall.cpp)
 endif()
 
 #Feature/Logging
 if(DYNOHOOK_FEATURE_LOGGING)
     target_compile_definitions(${PROJECT_NAME} PRIVATE
-            DYNO_LOGGING
-            DYNO_COMPILED_COMPILER="${CMAKE_CXX_COMPILER}"
-            DYNO_COMPILED_SYSTEM="${CMAKE_SYSTEM}"
-            DYNO_COMPILED_GENERATOR="${CMAKE_GENERATOR}")
+        DYNO_LOGGING
+        DYNO_COMPILED_COMPILER="${CMAKE_CXX_COMPILER}"
+        DYNO_COMPILED_SYSTEM="${CMAKE_SYSTEM}"
+        DYNO_COMPILED_GENERATOR="${CMAKE_GENERATOR}")
 endif()
 
 #Tests
 if(DYNOHOOK_BUILD_TESTS)
-    target_link_libraries(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:Catch2>)
+	target_link_libraries(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:Catch2>)
+    target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/catch2/src/catch2>)
+	target_sources(${PROJECT_NAME} PRIVATE
+		${PROJECT_SOURCE_DIR}/tests/main_tests.cpp
+	    ${PROJECT_SOURCE_DIR}/tests/test_disassembler.cpp
+		${PROJECT_SOURCE_DIR}/tests/${DYNOHOOK_OS}/test_mem_protector.cpp)
 endif()
+
+#
+# Install
+#
+
+configure_package_config_file(
+		"${PROJECT_NAME}-config.cmake.in"
+		"${PROJECT_NAME}-config.cmake"
+	INSTALL_DESTINATION
+        "lib/${PROJECT_NAME}"
+)
+
+install(
+    FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
+    DESTINATION
+        "lib/${PROJECT_NAME}"
+)
+
+install(TARGETS ${PROJECT_NAME}
+    EXPORT ${PROJECT_NAME}-targets
+    RUNTIME DESTINATION "bin"
+    LIBRARY DESTINATION "lib"
+    ARCHIVE DESTINATION "lib"
+)
+
+install(
+    EXPORT
+        ${PROJECT_NAME}-targets
+    NAMESPACE
+        ${PROJECT_NAME}::
+    DESTINATION
+        "lib/${PROJECT_NAME}"
+)
