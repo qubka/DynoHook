@@ -1,5 +1,10 @@
 #pragma once
 
+#include <cstdint>
+#include <vector>
+#include <string>
+#include <atomic>
+
 namespace dyno {
     enum class Mode : bool {
         x86,

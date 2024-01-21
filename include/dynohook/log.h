@@ -1,5 +1,10 @@
 #pragma once
 
+#include <cstdint>
+#include <string>
+#include <memory>
+#include <vector>
+
 namespace dyno {
     enum class ErrorLevel : uint8_t {
         NONE,
