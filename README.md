@@ -61,10 +61,10 @@ ReturnAction PostMyFunc(CallbackType type, Hook& hook) {
 	int y = hook.getArgument<int>(1);
 	assert(y == 10);
 
-	int return_value = hook.getReturnValue<int>();
+	int return_value = hook.getReturn<int>();
 	assert(return_value == 13);
 
-	hook.setReturnValue<int>(1337);
+	hook.setReturn<int>(1337);
 
 	return ReturnAction::Ignored;
 }
@@ -147,10 +147,10 @@ ReturnAction PostMyFunc(CallbackType type, Hook& hook) {
 	int y = hook.getArgument<int>(2);
 	assert(y == 10);
 
-	int return_value = hook.getReturnValue<int>();
+	int return_value = hook.getReturn<int>();
 	assert(return_value == 13);
 
-	hook.setReturnValue<int>(1337);
+	hook.setReturn<int>(1337);
 
 	return ReturnAction::Ignored;
 }
@@ -238,10 +238,10 @@ ReturnAction PostMyFunc(CallbackType type, Hook& hook) {
     int y = hook.getArgument<int>(2);
     assert(y == 10);
 
-    int return_value = hook.getReturnValue<int>();
+    int return_value = hook.getReturn<int>();
     assert(return_value == 13);
 
-    hook.setReturnValue<int>(1337);
+    hook.setReturn<int>(1337);
 
     return ReturnAction::Ignored;
 }

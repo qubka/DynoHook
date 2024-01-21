@@ -80,12 +80,12 @@ namespace dyno {
         }
 
         template<class T>
-        T getReturnValue() {
+        T getReturn() {
             return *(T*) getCallingConvention().getReturnPtr(getRegisters());
         }
 
         template<class T>
-        void setReturnValue(T value) {
+        void setReturn(T value) {
             void* returnPtr = getCallingConvention().getReturnPtr(getRegisters());
             *(T*) returnPtr = value;
             getCallingConvention().onReturnPtrChanged(getRegisters(), returnPtr);

@@ -86,7 +86,7 @@ DYNO_NOINLINE dyno::ReturnAction postCallback(dyno::CallbackType type, dyno::IHo
     dyno::StackCanary canary;
     std::cout << "postCallback: called" << std::endl;
 
-    int return_value = hook.getReturnValue<int>();
+    int return_value = hook.getReturn<int>();
     if (return_value == 0x1337) {
         ripEffects.peak().trigger();
     }

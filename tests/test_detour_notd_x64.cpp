@@ -361,7 +361,7 @@ TEST_CASE("Callback Argument re-writing", "[Convention]") {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
 
-            hook.setReturnValue<long>(1337);
+            hook.setReturn<long>(1337);
 
             std::cout << "post_rw_long called" << std::endl;
 
@@ -391,7 +391,7 @@ TEST_CASE("Callback Return re-writing", "[Convention]") {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             
-            hook.setReturnValue<int>(5);
+            hook.setReturn<int>(5);
             effectsNTD64.peak().trigger();
             std::cout << "post_rw_int called" << std::endl;
 
@@ -418,7 +418,7 @@ TEST_CASE("Callback Return re-writing", "[Convention]") {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             
-            hook.setReturnValue<float>(5.0f);
+            hook.setReturn<float>(5.0f);
             effectsNTD64.peak().trigger();
             std::cout << "post_rw_float called" << std::endl;
 
@@ -445,7 +445,7 @@ TEST_CASE("Callback Return re-writing", "[Convention]") {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             
-            hook.setReturnValue<double>(5.0);
+            hook.setReturn<double>(5.0);
             effectsNTD64.peak().trigger();
             std::cout << "post_rw_double called" << std::endl;
 
@@ -497,7 +497,7 @@ TEST_CASE("Callback Skip original function", "[Convention]") {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
 
-            hook.setReturnValue<bool>(false);
+            hook.setReturn<bool>(false);
 
             std::cout << "post_rw_bool called" << std::endl;
             

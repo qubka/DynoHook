@@ -74,7 +74,7 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
             dyno::StackCanary canary;
             std::cout << "post_hook_valloc_function called" << std::endl;
 
-            int32_t return_value = hook.getReturnValue<int32_t>();
+            int32_t return_value = hook.getReturn<int32_t>();
             if (return_value == 0x1337) {
                 schemeEffects.peak().trigger();
             }
@@ -121,7 +121,7 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
             dyno::StackCanary canary;
             std::cout << "post_hook_large_function called" << std::endl;
 
-            int64_t return_value = hook.getReturnValue<int64_t>();
+            int64_t return_value = hook.getReturn<int64_t>();
             if (return_value == 0x1234567890123456) {
                 schemeEffects.peak().trigger();
             }
@@ -166,7 +166,7 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
             dyno::StackCanary canary;
             std::cout << "post_hook_medium_function called" << std::endl;
 
-            int64_t return_value = hook.getReturnValue<int64_t>();
+            int64_t return_value = hook.getReturn<int64_t>();
             if (return_value == 0x1234567890123456) {
                 schemeEffects.peak().trigger();
             }
@@ -215,7 +215,7 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
             dyno::StackCanary canary;
             std::cout << "post_hook_rip_function called" << std::endl;
 
-            int32_t return_value = hook.getReturnValue<int32_t>();
+            int32_t return_value = hook.getReturn<int32_t>();
             if (return_value == 0x1337) {
                 schemeEffects.peak().trigger();
             }

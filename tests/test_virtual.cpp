@@ -96,11 +96,11 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             std::cout << "PostNoParamVirt 1 Called!" << std::endl;
-            int return_value = hook.getReturnValue<int>();
+            int return_value = hook.getReturn<int>();
             if (return_value == 4) {
                 vTblSwapEffects.peak().trigger();
             }
-            hook.setReturnValue<int>(1337);
+            hook.setReturn<int>(1337);
             return dyno::ReturnAction::Handled;
         };
 
@@ -191,11 +191,11 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             std::cout << "PostMultParamVirt 3 Called!" << std::endl;
-            float return_value = hook.getReturnValue<float>();
+            float return_value = hook.getReturn<float>();
             if (isApproximatelyEqual(return_value, 12.0f)) {
                 vTblSwapEffects.peak().trigger();
             }
-            hook.setReturnValue<float>(13.37f);
+            hook.setReturn<float>(13.37f);
             return dyno::ReturnAction::Handled;
         };
 
@@ -203,11 +203,11 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
             DYNO_UNUSED(type);
             dyno::StackCanary canary;
             std::cout << "PostMultParamVirt(2) 3 Called!" << std::endl;
-            float return_value = hook.getReturnValue<float>();
+            float return_value = hook.getReturn<float>();
             if (isApproximatelyEqual(return_value, 13.37f)) {
                 vTblSwapEffects.peak().trigger();
             }
-            hook.setReturnValue<float>(7.0f);
+            hook.setReturn<float>(7.0f);
             return dyno::ReturnAction::Handled;
         };
 
