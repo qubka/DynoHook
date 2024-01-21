@@ -354,7 +354,7 @@ endif()
 
 #Feature/Logging
 if(DYNOHOOK_FEATURE_LOGGING)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE
+    target_compile_definitions(${PROJECT_NAME} PUBLIC
         DYNO_LOGGING
         DYNO_COMPILED_COMPILER="${CMAKE_CXX_COMPILER}"
         DYNO_COMPILED_SYSTEM="${CMAKE_SYSTEM}"
