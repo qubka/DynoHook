@@ -2,7 +2,6 @@
 
 #include "mem_accessor.h"
 #include "_hook.h"
-#include "log.h"
 #include <asmjit/asmjit.h>
 
 namespace dyno {
