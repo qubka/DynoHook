@@ -42,7 +42,7 @@ int __fastcall MyFunc(int x, int y) {
 	return result;
 }
 
-ReturnAction PreMyFunc(CallbackType type, Hook& hook) {
+ReturnAction PreMyFunc(CallbackType type, IHook& hook) {
 	g_PreMyFuncCallCount++;
 	int x = hook.getArgument<int>(0);
 	assert(x == 3);
@@ -53,7 +53,7 @@ ReturnAction PreMyFunc(CallbackType type, Hook& hook) {
 	return ReturnAction::Ignored;
 }
 
-ReturnAction PostMyFunc(CallbackType type, Hook& hook) {
+ReturnAction PostMyFunc(CallbackType type, IHook& hook) {
 	g_PostMyFuncCallCount++;
 	int x = hook.getArgument<int>(0);
 	assert(x == 3);
@@ -78,6 +78,7 @@ void main() {
 	// Add the callbacks
 	hook->addCallback(CallbackType::Pre, (CallbackHandler) PreMyFunc);
 	hook->addCallback(CallbackType::Post, (CallbackHandler) PostMyFunc);
+	// Add more callbacks if you wish
 
 	// Call the function
 	int ret = MyFunc(3, 10);
@@ -122,7 +123,7 @@ private:
 	int m_iData;
 };
 
-ReturnAction PreMyFunc(CallbackType type, Hook& hook) {
+ReturnAction PreMyFunc(CallbackType type, IHook& hook) {
 	g_PreMyFuncCallCount++;
 	MyClass* pMyClass = hook.getArgument<MyClass*>(0);
 	assert(pMyClass == g_pMyClass);
@@ -136,7 +137,7 @@ ReturnAction PreMyFunc(CallbackType type, Hook& hook) {
 	return ReturnAction::Ignored;
 }
 
-ReturnAction PostMyFunc(CallbackType type, Hook& hook) {
+ReturnAction PostMyFunc(CallbackType type, IHook& hook) {
 	g_PostMyFuncCallCount++;
 	MyClass* pMyClass = hook.getArgument<MyClass*>(0);
 	assert(pMyClass == g_pMyClass);
@@ -166,6 +167,7 @@ void main() {
 	// Add the callbacks
 	hook->addCallback(CallbackType::Pre, (CallbackHandler) &PreMyFunc);
 	hook->addCallback(CallbackType::Post, (CallbackHandler) &PostMyFunc);
+	// Add more callbacks if you wish
 
 	MyClass a;
 	g_pMyClass = &a;
@@ -213,7 +215,7 @@ private:
     int m_iData;
 };
 
-ReturnAction PreMyFunc(CallbackType type, Hook& hook) {
+ReturnAction PreMyFunc(CallbackType type, IHook& hook) {
     g_PreMyFuncCallCount++;
     MyClass* pMyClass = hook.getArgument<MyClass*>(0);
     assert(pMyClass == g_pMyClass);
@@ -227,7 +229,7 @@ ReturnAction PreMyFunc(CallbackType type, Hook& hook) {
     return ReturnAction::Ignored;
 }
 
-ReturnAction PostMyFunc(CallbackType type, Hook& hook) {
+ReturnAction PostMyFunc(CallbackType type, IHook& hook) {
     g_PostMyFuncCallCount++;
     MyClass* pMyClass = hook.getArgument<MyClass*>(0);
     assert(pMyClass == g_pMyClass);
@@ -260,6 +262,7 @@ void test() {
     // add the callbacks
     hook->addCallback(CallbackType::Pre, (CallbackHandler) &PreMyFunc);
     hook->addCallback(CallbackType::Post, (CallbackHandler) &PostMyFunc);
+    // Add more callbacks if you wish
 
     // call the function
     void** vtable = *(void***)&a;
@@ -282,14 +285,14 @@ cd ./DynoHook
 git submodule update --init --recursive
 mkdir build
 cd build
-cmake -G "Visual Studio 15 2017" ..
+cmake ..
 ```
 
 ## Credits
+- [stevemk14ebr](https://github.com/stevemk14ebr/PolyHook_2_0) - PolyHook_2_0's range allocation, trampoline creation and disassembling
 - [Ayuto](https://github.com/Ayuto/) - DynamicHooks library
 - [peace-maker](https://github.com/peace-maker) - DHooks with detour support
-- [stevemk14ebr](https://github.com/stevemk14ebr/PolyHook_2_0) - PolyHook_2_0's range allocation, trampoline creation and disassembling
-- [Kailo](https://github.com/Kailo97) - Help with assembly porting from x32 to x64 and fixing crashes
+- [Kailo](https://github.com/Kailo97) - Help with assembly porting from x32 to x64 and helping fixing crashes
 
 ## Links
 - [X64 Function Hooking by Example](http://kylehalladay.com/blog/2020/11/13/Hooking-By-Example.html)
