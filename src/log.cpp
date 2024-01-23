@@ -12,36 +12,36 @@ void Log::log(const std::string& msg, ErrorLevel level) {
 }
 
 void ErrorLogger::log(const std::string& msg, ErrorLevel level) {
-	push({ msg, level });
+	push(msg, level);
 }
 
-void ErrorLogger::push(const Error& err) {
-	if (err.lvl >= m_level) {
-		switch (err.lvl) {
+void ErrorLogger::push(const std::string& msg, ErrorLevel level) {
+	if (level >= m_level) {
+		switch (level) {
 		case ErrorLevel::INFO:
-			std::cout << "[+] Info: " << err.msg << std::endl;
+			std::cout << "[+] Info: " << msg << std::endl;
 			break;
 		case ErrorLevel::WARN:
-			std::cout << "[!] Warn: " << err.msg << std::endl;
+			std::cout << "[!] Warn: " << msg << std::endl;
 			break;
 		case ErrorLevel::SEV:
-			std::cout << "[!] Error: " << err.msg << std::endl;
+			std::cout << "[!] Error: " << msg << std::endl;
 			break;
 		default:
-			std::cout << "Unsupported error message logged " << err.msg << std::endl;
+			std::cout << "Unsupported error message logged " << msg << std::endl;
 		}
 	}
 
-	m_log.push_back(err);
+	m_log.push_back(msg);
 }
 
-Error ErrorLogger::pop() {
-	Error err{};
+std::string ErrorLogger::pop() {
+	std::string msg;
 	if (!m_log.empty()) {
-		err = m_log.back();
+		msg = std::move(m_log.back());
 		m_log.pop_back();
 	}
-	return err;
+	return msg;
 }
 
 

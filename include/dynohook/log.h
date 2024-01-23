@@ -29,12 +29,7 @@ namespace dyno {
 	private:
 		static inline std::shared_ptr<Logger> m_logger = nullptr;
 	};
-	
-	struct Error {
-		std::string msg;
-		ErrorLevel lvl;
-	};
-	
+
 	class ErrorLogger : public Logger {
 	public:
 		ErrorLogger() = default;
@@ -42,15 +37,15 @@ namespace dyno {
 	
 		void log(const std::string& msg, ErrorLevel level) override;
 
-		void push(const Error& err);
-		Error pop();
+		void push(const std::string& msg, ErrorLevel level);
+		std::string pop();
 		
 		static ErrorLogger& Get();
 		
 		void setLogLevel(ErrorLevel level);
 
 	private:
-		std::vector<Error> m_log;
+		std::vector<std::string> m_log;
 		ErrorLevel m_level = ErrorLevel::INFO;
 	};
 }
