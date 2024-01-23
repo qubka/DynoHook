@@ -6,16 +6,11 @@
 
 namespace dyno {
     /**
-     * @brief Creates and manages hooks at the beginning of a function.
-     *
+     * Creates and manages hooks at the beginning of a function.
      * This hooking method requires knowledge of parameters and calling convention of the target function.
      */
     class Hook : public MemAccessor, public IHook {
     public:
-        /**
-         * @brief Creates a new function hook.
-         * @param convention The calling convention of <func>.
-         */
         explicit Hook(const ConvFunc& convention);
         ~Hook() override = default;
         DYNO_NONCOPYABLE(Hook);

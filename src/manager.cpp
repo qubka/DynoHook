@@ -23,7 +23,7 @@ std::shared_ptr<IHook> HookManager::hookDetour(void* pFunc, const ConvFunc& conv
     return detour;
 }
 
-std::shared_ptr<IHook> HookManager::hookVirtual(void* pClass, size_t index, const ConvFunc& convention) {
+std::shared_ptr<IHook> HookManager::hookVirtual(void* pClass, uint16_t index, const ConvFunc& convention) {
     if (!pClass)
         return nullptr;
 
@@ -35,6 +35,22 @@ std::shared_ptr<IHook> HookManager::hookVirtual(void* pClass, size_t index, cons
 
     auto vtable = std::make_unique<VTable>(pClass, m_cache);
     auto hook = vtable->hook(index, convention);
+    if (hook) m_vtables.emplace(pClass, std::move(vtable));
+    return hook;
+}
+
+std::shared_ptr<IHook> HookManager::hookVirtual(void* pClass, void* pFunc, const ConvFunc& convention) {
+    if (!pClass)
+        return nullptr;
+
+    std::lock_guard<std::mutex> m_lock(m_mutex);
+
+    auto it = m_vtables.find(pClass);
+    if (it != m_vtables.end())
+        return it->second->hook(pFunc, convention);
+
+    auto vtable = std::make_unique<VTable>(pClass, m_cache);
+    auto hook = vtable->hook(pFunc, convention);
     if (hook) m_vtables.emplace(pClass, std::move(vtable));
     return hook;
 }
@@ -54,7 +70,7 @@ bool HookManager::unhookDetour(void* pFunc) {
     return false;
 }
 
-bool HookManager::unhookVirtual(void* pClass, size_t index) {
+bool HookManager::unhookVirtual(void* pClass, uint16_t index) {
     if (!pClass)
         return false;
 
@@ -75,14 +91,40 @@ bool HookManager::unhookVirtual(void* pClass, size_t index) {
     return false;
 }
 
+bool HookManager::unhookVirtual(void* pClass, void* pFunc) {
+    if (!pClass)
+        return false;
+
+    std::lock_guard<std::mutex> m_lock(m_mutex);
+
+    auto it = m_vtables.find(pClass);
+    if (it != m_vtables.end()) {
+        auto& table = it->second;
+        if (table->unhook(pFunc)) {
+            if (table->empty())
+                m_vtables.erase(it);
+            return true;
+        }
+
+        return false;
+    }
+
+    return false;
+}
+
 std::shared_ptr<IHook> HookManager::findDetour(void* pFunc) const {
     auto it = m_detours.find(pFunc);
     return it != m_detours.end() ? it->second : nullptr;
 }
 
-std::shared_ptr<IHook> HookManager::findVirtual(void* pClass, size_t index) const {
+std::shared_ptr<IHook> HookManager::findVirtual(void* pClass, uint16_t index) const {
     auto it = m_vtables.find(pClass);
     return it != m_vtables.end() ? it->second->find(index) : nullptr;
+}
+
+std::shared_ptr<IHook> HookManager::findVirtual(void* pClass, void* pFunc) const {
+    auto it = m_vtables.find(pClass);
+    return it != m_vtables.end() ? it->second->find(pFunc) : nullptr;
 }
 
 void HookManager::unhookAll() {
@@ -102,6 +144,12 @@ void HookManager::unhookAllVirtual(void* pClass) {
     auto it = m_vtables.find(pClass);
     if (it != m_vtables.end())
         m_vtables.erase(it);
+}
+
+void HookManager::clearCache() {
+	std::lock_guard<std::mutex> m_lock(m_mutex);
+
+    m_cache.cleanup();
 }
 
 HookManager& HookManager::Get() {

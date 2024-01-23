@@ -18,11 +18,11 @@ VTable::~VTable() {
 
     *m_class = m_origVtable;
 
-	m_hookCache->removeUnused();
+    //m_hookCache->cleanup();
 }
 
-size_t VTable::getVFuncCount(void** vtable) {
-    size_t count = 0;
+uint16_t VTable::getVFuncCount(void** vtable) {
+    uint16_t count = 0;
     while (true) {
         // if you have more than 500 vfuncs you have a problem
         if (!isValidPtr(vtable[++count]) || count > 500)
@@ -31,9 +31,17 @@ size_t VTable::getVFuncCount(void** vtable) {
     return count;
 }
 
-std::shared_ptr<Hook> VTable::hook(size_t index, const ConvFunc& convention) {
+uint16_t VTable::getVFuncIndex(void* pFunc) {
+    for (uint16_t i = 0; i < m_vFuncCount; ++i) {
+        if (m_origVtable[i] == pFunc) 
+            return i;
+    }
+    return kInvalidIndex;
+}
+
+std::shared_ptr<Hook> VTable::hook(uint16_t index, const ConvFunc& convention) {
     if (index >= m_vFuncCount) {
-        DYNO_LOG("Invalid virtual function index", ErrorLevel::SEV);
+        DYNO_LOG("Invalid virtual function index: " + std::to_string(index), ErrorLevel::SEV);
         return nullptr;
     }
 
@@ -52,9 +60,19 @@ std::shared_ptr<Hook> VTable::hook(size_t index, const ConvFunc& convention) {
     return vhook;
 }
 
-bool VTable::unhook(size_t index) {
+std::shared_ptr<Hook> VTable::hook(void* pFunc, const ConvFunc& convention) {
+    uint16_t index = getVFuncIndex(pFunc); 
+    if (index == kInvalidIndex) {
+        DYNO_LOG("Invalid virtual function: " + int_to_hex(pFunc), ErrorLevel::SEV);
+        return nullptr;
+    }
+    
+    return hook(index, convention);
+}
+
+bool VTable::unhook(uint16_t index) {
     if (index >= m_vFuncCount) {
-        DYNO_LOG("Invalid virtual function index", ErrorLevel::SEV);
+        DYNO_LOG("Invalid virtual function index: " + std::to_string(index), ErrorLevel::SEV);
         return false;
     }
 
@@ -67,9 +85,29 @@ bool VTable::unhook(size_t index) {
     return true;
 }
 
-std::shared_ptr<Hook> VTable::find(size_t index) const {
+bool VTable::unhook(void* pFunc) {
+    uint16_t index = getVFuncIndex(pFunc); 
+    if (index == kInvalidIndex) {
+        DYNO_LOG("Invalid virtual function: " + int_to_hex(pFunc), ErrorLevel::SEV);
+        return nullptr;
+    }
+    
+    return unhook(index);
+}
+
+std::shared_ptr<Hook> VTable::find(uint16_t index) const {
     auto it = m_hooked.find(index);
     return it != m_hooked.end() ? it->second : nullptr;
+}
+
+std::shared_ptr<Hook> find(void* pFunc) const {
+    uint16_t index = getVFuncIndex(pFunc); 
+    if (index == kInvalidIndex) {
+        DYNO_LOG("Invalid virtual function: " + int_to_hex(pFunc), ErrorLevel::SEV);
+        return nullptr;
+    }
+    
+    return find(index);
 }
 
 std::shared_ptr<VHook> VHookCache::get(void* pFunc, const ConvFunc &convention) {
@@ -87,9 +125,9 @@ void VHookCache::clear() {
     m_hooked.clear();
 }
 
-void VHookCache::removeUnused() {
-	if (m_hooked.empty())
-		return;
+void VHookCache::cleanup() {
+    if (m_hooked.empty())
+        return;
 
     auto it = m_hooked.cbegin();
     while (it != m_hooked.cend()) {
