@@ -12,7 +12,6 @@
 #include <dynohook_export.h>
 
 namespace dyno {
-
 	class DYNO_API HookManager {
 	private:
 		HookManager();
@@ -93,7 +92,7 @@ namespace dyno {
 		 * @param pFunc 
 		 * @return NULL or the found Hook instance.
 		 */
-		std::shared_ptr<IHook> findVirtual(void* pFunc) const;
+		std::shared_ptr<IHook> findVirtual(void* pClass, void* pFunc) const;
 
 		/**
 		 * @brief Removes all callbacks and restores all functions.

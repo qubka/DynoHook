@@ -31,7 +31,7 @@ uint16_t VTable::getVFuncCount(void** vtable) {
 	return count;
 }
 
-uint16_t VTable::getVFuncIndex(void* pFunc) {
+uint16_t VTable::getVFuncIndex(void* pFunc) const {
 	for (uint16_t i = 0; i < m_vFuncCount; ++i) {
 		if (m_origVtable[i] == pFunc) 
 			return i;
@@ -89,7 +89,7 @@ bool VTable::unhook(void* pFunc) {
 	uint16_t index = getVFuncIndex(pFunc); 
 	if (index == kInvalidIndex) {
 		DYNO_LOG("Invalid virtual function: " + int_to_hex(pFunc), ErrorLevel::SEV);
-		return nullptr;
+		return false;
 	}
 	
 	return unhook(index);
@@ -100,7 +100,7 @@ std::shared_ptr<Hook> VTable::find(uint16_t index) const {
 	return it != m_hooked.end() ? it->second : nullptr;
 }
 
-std::shared_ptr<Hook> find(void* pFunc) const {
+std::shared_ptr<Hook> VTable::find(void* pFunc) const {
 	uint16_t index = getVFuncIndex(pFunc); 
 	if (index == kInvalidIndex) {
 		DYNO_LOG("Invalid virtual function: " + int_to_hex(pFunc), ErrorLevel::SEV);

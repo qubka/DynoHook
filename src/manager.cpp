@@ -149,7 +149,7 @@ void HookManager::unhookAllVirtual(void* pClass) {
 void HookManager::clearCache() {
 	std::lock_guard<std::mutex> m_lock(m_mutex);
 
-	m_cache.cleanup();
+	m_cache->cleanup();
 }
 
 HookManager& HookManager::Get() {

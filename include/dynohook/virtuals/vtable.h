@@ -26,9 +26,9 @@ namespace dyno {
 
 	private:
 		static uint16_t getVFuncCount(void** vtable);
-		static uint16_t getVFuncIndex(void* pFunc);
+		uint16_t getVFuncIndex(void* pFunc) const;
 		
-		constexpr uint16_t kInvalidIndex = std::numeric_limits<uint16_t>::max();
+		static constexpr uint16_t kInvalidIndex = std::numeric_limits<uint16_t>::max();
 
 		void*** m_class;
 		void** m_origVtable;
