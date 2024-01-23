@@ -179,11 +179,11 @@
 #if DYNO_PLATFORM_GCC
 #define DYNO_NOINLINE __attribute__((__noinline__))
 #define DYNO_NORETURN __attribute__((__noreturn__))
-#define DYNO_NAKED    __attribute__((naked))
+#define DYNO_NAKED	__attribute__((naked))
 #elif DYNO_PLATFORM_MSVC
 #define DYNO_NOINLINE __declspec(noinline)
 #define DYNO_NORETURN __declspec(noreturn)
-#define DYNO_NAKED    __declspec(naked)
+#define DYNO_NAKED	__declspec(naked)
 #else
 #define DYNO_NOINLINE
 #define DYNO_NORETURN

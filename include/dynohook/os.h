@@ -25,7 +25,7 @@
 // The operation was blocked as the process prohibits dynamic code generation.
 //
 #ifndef ERROR_DYNAMIC_CODE_BLOCKED
-#define ERROR_DYNAMIC_CODE_BLOCKED       1655L
+#define ERROR_DYNAMIC_CODE_BLOCKED	   1655L
 #endif
 
 #elif DYNO_PLATFORM_LINUX

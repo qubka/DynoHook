@@ -4,5 +4,5 @@
 #include "x86_ms_cdecl.h"
 
 namespace dyno {
-    typedef x86MsCdecl x86GccThiscall;
+	typedef x86MsCdecl x86GccThiscall;
 }

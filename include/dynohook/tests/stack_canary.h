@@ -3,14 +3,14 @@
 #include <cstdint>
 
 namespace dyno {
-    class StackCanary {
-    public:
-        StackCanary();
-        ~StackCanary() noexcept(false);
+	class StackCanary {
+	public:
+		StackCanary();
+		~StackCanary() noexcept(false);
 
-        bool isStackGood();
-        
-    private:
-        uint8_t buf[100];
-    };
+		bool isStackGood();
+		
+	private:
+		uint8_t buf[100];
+	};
 }
