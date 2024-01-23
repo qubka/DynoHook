@@ -6,6 +6,7 @@ endif()
 
 
 project(dynohook)
+include(CMakePackageConfigHelpers)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -80,7 +81,7 @@ endif()
 
 function(add_asmjit_properties)
     if(MSVC)
-        if(ASMJIT_STATIC)
+        if(DYNOHOOK_BUILD_STATIC_RUNTIME)
             set_target_properties(asmjit PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
         else()
             set_target_properties(asmjit PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")

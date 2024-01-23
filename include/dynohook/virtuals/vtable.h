@@ -7,7 +7,7 @@ namespace dyno {
 
     class VTable final : public MemAccessor {
     public:
-        VTable(void* pClass, VHookCache& cache);
+        VTable(void* pClass, std::shared_ptr<VHookCache> cache);
         ~VTable() override;
         DYNO_NONCOPYABLE(VTable);
 
@@ -28,7 +28,7 @@ namespace dyno {
         size_t m_vFuncCount;
         std::unique_ptr<void*[]> m_newVtable;
 
-        VHookCache& m_hookCache;
+        std::shared_ptr<VHookCache> m_hookCache;
 
         std::unordered_map<size_t, std::shared_ptr<VHook>> m_hooked;
     };
@@ -37,7 +37,7 @@ namespace dyno {
     public:
         std::shared_ptr<VHook> get(void* pFunc, const ConvFunc& convention);
         void clear();
-        void remove(); // remove unused
+        void removeUnused();
 
     private:
         std::unordered_map<void*, std::shared_ptr<VHook>> m_hooked;

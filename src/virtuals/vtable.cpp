@@ -3,7 +3,7 @@
 
 using namespace dyno;
 
-VTable::VTable(void* pClass, VHookCache& hookCache) : m_class{(void***)pClass}, m_hookCache{hookCache} {
+VTable::VTable(void* pClass, std::shared_ptr<VHookCache> hookCache) : m_class{(void***)pClass}, m_hookCache{std::move(hookCache)} {
     MemProtector protector((uintptr_t)m_class, sizeof(void*), ProtFlag::R | ProtFlag::W, *this);
 
     m_origVtable = *m_class;
@@ -17,6 +17,8 @@ VTable::~VTable() {
     MemProtector protector((uintptr_t)m_class, sizeof(void*), ProtFlag::R | ProtFlag::W, *this);
 
     *m_class = m_origVtable;
+
+	m_hookCache->removeUnused();
 }
 
 size_t VTable::getVFuncCount(void** vtable) {
@@ -39,7 +41,7 @@ std::shared_ptr<Hook> VTable::hook(size_t index, const ConvFunc& convention) {
     if (it != m_hooked.end())
         return it->second;
 
-    auto vhook = m_hookCache.get(m_origVtable[index], convention);
+    auto vhook = m_hookCache->get(m_origVtable[index], convention);
     if (!vhook) {
         DYNO_LOG("Invalid virtual hook", ErrorLevel::SEV);
         return nullptr;
@@ -85,7 +87,10 @@ void VHookCache::clear() {
     m_hooked.clear();
 }
 
-void VHookCache::remove() {
+void VHookCache::removeUnused() {
+	if (m_hooked.empty())
+		return;
+
     auto it = m_hooked.cbegin();
     while (it != m_hooked.cend()) {
         if (it->second.use_count() == 1) {

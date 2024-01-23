@@ -15,7 +15,7 @@ namespace dyno {
 
     class DYNO_API HookManager {
     private:
-        HookManager() = default;
+        HookManager();
         ~HookManager() = default;
 
     public:
@@ -28,7 +28,7 @@ namespace dyno {
          * @param convention
          * @return NULL or the Hook instance.
          */
-        std::shared_ptr<IHook> hook(void* pFunc, const ConvFunc& convention);
+        std::shared_ptr<IHook> hookDetour(void* pFunc, const ConvFunc& convention);
 
         /**
          * @brief Creates a function hook inside the virtual function table.
@@ -38,14 +38,14 @@ namespace dyno {
          * @param convention
          * @return NULL or the Hook instance.
          */
-        std::shared_ptr<IHook> hook(void* pClass, size_t index, const ConvFunc& convention);
+        std::shared_ptr<IHook> hookVirtual(void* pClass, size_t index, const ConvFunc& convention);
 
         /**
          * @brief Removes all callbacks and restores the original function.
          * @param pFunc address to apply the hook to.
          * @return true if the function was hooked previously and is unhooked now. False otherwhise.
          */
-        bool unhook(void* pFunc);
+        bool unhookDetour(void* pFunc);
 
         /**
          * @brief Removes all callbacks and restores the original function.
@@ -53,14 +53,14 @@ namespace dyno {
          * @param index index of the function to hook inside the virtual function table. (starting at 0)
          * @return true if the function was hooked previously and is unhooked now. False otherwhise.
          */
-        bool unhook(void* pClass, size_t index);
+        bool unhookVirtual(void* pClass, size_t index);
 
         /**
          * @brief Finds the hook for a given function.
          * @param pFunc address to apply the hook to.
          * @return NULL or the found Hook instance.
          */
-        std::shared_ptr<IHook> find(void* pFunc) const;
+        std::shared_ptr<IHook> findDetour(void* pFunc) const;
 
         /**
          * @brief Finds the hook for a given class and virtual function index.
@@ -68,7 +68,7 @@ namespace dyno {
          * @param index index of the function to hook inside the virtual function table. (starting at 0)
          * @return NULL or the found Hook instance.
          */
-        std::shared_ptr<IHook> find(void* pClass, size_t index) const;
+        std::shared_ptr<IHook> findVirtual(void* pClass, size_t index) const;
 
         /**
          * @brief Removes all callbacks and restores all functions.
@@ -79,12 +79,7 @@ namespace dyno {
          * @brief Unhooks all previously hooked functions in the virtual function table.
          * @param pClass address of the class to instantiate hook on.
          */
-        void unhookAll(void* pClass);
-
-        /**
-         * @brief Unhooks all previously virtual hooked functions.
-         */
-        void clearCache();
+        void unhookAllVirtual(void* pClass);
 
         /**
          * @return Returns a pointer to a static HookManager object.
@@ -92,9 +87,9 @@ namespace dyno {
         static HookManager& Get();
 
     public:
-        std::unordered_map<void*, std::shared_ptr<NatDetour>> m_detours;
-        std::unordered_map<void*, std::unique_ptr<VTable>> m_vtables;
-        VHookCache m_cache;
+		std::shared_ptr<VHookCache> m_cache;
+		std::unordered_map<void*, std::unique_ptr<VTable>> m_vtables;
+		std::unordered_map<void*, std::shared_ptr<NatDetour>> m_detours;
         std::mutex m_mutex;
     };
 }

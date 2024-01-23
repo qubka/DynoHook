@@ -2,7 +2,10 @@
 
 using namespace dyno;
 
-std::shared_ptr<IHook> HookManager::hook(void* pFunc, const ConvFunc& convention) {
+HookManager::HookManager() : m_cache{std::make_shared<VHookCache>()} {
+}
+
+std::shared_ptr<IHook> HookManager::hookDetour(void* pFunc, const ConvFunc& convention) {
     if (!pFunc)
         return nullptr;
 
@@ -20,7 +23,7 @@ std::shared_ptr<IHook> HookManager::hook(void* pFunc, const ConvFunc& convention
     return detour;
 }
 
-std::shared_ptr<IHook> HookManager::hook(void* pClass, size_t index, const ConvFunc& convention) {
+std::shared_ptr<IHook> HookManager::hookVirtual(void* pClass, size_t index, const ConvFunc& convention) {
     if (!pClass)
         return nullptr;
 
@@ -36,7 +39,7 @@ std::shared_ptr<IHook> HookManager::hook(void* pClass, size_t index, const ConvF
     return hook;
 }
 
-bool HookManager::unhook(void* pFunc) {
+bool HookManager::unhookDetour(void* pFunc) {
     if (!pFunc)
         return false;
 
@@ -51,7 +54,7 @@ bool HookManager::unhook(void* pFunc) {
     return false;
 }
 
-bool HookManager::unhook(void* pClass, size_t index) {
+bool HookManager::unhookVirtual(void* pClass, size_t index) {
     if (!pClass)
         return false;
 
@@ -72,12 +75,12 @@ bool HookManager::unhook(void* pClass, size_t index) {
     return false;
 }
 
-std::shared_ptr<IHook> HookManager::find(void* pFunc) const {
+std::shared_ptr<IHook> HookManager::findDetour(void* pFunc) const {
     auto it = m_detours.find(pFunc);
     return it != m_detours.end() ? it->second : nullptr;
 }
 
-std::shared_ptr<IHook> HookManager::find(void* pClass, size_t index) const {
+std::shared_ptr<IHook> HookManager::findVirtual(void* pClass, size_t index) const {
     auto it = m_vtables.find(pClass);
     return it != m_vtables.end() ? it->second->find(index) : nullptr;
 }
@@ -85,12 +88,12 @@ std::shared_ptr<IHook> HookManager::find(void* pClass, size_t index) const {
 void HookManager::unhookAll() {
     std::lock_guard<std::mutex> m_lock(m_mutex);
 
-    m_detours.clear();
-    m_vtables.clear();
-    m_cache.clear();
+	m_cache->clear();
+	m_detours.clear();
+	m_vtables.clear();
 }
 
-void HookManager::unhookAll(void* pClass) {
+void HookManager::unhookAllVirtual(void* pClass) {
     if (!pClass)
         return;
 
@@ -99,12 +102,6 @@ void HookManager::unhookAll(void* pClass) {
     auto it = m_vtables.find(pClass);
     if (it != m_vtables.end())
         m_vtables.erase(it);
-}
-
-void HookManager::clearCache() {
-    std::lock_guard<std::mutex> m_lock(m_mutex);
-
-    m_cache.remove();
 }
 
 HookManager& HookManager::Get() {
