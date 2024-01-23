@@ -1,7 +1,7 @@
 #pragma once
 
 #include "mem_accessor.h"
-#include "_hook.h"
+#include "ihook.h"
 #include <asmjit/asmjit.h>
 
 namespace dyno {

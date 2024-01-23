@@ -190,7 +190,7 @@ set(DYNOHOOK_CORE_HEADERS
         ${PROJECT_SOURCE_DIR}/include/dynohook/convention.h
         ${PROJECT_SOURCE_DIR}/include/dynohook/core.h
         ${PROJECT_SOURCE_DIR}/include/dynohook/fb_allocator.h
-        ${PROJECT_SOURCE_DIR}/include/dynohook/_hook.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/ihook.h
         ${PROJECT_SOURCE_DIR}/include/dynohook/hook.h
         ${PROJECT_SOURCE_DIR}/include/dynohook/instruction.h
         ${PROJECT_SOURCE_DIR}/include/dynohook/manager.h
@@ -228,9 +228,9 @@ target_sources(${PROJECT_NAME} PRIVATE
 target_precompile_headers(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/src/pch.h)
 
 if(NOT DYNOHOOK_BUILD_TESTS)
-    include(GenerateExportHeader)
-    generate_export_header(${PROJECT_NAME} EXPORT_MACRO_NAME DYNO_API EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/exports/${PROJECT_NAME}_export.h)
-    target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_BINARY_DIR}/exports)
+    #include(GenerateExportHeader)
+    #generate_export_header(${PROJECT_NAME} EXPORT_MACRO_NAME DYNO_API EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/exports/${PROJECT_NAME}_export.h)
+    #target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_BINARY_DIR}/exports)
 else()
 	target_compile_options(${PROJECT_NAME} PRIVATE
 		$<$<BOOL:${UNIX}>:-fpermissive>

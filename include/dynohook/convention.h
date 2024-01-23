@@ -160,7 +160,7 @@ namespace dyno {
 		}
 
 	protected:
-		void init();
+		virtual void init();
 
 	protected:
 		std::vector<DataObject> m_arguments;
