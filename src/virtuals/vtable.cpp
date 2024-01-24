@@ -98,7 +98,7 @@ int VTable::getVTableIndex(void* pFunc) {
 		if (*addr == 0xE9) {
 			// May or may not be!
 			// Check where it'd jump
-			addr += 5 /*size of the instruction*/ + *(uintptr_t*)(addr + 1);
+			addr += 5 /*size of the instruction*/ + *(uint32_t)(addr + 1);
 
 			protector = std::make_unique<MemProtector>((uintptr_t)addr, size, ProtFlag::R, *this);
 		}
