@@ -12,21 +12,19 @@ namespace dyno {
 		DYNO_NONCOPYABLE(VTable);
 
 		std::shared_ptr<Hook> hook(uint16_t index, const ConvFunc& convention);
-		std::shared_ptr<Hook> hook(void* pFunc, const ConvFunc& convention);
 		
 		bool unhook(uint16_t index);
-		bool unhook(void* pFunc);
 
 		std::shared_ptr<Hook> find(uint16_t index) const;
-		std::shared_ptr<Hook> find(void* pFunc) const;
 
 		bool empty() const {
 			return m_hooked.empty();
 		}
 
+		uint16_t getVTableIndex(void* pFunc) const;
+		
 	private:
 		static uint16_t getVFuncCount(void** vtable);
-		uint16_t getVFuncIndex(void* pFunc) const;
 		
 		static constexpr uint16_t kInvalidIndex = std::numeric_limits<uint16_t>::max();
 
