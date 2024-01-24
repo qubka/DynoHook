@@ -100,7 +100,7 @@ int VTable::getVTableIndex(void* pFunc) {
 			// Check where it'd jump
 			addr += 5 /*size of the instruction*/ + *(uintptr_t*)(addr + 1);
 
-			protector = std::make_unique<MemProtector>((uintptr_t)pFunc, size, ProtFlag::R, *this);
+			protector = std::make_unique<MemProtector>((uintptr_t)addr, size, ProtFlag::R, *this);
 		}
 
 		bool ok = false;
