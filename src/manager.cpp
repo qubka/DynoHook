@@ -63,7 +63,6 @@ std::shared_ptr<IHook> HookManager::hookVirtual(void* pClass, void* pFunc, const
 	auto hook = vtable->hook(index, convention);
 	if (hook) m_vtables.emplace(pClass, std::move(vtable));
 	return hook;
-	return nullptr;
 }
 
 bool HookManager::unhookDetour(void* pFunc) {
