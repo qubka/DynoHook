@@ -164,6 +164,7 @@ namespace dyno {
 		// >> 256-bit YMM registers
 		// ========================================================================
 #if DYNO_ARCH_X86 == 64
+#if DYNO_PLATFORM_AVX
 		YMM0,
 		YMM1,
 		YMM2,
@@ -198,6 +199,7 @@ namespace dyno {
 		YMM30,
 		YMM31,
 #endif // DYNO_PLATFORM_AVX512
+#endif // DYNO_PLATFORM_AVX
 #endif // DYNO_ARCH_X86
 
 		// ========================================================================

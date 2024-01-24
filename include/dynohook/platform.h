@@ -155,6 +155,9 @@
 #define DYNO_PLATFORM_AVX2 1
 #endif
 #endif
+#if defined(__AVX512F__)
+#define DYNO_PLATFORM_AVX512 1
+#endif
 
 // define macros for architecture type
 #if DYNO_PLATFORM_X86

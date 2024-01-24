@@ -418,24 +418,3 @@ TEST_CASE("Test Disassemblers NOPS", "[ZydisDisassembler]") {
         }
     }
 }
-
-TEST_CASE("Test Disassemblers JMP", "[ZydisDisassembler]") {
-
-	std::vector<uint8_t> x86x64Jmp = {
-		0x48,0x8b, 0x01, 0xff, 0x60, 0x68, 0x00, 0x00, 0x00,
-	};
-	/*std::vector<uint8_t> x86x64Jmp = {
-		0x48, 0x8b, 0x01, 0xff, 0xa0, 0x78, 0x01, 0x00, 0x00,
-	};*/
-
-	dyno::MemAccessor accessor;
-	dyno::ZydisDisassembler disasm(dyno::Mode::x64);
-	dyno::insts_t Instructions = disasm.disassemble((uintptr_t)&x86x64Jmp.front(), (uintptr_t)&x86x64Jmp.front(),
-													(uintptr_t)&x86x64Jmp.front() + x86x64Jmp.size(), accessor);
-
-	for (const auto& inst: Instructions) {
-		if (inst.getMnemonic() == "jmp") {
-
-		}
-	}
-}

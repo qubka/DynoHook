@@ -247,6 +247,7 @@ const static std::array<RegisterInfo, REG_COUNT> reg_table = {{
 	// >> 256-bit YMM registers
 	// ========================================================================
 #if DYNO_ARCH_X86 == 64
+#if DYNO_PLATFORM_AVX
 	{"YMM0", SIZE_YMMWORD, SIZE_YMMWORD},
 	{"YMM1", SIZE_YMMWORD, SIZE_YMMWORD},
 	{"YMM2", SIZE_YMMWORD, SIZE_YMMWORD},
@@ -281,6 +282,7 @@ const static std::array<RegisterInfo, REG_COUNT> reg_table = {{
 	{"YMM30", SIZE_YMMWORD, SIZE_YMMWORD},
 	{"YMM31", SIZE_YMMWORD, SIZE_YMMWORD},
 #endif // DYNO_PLATFORM_AVX512
+#endif // DYNO_PLATFORM_AVX
 #endif // DYNO_ARCH_X86
 
 	// ========================================================================
@@ -424,6 +426,7 @@ size_t dyno::RegisterTypeToSSEIndex(RegisterType reg) {
 		// >> 256-bit YMM registers
 		// ========================================================================
 #if DYNO_ARCH_X86 == 64
+#if DYNO_PLATFORM_AVX
 		case YMM0: return 0;
 		case YMM1: return 1;
 		case YMM2: return 2;
@@ -458,6 +461,7 @@ size_t dyno::RegisterTypeToSSEIndex(RegisterType reg) {
 		case YMM30: return 30;
 		case YMM31: return 31;
 #endif // DYNO_PLATFORM_AVX512
+#endif // DYNO_PLATFORM_AVX
 #endif // DYNO_ARCH_X86
 
 		// ========================================================================
@@ -551,6 +555,7 @@ RegisterType dyno::SSEIndexToRegisterType(size_t index, size_t size) {
 			// >> 256-bit YMM registers
 			// ========================================================================
 #if DYNO_ARCH_X86 == 64
+#if DYNO_PLATFORM_AVX
 		case SIZE_YMMWORD:
 			switch (index) {
 				case 0: return YMM0;
@@ -589,6 +594,7 @@ RegisterType dyno::SSEIndexToRegisterType(size_t index, size_t size) {
 #endif // DYNO_PLATFORM_AVX512
 			}
 			break;
+#endif // DYNO_PLATFORM_AVX
 #endif // DYNO_ARCH_X86
 
 			// ========================================================================
