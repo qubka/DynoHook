@@ -77,7 +77,7 @@ bool isApproximatelyEqual(T a, T b, T tolerance = std::numeric_limits<T>::epsilo
 TEST_CASE("VTableSwap tests", "[VTableSwap]") {
     std::unique_ptr<VirtualTest> ClassToHook = std::make_unique<VirtualTest>();
 
-    dyno::VHookCache cache;
+    std::shared_ptr<dyno::VHookCache> cache = std::make_shared<dyno::VHookCache>();
     dyno::VTable table(ClassToHook.get(), cache);
 
     SECTION("Verify vtable hook") {
@@ -105,7 +105,7 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
         };
 
         dyno::StackCanary canary;
-        auto hook = table.hook(0, callConvInt);
+        auto hook = table.hook(uint16_t(0u), callConvInt);
         REQUIRE(hook);
         hook->addCallback(dyno::CallbackType::Pre, PreNoParamVirt);
         hook->addCallback(dyno::CallbackType::Post, PostNoParamVirt);
@@ -120,7 +120,7 @@ TEST_CASE("VTableSwap tests", "[VTableSwap]") {
 
         REQUIRE(ret == 1337);
         REQUIRE(vTblSwapEffects.pop().didExecute(2));
-        REQUIRE(table.unhook(0));
+        REQUIRE(table.unhook(uint16_t(0u)));
     }
 
     SECTION("Verify multiple callbacks") {

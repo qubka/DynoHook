@@ -210,25 +210,25 @@ namespace dyno {
 	private:
 		const MemAccessor* m_accessor;
 
-		int		   m_register;		// Register operand when displacement is present
-		bool		  m_isIndirect;	  // Does this instruction get its destination via an indirect mem read (ff 25 ... jmp [jmp_dest]) (only filled for jmps / calls)
-		bool		  m_isCalling;	   // Does this instruction is of a CALL type.
-		bool		  m_isBranching;	 // Does this instruction jmp/call or otherwise change control flow
-		bool		  m_isRelative;	  // Does the displacement need to be added to the address to retrieve where it points too?
-		bool		  m_hasDisplacement; // Does this instruction have the displacement fields filled (only rip/eip relative types are filled)
-		bool		  m_hasImmediate;	// Does this instruction have the immediate field filled?
-		Displacement  m_displacement;	// Where an instruction points too (valid for jmp + call types, and RIP relative MEM types)
+		int           m_register;        // Register operand when displacement is present
+		bool          m_isIndirect;      // Does this instruction get its destination via an indirect mem read (ff 25 ... jmp [jmp_dest]) (only filled for jmps / calls)
+		bool          m_isCalling;       // Does this instruction is of a CALL type.
+		bool          m_isBranching;     // Does this instruction jmp/call or otherwise change control flow
+		bool          m_isRelative;      // Does the displacement need to be added to the address to retrieve where it points too?
+		bool          m_hasDisplacement; // Does this instruction have the displacement fields filled (only rip/eip relative types are filled)
+		bool          m_hasImmediate;    // Does this instruction have the immediate field filled?
+		Displacement  m_displacement;    // Where an instruction points too (valid for jmp + call types, and RIP relative MEM types)
 
-		uintptr_t	 m_address;		 // Address the instruction is at
-		uintptr_t	 m_immediate;	   // Immediate op
-		uint8_t	   m_immediateSize;   // Immediate size, in bytes
-		uint8_t	   m_dispOffset;	  // Offset into the byte array where displacement is encoded
-		uint8_t	   m_dispSize;		// Size of the displacement, in bytes
+		uintptr_t     m_address;         // Address the instruction is at
+		uintptr_t     m_immediate;       // Immediate op
+		uint8_t       m_immediateSize;   // Immediate size, in bytes
+		uint8_t       m_dispOffset;      // Offset into the byte array where displacement is encoded
+		uint8_t       m_dispSize;        // Size of the displacement, in bytes
 
 		Mode m_mode;
 		uint32_t m_uid;
 
-		std::vector<uint8_t> m_bytes;	// All the raw bytes of this instruction
+		std::vector<uint8_t> m_bytes;    // All the raw bytes of this instruction
 		std::vector<OperandType> m_operands; // Types of all instruction operands
 		std::string m_mnemonic;
 		std::string m_opStr;
