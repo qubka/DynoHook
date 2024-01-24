@@ -125,7 +125,7 @@ int VTable::getVTableIndex(void* pFunc) {
 			if (*addr == 0x60)
 				return *++addr / PtrSize;
 			else if (*addr == 0xA0)
-				return *((int*)++addr) / PtrSize;
+				return int(*((uint32_t*)++addr)) / PtrSize;
 			else if (*addr == 0x20)
 				return 0;
 			else
