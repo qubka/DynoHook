@@ -104,15 +104,17 @@ int VTable::getVTableIndex(void* pFunc) {
 		}
 
 		bool ok = false;
-		
-		if (addr[0] == 0x8B && addr[1] == 0x44 && addr[2] == 0x24 && addr[3] == 0x04 && addr[4] == 0x8B && addr[5] == 0x00) {
-			addr += 6;
+#if DYNO_ARCH_X86 == 64
+		if (addr[0] == 0x48 && addr[1] == 0x8B && addr[2] == 0x01) {
+			addr += 3;
 			ok = true;
-		} else if (addr[0] == 0x8B && addr[1] == 0x01) {
+		} else
+#endif
+		if (addr[0] == 0x8B && addr[1] == 0x01) {
 			addr += 2;
 			ok = true;
-		} else if (addr[0] == 0x48 && addr[1] == 0x8B && addr[2] == 0x01) {
-			addr += 3;
+		} else if (addr[0] == 0x8B && addr[1] == 0x44 && addr[2] == 0x24 && addr[3] == 0x04 && addr[4] == 0x8B && addr[5] == 0x00) {
+			addr += 6;
 			ok = true;
 		}
 		
