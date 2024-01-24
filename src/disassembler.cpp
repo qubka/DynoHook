@@ -50,7 +50,7 @@ insts_t ZydisDisassembler::disassemble(
 	// copy potentially remote memory to local buffer
 	size_t read = 0;
 	auto buf = std::make_unique<uint8_t[]>(size);
-	if (!accessor.safe_mem_read(firstInstruction, (uintptr_t)buf.get(), size, read)) {
+	if (!accessor.safe_mem_read(firstInstruction, (uintptr_t) buf.get(), size, read)) {
 		return insVec;
 	}
 	ZydisDecodedOperand decoded_operands[ZYDIS_MAX_OPERAND_COUNT];
@@ -87,7 +87,7 @@ insts_t ZydisDisassembler::disassemble(
 			break;
 		}
 
-		for (int i = 0; i < insInfo.operand_count; i++) {
+		for (auto i = 0; i < insInfo.operand_count; i++) {
 			auto op = decoded_operands[i];
 			if (op.type == ZYDIS_OPERAND_TYPE_MEMORY && op.mem.type == ZYDIS_MEMOP_TYPE_MEM && op.mem.disp.has_displacement && op.mem.base == ZYDIS_REGISTER_NONE && op.mem.segment != ZYDIS_REGISTER_DS && inst.isIndirect()) {
 				inst.setIndirect(false);
@@ -123,7 +123,7 @@ void ZydisDisassembler::setDisplacementFields(Instruction& inst, const ZydisDeco
 	inst.setBranching(zydisInst->meta.branch_type != ZYDIS_BRANCH_TYPE_NONE);
 	inst.setCalling(zydisInst->mnemonic == ZydisMnemonic::ZYDIS_MNEMONIC_CALL);
 
-	for (int i = 0; i < zydisInst->operand_count; i++) {
+	for (auto i = 0; i < zydisInst->operand_count; i++) {
 		const ZydisDecodedOperand* const operand = &operands[i];
 
 		// skip implicit operands (r/w effects)

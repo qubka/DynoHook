@@ -283,7 +283,7 @@ namespace dyno {
 	};
 
 	struct RegisterInfo {
-		std::string name;
+		std::string_view name;
 		RegisterSize size;
 		uint8_t alignment;
 	};

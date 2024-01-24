@@ -25,13 +25,13 @@ namespace dyno {
 		 * @param convention
 		 * @return NULL or the Hook instance.
 		 */
-		virtual std::shared_ptr<IHook> hookVirtual(void* pClass, uint16_t index, const ConvFunc& convention) = 0;
+		virtual std::shared_ptr<IHook> hookVirtual(void* pClass, int index, const ConvFunc& convention) = 0;
 
 		/**
 		 * @brief Creates a function hook inside the virtual function table.
 		 * If the function was already hooked, the existing Hook instance will be returned.
 		 * @param pClass address of the class to instantiate hook on.
-		 * @param pFunc address to apply the hook to.
+		 * @param pFunc address of member function. Like (void*&) &IClass::Method.
 		 * @param convention
 		 * @return NULL or the Hook instance.
 		 */
@@ -50,7 +50,7 @@ namespace dyno {
 		 * @param index
 		 * @return true if the function was hooked previously and is unhooked now. False otherwhise.
 		 */
-		virtual bool unhookVirtual(void* pClass, uint16_t index) = 0;
+		virtual bool unhookVirtual(void* pClass, int index) = 0;
 
 		/**
 		 * @brief Removes all callbacks and restores the original function.
@@ -73,7 +73,7 @@ namespace dyno {
 		 * @param index
 		 * @return NULL or the found Hook instance.
 		 */
-		virtual std::shared_ptr<IHook> findVirtual(void* pClass, uint16_t index) const = 0;
+		virtual std::shared_ptr<IHook> findVirtual(void* pClass, int index) const = 0;
 
 		/**
 		 * @brief Finds the hook for a given class and virtual function ptr.

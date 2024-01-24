@@ -18,13 +18,13 @@ namespace dyno {
 		DYNO_NONCOPYABLE(HookManager);
 
 		std::shared_ptr<IHook> hookDetour(void* pFunc, const ConvFunc& convention) override;
-		std::shared_ptr<IHook> hookVirtual(void* pClass, uint16_t index, const ConvFunc& convention) override;
+		std::shared_ptr<IHook> hookVirtual(void* pClass, int index, const ConvFunc& convention) override;
 		std::shared_ptr<IHook> hookVirtual(void* pClass, void* pFunc, const ConvFunc& convention) override;
 		bool unhookDetour(void* pFunc) override;
-		bool unhookVirtual(void* pClass, uint16_t index) override;
+		bool unhookVirtual(void* pClass, int index) override;
 		bool unhookVirtual(void* pClass, void* pFunc) override;
 		std::shared_ptr<IHook> findDetour(void* pFunc) const override;
-		std::shared_ptr<IHook> findVirtual(void* pClass, uint16_t index) const override;
+		std::shared_ptr<IHook> findVirtual(void* pClass, int index) const override;
 		std::shared_ptr<IHook> findVirtual(void* pClass, void* pFunc) const override;
 
 		void unhookAll() override;

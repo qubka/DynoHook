@@ -11,31 +11,29 @@ namespace dyno {
 		~VTable() override;
 		DYNO_NONCOPYABLE(VTable);
 
-		std::shared_ptr<Hook> hook(uint16_t index, const ConvFunc& convention);
+		std::shared_ptr<Hook> hook(int index, const ConvFunc& convention);
 		
-		bool unhook(uint16_t index);
+		bool unhook(int index);
 
-		std::shared_ptr<Hook> find(uint16_t index) const;
+		std::shared_ptr<Hook> find(int index) const;
 
 		bool empty() const {
 			return m_hooked.empty();
 		}
 
-		uint16_t getVTableIndex(void* pFunc) const;
+		int getVTableIndex(void* pFunc);
 		
 	private:
-		static uint16_t getVFuncCount(void** vtable);
-		
-		static constexpr uint16_t kInvalidIndex = std::numeric_limits<uint16_t>::max();
+		static int getVFuncCount(void** vtable);
 
 		void*** m_class;
 		void** m_origVtable;
-		uint16_t m_vFuncCount;
+		int m_vFuncCount;
 		std::unique_ptr<void*[]> m_newVtable;
 
 		std::shared_ptr<VHookCache> m_hookCache;
 
-		std::unordered_map<uint16_t, std::shared_ptr<VHook>> m_hooked;
+		std::unordered_map<int16_t, std::shared_ptr<VHook>> m_hooked;
 	};
 
 	class VHookCache {
