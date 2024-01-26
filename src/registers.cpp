@@ -349,10 +349,24 @@ const static std::array<RegisterInfo, REG_COUNT> reg_table = {{
 
 Registers::Registers(const regs_t& registers) {
 	m_registers.reserve(registers.size());
+	insert(registers);
+}
 
+Registers::Registers(const regs_t& registers1, const regs_t& registers2) {
+	m_registers.reserve( std::max(registers1.size(), registers2.size()) + std::min(registers1.size(), registers2.size()) / 2);
+	insert(registers2);
+	insert(registers1);
+}
+
+void Registers::insert(const regs_t& registers) {
 	for (RegisterType type : registers) {
-		const auto& [name, size, alignment] = reg_table.at(type);
-		m_registers.emplace_back(type, size, alignment);
+		auto it = std::find_if(m_registers.begin(), m_registers.end(), [type](const Register& reg) {
+			return reg.getType() == type;
+		});
+		if (it == m_registers.end()) {
+			const auto& [name, size, alignment] = reg_table.at(type);
+			m_registers.emplace_back(type, size, alignment);
+		}
 	}
 }
 

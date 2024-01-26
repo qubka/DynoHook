@@ -55,12 +55,10 @@ namespace dyno {
 
 		void writeModifyReturnAddress(Assembler& a);
 		void writeCallHandler(Assembler& a, CallbackType type) const;
-		void writeSaveRegisters(Assembler& a, CallbackType type) const;
-		void writeRestoreRegisters(Assembler& a, CallbackType type) const;
-		void writeSaveScratchRegisters(Assembler& a) const;
-		void writeRestoreScratchRegisters(Assembler& a) const;
-		void writeRegToMem(Assembler& a, const Register& reg, CallbackType type = CallbackType::Pre) const;
-		void writeMemToReg(Assembler& a, const Register& reg, CallbackType type = CallbackType::Pre) const;
+		void writeSaveRegisters(Assembler& a, const Registers& regs, bool post = false) const;
+		void writeRestoreRegisters(Assembler& a, const Registers& regs, bool post = false) const;
+		void writeRegToMem(Assembler& a, const Register& reg, bool post = false) const;
+		void writeMemToReg(Assembler& a, const Register& reg, bool post = false) const;
 
 DYNO_OPTS_OFF
 		DYNO_NOINLINE ReturnAction DYNO_CDECL callbackHandler(CallbackType type);

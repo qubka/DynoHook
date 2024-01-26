@@ -720,16 +720,31 @@ bool x64Detour::makeTrampoline(insts_t& prologue, insts_t& outJmpTable) {
 	m_trampoline = tmpTrampoline;
 	delta = (intptr_t) (m_trampoline - prolStart);
 
-	// update bridge
-	//const uint8_t* bridge_end = (uint8_t*) m_fnBridge + m_fnBridgeSize;
-	//while (*--bridge_end != 0x90) {}
-
 	// since we did not set the address of the trampoline for the bridge at the time of its generation,
-	// we are looking for the last return and after it we set our address of the springboard
-	std::vector<uint8_t> destBytes(8);
-	std::memcpy(destBytes.data(), &m_trampoline, 8);
-	Instruction jmpToTrampoline(this, (uintptr_t) ++bridge_end, {0}, 0, false, false, std::move(destBytes), "dest holder", "", Mode::x64);
-	writeEncoding(jmpToTrampoline);
+	// we are looking for the nop space and set our address of the trampoline there
+	uint8_t match = 0;
+	const uint8_t* nop_addr = (uint8_t*) m_fnBridge + m_fnBridgeSize;
+	while (match < 5) {
+		if (*--nop_addr == 0x90)
+			match++;
+		else
+			match = 0;
+	}
+
+	const uintptr_t jmpToTramAddr = (uintptr_t) nop_addr;
+	const auto rel_jump_size = 5;
+	auto next_addr = jmpToTramAddr + rel_jump_size;
+	auto max = AlignDownwards(calc_2gb_above(next_addr), getPageSize());
+	auto min = AlignDownwards(calc_2gb_below(next_addr), getPageSize());
+	if (m_trampoline >= min && m_trampoline < max) {
+		const auto jmpToTram = makex86Jmp(jmpToTramAddr, m_trampoline);
+		DYNO_LOG_INFO("Jmp To Tram:\n" + instsToStr(jmpToTram) + "\n");
+		writeEncoding(jmpToTram);
+	} else {
+		const auto jmpToTram = makex64FarJump(jmpToTramAddr, m_trampoline);
+		DYNO_LOG_INFO("Jmp To Tram:\n" + instsToStr(jmpToTram) + "\n");
+		writeEncoding(jmpToTram);
+	}
 
 	buildRelocationList(prologue, prolSz, delta, instsNeedingEntry, instsNeedingReloc, instsNeedingTranslation);
 	if (!instsNeedingEntry.empty()) {

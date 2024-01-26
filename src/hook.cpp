@@ -8,7 +8,7 @@ using namespace asmjit::x86;
 
 Hook::Hook(const ConvFunc& convention) :
 	m_callingConvention{convention()},
-	m_registers{m_callingConvention->getRegisters()},
+	m_registers{m_callingConvention->getRegisters(), Registers::ScratchList()},
 	m_scratchRegisters{Registers::ScratchList()} {
 }
 
@@ -168,23 +168,19 @@ bool Hook::createBridge() {
 	a.cmp(al, ReturnAction::Supercede);
 
 	// restore the previously saved registers, so any changes will be applied
-	writeRestoreRegisters(a, CallbackType::Pre);
+	writeRestoreRegisters(a, m_registers);
 
 	// skip trampoline if equal
 	a.je(override);
-
-	Label trampoline = a.newLabel();
 
 	// jump to the original address (trampoline)
 	const uintptr_t& address = getAddress();
 	if (address) {
 		a.jmp(address);
 	} else {
-		// make space for inserting jump later
-		/*for (int i = 0; i < 14; ++i) {
-			a.nop();
-		}*/
-		a.jmp(ptr(trampoline));
+		// make space for inserting near/far jump later
+		std::array<uint8_t, 14> nops{ 0x90, 0x90, 0x90, 0x90, 0x90, 0x66, 0x0F, 0x1F, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00 };
+		a.embedDataArray(TypeId::kUInt8, nops.data(), nops.size());
 	}
 
 	// this code will be executed if a pre-hook returns Supercede
@@ -197,12 +193,6 @@ bool Hook::createBridge() {
 		a.ret(popSize);
 	else
 		a.ret();
-
-	if (!address) {
-		a.nop();
-		a.bind(trampoline);
-		a.embedUInt64(address);
-	}
 
 	// generate code
 	auto error = m_asmjit_rt.add(&m_fnBridge, &code);
@@ -220,7 +210,7 @@ void Hook::writeModifyReturnAddress(Assembler& a) {
 	/// https://en.wikipedia.org/wiki/X86_calling_conventions
 
 	// save scratch registers that are used by setReturnAddress
-	writeSaveScratchRegisters(a);
+	writeSaveRegisters(a, m_scratchRegisters);
 
 	// save the original return address by using the current sp as the key.
 	// this should be unique until we have returned to the original caller.
@@ -254,7 +244,7 @@ void Hook::writeModifyReturnAddress(Assembler& a) {
 #endif // DYNO_ARCH_X86
 
 	// restore scratch registers
-	writeRestoreScratchRegisters(a);
+	writeRestoreRegisters(a, m_scratchRegisters);
 
 	// override the return address. This is a redirect to our post-hook code
 	createPostCallback();
@@ -290,10 +280,10 @@ bool Hook::createPostCallback() {
 	writeCallHandler(a, CallbackType::Post);
 
 	// restore the previously saved registers, so any changes will be applied
-	writeRestoreRegisters(a, CallbackType::Post);
+	writeRestoreRegisters(a, m_registers, true);
 
 	// save scratch registers that are used by getReturnAddress
-	writeSaveScratchRegisters(a);
+	writeSaveRegisters(a, m_scratchRegisters);
 
 	// get the original return address
 	void* (DYNO_CDECL Hook::*getReturnAddress)(void*) = &Hook::getReturnAddress;
@@ -330,7 +320,7 @@ bool Hook::createPostCallback() {
 #endif // DYNO_ARCH_X86
 
 	// restore scratch registers
-	writeRestoreScratchRegisters(a);
+	writeRestoreRegisters(a, m_scratchRegisters);
 
 	// return to the original address
 	// add the bytes again to the stack (stack size + return address), so we
@@ -353,7 +343,7 @@ void Hook::writeCallHandler(Assembler& a, CallbackType type) const {
 	ReturnAction (DYNO_CDECL Hook::*callbackHandler)(CallbackType) = &Hook::callbackHandler;
 
 	// save the registers so that we can access them in our handlers
-	writeSaveRegisters(a, type);
+	writeSaveRegisters(a, m_registers, type == CallbackType::Post);
 
 	// call the global hook handler
 #if DYNO_ARCH_X86 == 64
@@ -382,31 +372,31 @@ void Hook::writeCallHandler(Assembler& a, CallbackType type) const {
 
 #if DYNO_ARCH_X86 == 64
 
-void Hook::writeSaveScratchRegisters(Assembler& a) const {
+void Hook::writeSaveRegisters(Assembler& a, const Registers& regs, bool) const {
 	// save rax first, because we use it to save others
 
-	for (const auto& reg : m_scratchRegisters) {
+	for (const auto& reg : regs) {
 		if (reg == RAX) {
 			writeRegToMem(a, reg);
 			break;
 		}
 	}
 
-	for (const auto& reg : m_scratchRegisters) {
+	for (const auto& reg : regs) {
 		if (reg != RAX)
 			writeRegToMem(a, reg);
 	}
 }
 
-void Hook::writeRestoreScratchRegisters(Assembler& a) const {
+void Hook::writeRestoreRegisters(Assembler& a, const Registers& regs, bool) const {
 	// restore rax last, because we use it to restore others
 
-	for (const auto& reg : m_scratchRegisters) {
+	for (const auto& reg : regs) {
 		if (reg != RAX)
 			writeMemToReg(a, reg);
 	}
 
-	for (const auto& reg : m_scratchRegisters) {
+	for (const auto& reg : regs) {
 		if (reg == RAX) {
 			writeMemToReg(a, reg);
 			break;
@@ -414,39 +404,7 @@ void Hook::writeRestoreScratchRegisters(Assembler& a) const {
 	}
 }
 
-void Hook::writeSaveRegisters(Assembler& a, CallbackType) const {
-	// save rax first, because we use it to save others
-
-	for (const auto& reg : m_registers) {
-		if (reg == RAX) {
-			writeRegToMem(a, reg);
-			break;
-		}
-	}
-
-	for (const auto& reg : m_registers) {
-		if (reg != RAX)
-			writeRegToMem(a, reg);
-	}
-}
-
-void Hook::writeRestoreRegisters(Assembler& a, CallbackType) const {
-	// restore rax last, because we use it to restore others
-
-	for (const auto& reg : m_registers) {
-		if (reg != RAX)
-			writeMemToReg(a, reg);
-	}
-
-	for (const auto& reg : m_registers) {
-		if (reg == RAX) {
-			writeMemToReg(a, reg);
-			break;
-		}
-	}
-}
-
-void Hook::writeRegToMem(Assembler& a, const Register& reg, CallbackType) const {
+void Hook::writeRegToMem(Assembler& a, const Register& reg, bool) const {
 	/**
 	 * The moffs8, moffs16, moffs32 and moffs64 operands specify a simple offset relative to the segment base,
 	 * where 8, 16, 32 and 64 refer to the size of the data. The address-size attribute of the instruction determines the size of the offset, either 16, 32 or 64 bits.
@@ -686,7 +644,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, CallbackType) const 
 	}
 }
 
-void Hook::writeMemToReg(Assembler& a, const Register& reg, CallbackType) const {
+void Hook::writeMemToReg(Assembler& a, const Register& reg, bool) const {
 	/**
 	 * The moffs8, moffs16, moffs32 and moffs64 operands specify a simple offset relative to the segment base,
 	 * where 8, 16, 32 and 64 refer to the size of the data. The address-size attribute of the instruction determines the size of the offset, either 16, 32 or 64 bits.
@@ -927,31 +885,19 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, CallbackType) const 
 
 #elif DYNO_ARCH_X86 == 32
 
-void Hook::writeSaveScratchRegisters(Assembler& a) const {
-	for (const auto& reg : m_scratchRegisters) {
-		writeRegToMem(a, reg);
+void Hook::writeSaveRegisters(Assembler& a, const Registers& regs, bool post) const {
+	for (const auto& reg : regs) {
+		writeRegToMem(a, reg, post);
 	}
 }
 
-void Hook::writeRestoreScratchRegisters(Assembler& a) const {
-	for (const auto& reg : m_scratchRegisters) {
-		writeMemToReg(a, reg);
+void Hook::writeRestoreRegisters(Assembler& a, const Registers& regs, bool post) const {
+	for (const auto& reg : regs) {
+		writeMemToReg(a, reg, post);
 	}
 }
 
-void Hook::writeSaveRegisters(Assembler& a, CallbackType type) const {
-	for (const auto& reg : m_registers) {
-		writeRegToMem(a, reg, type);
-	}
-}
-
-void Hook::writeRestoreRegisters(Assembler& a, CallbackType type) const {
-	for (const auto& reg : m_registers) {
-		writeMemToReg(a, reg, type);
-	}
-}
-
-void Hook::writeRegToMem(Assembler& a, const Register& reg, CallbackType type) const {
+void Hook::writeRegToMem(Assembler& a, const Register& reg, bool post) const {
 	uintptr_t addr = reg.getAddress<uintptr_t>();
 	switch (reg) {
 		// ========================================================================
@@ -1031,7 +977,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, CallbackType type) c
 		case ST0:
 			// don't mess with the FPU stack in a pre-hook. The float return is returned in st0,
 			// so only load it in a post hook to avoid writing back NaN.
-			if (type == CallbackType::Post) {
+			if (post) {
 				switch (m_callingConvention->getReturn().size) {
 					case SIZE_DWORD: a.fstp(dword_ptr(addr)); break;
 					case SIZE_QWORD: a.fstp(qword_ptr(addr)); break;
@@ -1051,7 +997,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, CallbackType type) c
 	}
 }
 
-void Hook::writeMemToReg(Assembler& a, const Register& reg, CallbackType type) const {
+void Hook::writeMemToReg(Assembler& a, const Register& reg, bool post) const {
 	uintptr_t addr = reg.getAddress<uintptr_t>();
 	switch (reg) {
 		// ========================================================================
@@ -1129,7 +1075,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, CallbackType type) c
 		// >> 80-bit FPU registers
 		// ========================================================================
 		case ST0:
-			if (type == CallbackType::Post) {
+			if (post == CallbackType::Post) {
 				// replace the top of the FPU stack.
 				// copy st0 to st0 and pop -> just pop the FPU stack.
 				a.fstp(st0);

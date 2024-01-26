@@ -276,7 +276,7 @@ namespace dyno {
 		SIZE_WORD = 2,
 		SIZE_DWORD = 4,
 		SIZE_QWORD = 8,
-		size_tWORD = 10,
+		SIZE_TWORD = 10,
 		SIZE_XMMWORD = 16,
 		SIZE_YMMWORD = 32,
 		SIZE_ZMMWORD = 64
@@ -349,7 +349,8 @@ namespace dyno {
 
 	class Registers {
 	public:
-		Registers(const regs_t& registers);
+		explicit Registers(const regs_t& registers);
+		Registers(const regs_t& registers1, const regs_t& registers2);
 		~Registers() = default;
 		DYNO_NONCOPYABLE(Registers);
 
@@ -371,6 +372,8 @@ namespace dyno {
 
 		static Register s_none;
 		static regs_t s_scratch;
+
+		void insert(const regs_t& registers);
 	};
 
 }
