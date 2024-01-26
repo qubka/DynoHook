@@ -74,6 +74,8 @@ DYNO_OPTS_ON
 		// address storage
 		uintptr_t m_fnBridge{ 0 };
 		uintptr_t m_newRetAddr{ 0 };
+		size_t m_fnBridgeSize{ 0 };
+		size_t m_newRetAddrSize{ 0 };
 
 		// interface if the calling convention
 		std::unique_ptr<ICallingConvention> m_callingConvention;

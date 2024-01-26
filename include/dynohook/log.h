@@ -10,7 +10,7 @@ namespace dyno {
 		NONE,
 		INFO,
 		WARN,
-		SEV,
+		ERR,
 	};
 
 	class Logger {
@@ -51,7 +51,13 @@ namespace dyno {
 }
 
 #if DYNO_LOGGING
-#define DYNO_LOG(msg, lvl) dyno::Log::log(msg, lvl)
+#define DYNO_LOG(lvl, msg) dyno::Log::log(msg, dyno::ErrorLevel::lvl)
+#define DYNO_LOG_INFO(msg) dyno::Log::log(msg, dyno::ErrorLevel::INFO)
+#define DYNO_LOG_WARN(msg) dyno::Log::log(msg, dyno::ErrorLevel::WARN)
+#define DYNO_LOG_ERR(msg)  dyno::Log::log(msg, dyno::ErrorLevel::ERR)
 #else
-#define DYNO_LOG(msg, lvl)
+#define DYNO_LOG(lvl, msg)
+#define DYNO_LOG_INFO(lvl, msg)
+#define DYNO_LOG_WARN(lvl, msg)
+#define DYNO_LOG_ERR(lvl, msg)
 #endif

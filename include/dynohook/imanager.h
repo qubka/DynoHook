@@ -31,7 +31,7 @@ namespace dyno {
 		 * @brief Creates a function hook inside the virtual function table.
 		 * If the function was already hooked, the existing Hook instance will be returned.
 		 * @param pClass address of the class to instantiate hook on.
-		 * @param pFunc address of member function. Like (void*&) &IClass::Method.
+		 * @param pFunc address of virtual member function. Like (void*&) &IClass::PureVirtualMethod.
 		 * @param convention
 		 * @return NULL or the Hook instance.
 		 */
