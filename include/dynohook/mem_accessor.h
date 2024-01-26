@@ -53,6 +53,8 @@ namespace dyno {
 		void writeEncoding(const Instruction& instruction);
 
 	protected:
+		insts_t makex64FarJump(uintptr_t address, uintptr_t destination);
+
 		/**
 		 * Write a 25 byte absolute jump. This is preferred since it doesn't require an indirect memory holder.
 		 * We first sub rsp by 128 bytes to avoid the red-zone stack space. This is specific to unix only afaik.
@@ -70,5 +72,6 @@ namespace dyno {
 		insts_t makeAgnosticJmp(uintptr_t address, uintptr_t destination);
 
 		insts_t makex64DestHolder(uintptr_t destination, uintptr_t destHolder);
+
 	};
 }
