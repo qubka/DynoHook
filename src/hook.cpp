@@ -14,7 +14,7 @@ Hook::Hook(const ConvFunc& convention) :
 
 bool Hook::addCallback(CallbackType type, CallbackHandler handler) {
 	if (!handler) {
-		DYNO_LOG("Callback handler is null", ErrorLevel::WARN);
+		DYNO_LOG_WARN("Callback handler is null");
 		return false;
 	}
 
@@ -22,7 +22,7 @@ bool Hook::addCallback(CallbackType type, CallbackHandler handler) {
 
 	for (const CallbackHandler callback : callbacks) {
 		if (callback == handler) {
-			DYNO_LOG("Callback handler was already added", ErrorLevel::WARN);
+			DYNO_LOG_WARN("Callback handler was already added");
 			return false;
 		}
 	}
@@ -33,7 +33,7 @@ bool Hook::addCallback(CallbackType type, CallbackHandler handler) {
 
 bool Hook::removeCallback(CallbackType type, CallbackHandler handler) {
 	if (!handler) {
-		DYNO_LOG("Callback handler is null", ErrorLevel::WARN);
+		DYNO_LOG_WARN("Callback handler is null");
 		return false;
 	}
 
@@ -52,13 +52,13 @@ bool Hook::removeCallback(CallbackType type, CallbackHandler handler) {
 		}
 	}
 
-	DYNO_LOG("Callback handler not registered", ErrorLevel::WARN);
+	DYNO_LOG_WARN("Callback handler not registered");
 	return false;
 }
 
 bool Hook::isCallbackRegistered(CallbackType type, CallbackHandler handler) const {
 	if (!handler) {
-		DYNO_LOG("Callback handler is null", ErrorLevel::WARN);
+		DYNO_LOG_WARN("Callback handler is null");
 		return false;
 	}
 
@@ -132,7 +132,7 @@ ReturnAction Hook::callbackHandler(CallbackType type) {
 void* Hook::getReturnAddress(void* stackPtr) {
 	auto it = m_retAddr.find(stackPtr);
 	if (it == m_retAddr.end()) {
-		DYNO_LOG("Failed to find return address of original function. Check the arguments and return type of your detour setup.", ErrorLevel::SEV);
+		DYNO_LOG_ERR("Failed to find return address of original function. Check the arguments and return type of your detour setup.");
 		return nullptr;
 	}
 
@@ -173,23 +173,18 @@ bool Hook::createBridge() {
 	// skip trampoline if equal
 	a.je(override);
 
+	Label trampoline = a.newLabel();
+
 	// jump to the original address (trampoline)
 	const uintptr_t& address = getAddress();
 	if (address) {
 		a.jmp(address);
 	} else {
-		// if address not available yet, load from
-		uintptr_t addr = (uintptr_t)&address;
-#if DYNO_ARCH_X86 == 64
-		a.push(rax);
-		a.mov(rax, qword_ptr(addr));
-		a.xchg(qword_ptr(rsp), rax);
-#elif DYNO_ARCH_X86 == 32
-		a.push(eax);
-		a.mov(eax, dword_ptr(addr));
-		a.xchg(dword_ptr(esp), eax);
-#endif // DYNO_ARCH_X86
-		a.ret();
+		// make space for inserting jump later
+		/*for (int i = 0; i < 14; ++i) {
+			a.nop();
+		}*/
+		a.jmp(ptr(trampoline));
 	}
 
 	// this code will be executed if a pre-hook returns Supercede
@@ -203,12 +198,20 @@ bool Hook::createBridge() {
 	else
 		a.ret();
 
+	if (!address) {
+		a.nop();
+		a.bind(trampoline);
+		a.embedUInt64(address);
+	}
+
 	// generate code
 	auto error = m_asmjit_rt.add(&m_fnBridge, &code);
 	if (error) {
-		DYNO_LOG("AsmJit error: "s + DebugUtils::errorAsString(error), ErrorLevel::SEV);
+		DYNO_LOG_ERR("AsmJit error: "s + DebugUtils::errorAsString(error));
 		return false;
 	}
+
+	m_fnBridgeSize = code.codeSize();
 
 	return true;
 }
@@ -337,9 +340,11 @@ bool Hook::createPostCallback() {
 	// generate code
 	auto error = m_asmjit_rt.add(&m_newRetAddr, &code);
 	if (error) {
-		DYNO_LOG("AsmJit error: "s + DebugUtils::errorAsString(error), ErrorLevel::SEV);
+		DYNO_LOG_ERR("AsmJit error: "s + DebugUtils::errorAsString(error));
 		return false;
 	}
+
+	m_newRetAddrSize = code.codeSize();
 
 	return true;
 }
@@ -591,6 +596,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, CallbackType) const 
 		// ========================================================================
 		// >> 256-bit YMM registers
 		// ========================================================================
+#if DYNO_PLATFORM_AVX
 		case YMM0: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm0); break;
 		case YMM1: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm1); break;
 		case YMM2: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm2); break;
@@ -607,6 +613,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, CallbackType) const 
 		case YMM13: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm13); break;
 		case YMM14: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm14); break;
 		case YMM15: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm15); break;
+
 #if DYNO_PLATFORM_AVX512
 		case YMM16: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm16); break;
 		case YMM17: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm17); break;
@@ -625,6 +632,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, CallbackType) const 
 		case YMM30: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm30); break;
 		case YMM31: a.mov(rax, addr); a.vmovaps(ymmword_ptr(rax), ymm31); break;
 #endif // DYNO_PLATFORM_AVX512
+#endif // DYNO_PLATFORM_AVX
 
 		// ========================================================================
 		// >> 512-bit ZMM registers
@@ -674,7 +682,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, CallbackType) const 
 		case FS: a.mov(rax, addr); a.mov(word_ptr(rax), fs); break;
 		case GS: a.mov(rax, addr); a.mov(word_ptr(rax), gs); break;
 
-		default: DYNO_LOG("Unsupported register.", ErrorLevel::WARN);
+		default: DYNO_LOG_WARN("Unsupported register.");
 	}
 }
 
@@ -828,6 +836,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, CallbackType) const 
 		// ========================================================================
 		// >> 256-bit YMM registers
 		// ========================================================================
+#if DYNO_PLATFORM_AVX
 		case YMM0: a.mov(rax, addr); a.vmovaps(ymm0, ymmword_ptr(rax)); break;
 		case YMM1: a.mov(rax, addr); a.vmovaps(ymm1, ymmword_ptr(rax)); break;
 		case YMM2: a.mov(rax, addr); a.vmovaps(ymm2, ymmword_ptr(rax)); break;
@@ -862,6 +871,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, CallbackType) const 
 		case YMM30: a.mov(rax, addr); a.vmovaps(ymm30, ymmword_ptr(rax)); break;
 		case YMM31: a.mov(rax, addr); a.vmovaps(ymm31, ymmword_ptr(rax)); break;
 #endif // DYNO_PLATFORM_AVX512
+#endif // DYNO_PLATFORM_AVX
 
 		// ========================================================================
 		// >> 512-bit ZMM registers
@@ -911,7 +921,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, CallbackType) const 
 		case FS: a.mov(rax, addr); a.mov(fs, word_ptr(rax)); break;
 		case GS: a.mov(rax, addr); a.mov(gs, word_ptr(rax)); break;
 
-		default: DYNO_LOG("Unsupported register.", ErrorLevel::WARN);
+		default: DYNO_LOG_WARN("Unsupported register.");
 	}
 }
 
@@ -1037,7 +1047,7 @@ void Hook::writeRegToMem(Assembler& a, const Register& reg, CallbackType type) c
 		//case ST6: a.movl(tword_ptr(addr), st6); break;
 		//case ST7: a.movl(tword_ptr(addr), st7); break;
 
-		default: DYNO_LOG("Unsupported register.", ErrorLevel::WARN);
+		default: DYNO_LOG_WARN("Unsupported register.");
 	}
 }
 
@@ -1141,7 +1151,7 @@ void Hook::writeMemToReg(Assembler& a, const Register& reg, CallbackType type) c
 		//case ST6: a.movl(st6, tword_ptr(addr)); break;
 		//case ST7: a.movl(st7, tword_ptr(addr)); break;
 
-		default: DYNO_LOG("Unsupported register.", ErrorLevel::WARN);
+		default: DYNO_LOG_WARN("Unsupported register.");
 	}
 }
 

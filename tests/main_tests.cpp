@@ -18,8 +18,8 @@ int main(int argc, char* argv[]) {
     logger->setLogLevel(dyno::ErrorLevel::INFO);
     dyno::Log::registerLogger(logger);
 
-    DYNO_LOG("Git: [" DYNO_GIT_COMMIT_HASH "]:(" DYNO_GIT_TAG ") - " DYNO_GIT_COMMIT_SUBJECT " on " DYNO_GIT_BRANCH " at '" DYNO_GIT_COMMIT_DATE "'", dyno::ErrorLevel::INFO);
-    DYNO_LOG("Compiled on: " DYNO_COMPILED_SYSTEM " from: " DYNO_COMPILED_GENERATOR" with: '" DYNO_COMPILED_COMPILER "'", dyno::ErrorLevel::INFO);
+    DYNO_LOG_INFO("Git: [" DYNO_GIT_COMMIT_HASH "]:(" DYNO_GIT_TAG ") - " DYNO_GIT_COMMIT_SUBJECT " on " DYNO_GIT_BRANCH " at '" DYNO_GIT_COMMIT_DATE "'");
+    DYNO_LOG_INFO("Compiled on: " DYNO_COMPILED_SYSTEM " from: " DYNO_COMPILED_GENERATOR" with: '" DYNO_COMPILED_COMPILER "'");
 
     return Catch::Session().run(argc, argv);
 }

@@ -61,12 +61,12 @@ std::optional<insts_t> Detour::calcNearestSz(
 
 bool Detour::followJmp(insts_t& functionInsts, uint8_t curDepth) { // NOLINT(misc-no-recursion)
 	if (functionInsts.empty()) {
-		DYNO_LOG("Couldn't decompile instructions at followed jmp", ErrorLevel::WARN);
+		DYNO_LOG_WARN("Couldn't decompile instructions at followed jmp");
 		return false;
 	}
 
 	if (curDepth >= m_maxDepth) {
-		DYNO_LOG("Prologue jmp resolution hit max depth, prologue too deep", ErrorLevel::WARN);
+		DYNO_LOG_WARN("Prologue jmp resolution hit max depth, prologue too deep");
 		return false;
 	}
 
@@ -76,16 +76,16 @@ bool Detour::followJmp(insts_t& functionInsts, uint8_t curDepth) { // NOLINT(mis
 	}
 
 	if (!m_isFollowCallOnFnAddress) {
-		DYNO_LOG("setting: Do NOT follow CALL on fnAddress", ErrorLevel::INFO);
+		DYNO_LOG_INFO("setting: Do NOT follow CALL on fnAddress");
 		if (functionInsts.front().isCalling()) {
-			DYNO_LOG("First assembly instruction is CALL", ErrorLevel::INFO);
+			DYNO_LOG_INFO("First assembly instruction is CALL");
 			return true;
 		}
 	}
 
 	// might be a mem type like jmp rax, not supported
 	if (!functionInsts.front().hasDisplacement()) {
-		DYNO_LOG("Branching instruction without displacement encountered", ErrorLevel::WARN);
+		DYNO_LOG_WARN("Branching instruction without displacement encountered");
 		return false;
 	}
 
@@ -187,7 +187,7 @@ void Detour::buildRelocationList(
 
 bool Detour::unhook() {
 	if (!m_hooked) {
-		DYNO_LOG("Detour unhook failed: no hook present", ErrorLevel::SEV);
+		DYNO_LOG_ERR("Detour unhook failed: no hook present");
 		return false;
 	}
 
@@ -209,7 +209,7 @@ bool Detour::rehook() {
 
 	// Nop the space between jmp and end of prologue
 	if (m_hookSize < m_nopProlOffset) {
-		DYNO_LOG("hook size must not be larger than nop prologue offset", ErrorLevel::SEV);
+		DYNO_LOG_ERR("Hook size must not be larger than nop prologue offset");
 		return false;
 	}
 

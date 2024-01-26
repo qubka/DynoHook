@@ -24,7 +24,7 @@ void ErrorLogger::push(const std::string& msg, ErrorLevel level) {
 		case ErrorLevel::WARN:
 			std::cout << "[!] Warn: " << msg << std::endl;
 			break;
-		case ErrorLevel::SEV:
+		case ErrorLevel::ERR:
 			std::cout << "[!] Error: " << msg << std::endl;
 			break;
 		default:

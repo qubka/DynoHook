@@ -64,7 +64,7 @@ int VTable::getVTableIndex(void* pFunc) {
 	return vtindex;
 #elif DYNO_PLATFORM_MSVC
 
-	// https://github.com/alliedmodders/metamod-source/blob/aece7d5161178841aaf500b55a1e67647e9e38fb/core/sourcehook/sh_memfuncinfo.h
+	// https://www.unknowncheats.me/forum/c-and-c-/102577-vtable-index-pure-virtual-function.html
 
 	// Check whether it's a virtual function call on x86
 	
@@ -92,7 +92,7 @@ int VTable::getVTableIndex(void* pFunc) {
 	//		0:  48 8b 01                mov    rax,QWORD PTR [rcx]
 	//		3:  ff a0 18 03 00 00       jmp    QWORD PTR [rax+0x318]
 
-	auto find_vtable_index = [&](uint8_t* addr) {
+	auto finder = [&](uint8_t* addr) {
 		std::unique_ptr<MemProtector> protector;
 
 		if (*addr == 0xE9) {
@@ -137,7 +137,7 @@ int VTable::getVTableIndex(void* pFunc) {
 		return -1;
 	};
 
-	int vtindex = find_vtable_index((uint8_t*)pFunc);
+	int vtindex = finder((uint8_t*)pFunc);
 	cachedVTableIndexes.emplace(pFunc, vtindex);
 	return vtindex;
 #else
@@ -147,7 +147,7 @@ int VTable::getVTableIndex(void* pFunc) {
 
 std::shared_ptr<Hook> VTable::hook(int index, const ConvFunc& convention) {
 	if (index <= -1 || index >= m_vFuncCount) {
-		DYNO_LOG("Invalid virtual function index: " + std::to_string(index), ErrorLevel::SEV);
+		DYNO_LOG_ERR("Invalid virtual function index: " + std::to_string(index));
 		return nullptr;
 	}
 
@@ -157,7 +157,7 @@ std::shared_ptr<Hook> VTable::hook(int index, const ConvFunc& convention) {
 
 	auto vhook = m_hookCache->get(m_origVtable[index], convention);
 	if (!vhook) {
-		DYNO_LOG("Invalid virtual hook", ErrorLevel::SEV);
+		DYNO_LOG_ERR("Invalid virtual hook");
 		return nullptr;
 	}
 	
@@ -168,7 +168,7 @@ std::shared_ptr<Hook> VTable::hook(int index, const ConvFunc& convention) {
 
 bool VTable::unhook(int index) {
 	if (index <= -1 || index >= m_vFuncCount) {
-		DYNO_LOG("Invalid virtual function index: " + std::to_string(index), ErrorLevel::SEV);
+		DYNO_LOG_ERR("Invalid virtual function index: " + std::to_string(index));
 		return false;
 	}
 

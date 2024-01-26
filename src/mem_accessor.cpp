@@ -160,6 +160,15 @@ ProtFlag MemAccessor::mem_protect(uintptr_t dest, size_t size, ProtFlag prot, bo
 
 #endif
 
+insts_t MemAccessor::makex64FarJump(uintptr_t address, uintptr_t destination) {
+	std::vector<uint8_t> bytes(14);
+	bytes[0] = 0xFF;
+	bytes[1] = 0x25;
+	std::memcpy(&bytes[6], &destination, 8);
+
+	return { Instruction(this, address, Instruction::Displacement{0}, 0, false, false, std::move(bytes), "jmp", int_to_hex(destination), Mode::x64) };
+}
+
 /**
  * Write a 25 byte absolute jump. This is preferred since it doesn't require an indirect memory holder.
  * We first sub rsp by 128 bytes to avoid the red-zone stack space. This is specific to unix only afaik.
