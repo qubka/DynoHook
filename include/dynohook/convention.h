@@ -18,7 +18,8 @@ namespace dyno {
 		Float,
 		Double,
 		Pointer,
-		String,
+		String, // char* (null-terminated)
+		WString, // wchar_t* (null-terminated)
 		M128,
 		M256,
 		M512,
@@ -225,6 +226,8 @@ namespace dyno {
 				return Align(sizeof(void*), alignment);
 			case DataType::String:
 				return Align(sizeof(char*), alignment);
+			case DataType::WString:
+				return Align(sizeof(wchar_t*), alignment);
 			case DataType::M128:
 				return Align(sizeof(float) * 4, alignment);
 			case DataType::M256:
