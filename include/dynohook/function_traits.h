@@ -4,6 +4,45 @@
 #include <type_traits>
 
 namespace dyno {
+	template <typename Function>
+	struct FunctionTrait;
+
+	template <typename Ret, typename... Args>
+	struct FunctionTrait<Ret(*)(Args...)> {
+		using return_type = Ret;
+		using argument_types = std::tuple<Args...>;
+		static constexpr size_t arity = sizeof...(Args);
+
+		template <size_t N>
+		struct arg {
+			using type = typename std::tuple_element<N, argument_types>::type;
+		};
+	};
+
+	template <typename Class, typename Ret, typename... Args>
+	struct FunctionTrait<Ret(Class::*)(Args...)> {
+		using return_type = Ret;
+		using argument_types = std::tuple<Args...>;
+		static constexpr size_t arity = sizeof...(Args);
+
+		template <size_t N>
+		struct arg {
+			using type = typename std::tuple_element<N, argument_types>::type;
+		};
+	};
+
+	template <typename Ret, typename... Args>
+	struct FunctionTrait<Ret(Args...)> {
+		using return_type = Ret;
+		using argument_types = std::tuple<Args...>;
+		static constexpr size_t arity = sizeof...(Args);
+
+		template <size_t N>
+		struct arg {
+			using type = typename std::tuple_element<N, argument_types>::type;
+		};
+	};
+
 	template<typename F>
 	DataObject GetReturn(F func) {
 		using trait = FunctionTrait<decltype(func)>;
@@ -66,43 +105,4 @@ namespace dyno {
 		else if constexpr (std::is_pointer<T>::value) return DataType::Pointer;
 		else static_assert("Unsupported type");
 	}
-
-	template <typename Function>
-	struct FunctionTrait;
-
-	template <typename Ret, typename... Args>
-	struct FunctionTrait<Ret(*)(Args...)> {
-		using return_type = Ret;
-		using argument_types = std::tuple<Args...>;
-		static constexpr size_t arity = sizeof...(Args);
-
-		template <size_t N>
-		struct arg {
-			using type = typename std::tuple_element<N, argument_types>::type;
-		};
-	};
-
-	template <typename Class, typename Ret, typename... Args>
-	struct FunctionTrait<Ret(Class::*)(Args...)> {
-		using return_type = Ret;
-		using argument_types = std::tuple<Args...>;
-		static constexpr size_t arity = sizeof...(Args);
-
-		template <size_t N>
-		struct arg {
-			using type = typename std::tuple_element<N, argument_types>::type;
-		};
-	};
-
-	template <typename Ret, typename... Args>
-	struct FunctionTrait<Ret(Args...)> {
-		using return_type = Ret;
-		using argument_types = std::tuple<Args...>;
-		static constexpr size_t arity = sizeof...(Args);
-
-		template <size_t N>
-		struct arg {
-			using type = typename std::tuple_element<N, argument_types>::type;
-		};
-	};
 }
