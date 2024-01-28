@@ -4,12 +4,12 @@
 #include <dynohook/mem_accessor.h>
 #include <dynohook/mem_protector.h>
 #include <dynohook/instruction.h>
-#include <dynohook/hook.h>
+#include <dynohook/nat_hook.h>
 #include <optional>
 #include <cassert>
 
 namespace dyno {
-	class Detour : public Hook {
+	class Detour : public NatHook {
 	public:
 		Detour(uintptr_t fnAddress, const ConvFunc& convention, Mode mode);
 		~Detour() override;

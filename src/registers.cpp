@@ -390,7 +390,7 @@ const Register& Registers::at(RegisterType regType, bool reverse) const {
 	return s_none;
 }
 
-const RegisterInfo& RegisterTypeInfo(RegisterType reg) {
+const RegisterInfo& dyno::RegisterTypeInfo(RegisterType reg) {
 	return reg_table.at(reg);
 }
 

@@ -724,7 +724,7 @@ bool x64Detour::makeTrampoline(insts_t& prologue, insts_t& outJmpTable) {
 	// we are looking for the nop space and set our address of the trampoline there
 	uint8_t match = 0;
 	const uint8_t* nop_addr = (uint8_t*) m_fnBridge + m_fnBridgeSize;
-	while (match < 5) {
+	while (match < 14) {
 		if (*--nop_addr == 0x90)
 			match++;
 		else
@@ -741,7 +741,7 @@ bool x64Detour::makeTrampoline(insts_t& prologue, insts_t& outJmpTable) {
 		DYNO_LOG_INFO("Jmp To Tram:\n" + instsToStr(jmpToTram) + "\n");
 		writeEncoding(jmpToTram);
 	} else {
-		const auto jmpToTram = makex64FarJump(jmpToTramAddr, m_trampoline);
+		const auto jmpToTram = makex64Jump(jmpToTramAddr, m_trampoline);
 		DYNO_LOG_INFO("Jmp To Tram:\n" + instsToStr(jmpToTram) + "\n");
 		writeEncoding(jmpToTram);
 	}

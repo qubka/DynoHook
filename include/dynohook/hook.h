@@ -13,7 +13,7 @@ namespace dyno {
 	public:
 		explicit Hook(const ConvFunc& convention);
 		~Hook() override = default;
-		DYNO_NONCOPYABLE(Hook);
+		DYNO_NONCOPYABLE(Hook)
 
 		bool addCallback(CallbackType type, CallbackHandler handler) override;
 		bool removeCallback(CallbackType type, CallbackHandler handler) override;
@@ -40,8 +40,8 @@ namespace dyno {
 		}
 
 	protected:
-		bool createBridge();
-		bool createPostCallback();
+		virtual bool createBridge() = 0;
+		virtual bool createPostCallback() = 0;
 
 		ICallingConvention& getCallingConvention() override {
 			return *m_callingConvention;
@@ -50,15 +50,16 @@ namespace dyno {
 			return m_registers;
 		}
 
-	private:
 		typedef asmjit::x86::Assembler Assembler;
 
-		void writeModifyReturnAddress(Assembler& a);
-		void writeCallHandler(Assembler& a, CallbackType type) const;
-		void writeSaveRegisters(Assembler& a, const Registers& regs, bool post = false) const;
-		void writeRestoreRegisters(Assembler& a, const Registers& regs, bool post = false) const;
-		void writeRegToMem(Assembler& a, const Register& reg, bool post = false) const;
-		void writeMemToReg(Assembler& a, const Register& reg, bool post = false) const;
+		virtual void writeModifyReturnAddress(Assembler& a) = 0;
+		virtual void writeCallHandler(Assembler& a, CallbackType type) const = 0;
+		virtual int32_t writeSaveScratchRegisters(Assembler& a) const = 0;
+		virtual void writeRestoreScratchRegisters(Assembler& a) const = 0;
+		virtual void writeSaveRegisters(Assembler& a, bool post) const = 0;
+		virtual void writeRestoreRegisters(Assembler& a, bool post) const = 0;
+		virtual void writeRegToMem(Assembler& a, const Register& reg, [[maybe_unused]] bool post) const = 0;
+		virtual void writeMemToReg(Assembler& a, const Register& reg, [[maybe_unused]] bool post) const = 0;
 
 DYNO_OPTS_OFF
 		DYNO_NOINLINE ReturnAction DYNO_CDECL callbackHandler(CallbackType type);
@@ -80,7 +81,6 @@ DYNO_OPTS_ON
 
 		// register storage
 		Registers m_registers;
-		Registers m_scratchRegisters;
 
 		// save the last return action of the pre callbackHander for use in the post handler.
 		std::vector<ReturnAction> m_lastPreReturnAction;

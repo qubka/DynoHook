@@ -150,6 +150,7 @@ endif()
 if(NOT DYNOHOOK_BUILD_TESTS)
     if(DYNOHOOK_BUILD_SHARED_LIB)
         add_library(${PROJECT_NAME} SHARED)
+        set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
     else()
         add_library(${PROJECT_NAME} STATIC)
     endif()
@@ -192,6 +193,7 @@ set(DYNOHOOK_CORE_HEADERS
         ${PROJECT_SOURCE_DIR}/include/dynohook/fb_allocator.h
         ${PROJECT_SOURCE_DIR}/include/dynohook/ihook.h
         ${PROJECT_SOURCE_DIR}/include/dynohook/hook.h
+        ${PROJECT_SOURCE_DIR}/include/dynohook/nat_detour.h
         ${PROJECT_SOURCE_DIR}/include/dynohook/instruction.h
         ${PROJECT_SOURCE_DIR}/include/dynohook/manager.h
         ${PROJECT_SOURCE_DIR}/include/dynohook/mem_accessor.h
@@ -206,6 +208,13 @@ set(DYNOHOOK_CORE_HEADERS
         ${PROJECT_SOURCE_DIR}/include/dynohook/tests/effect_tracker.h
         ${PROJECT_SOURCE_DIR}/include/dynohook/tests/stack_canary.h
         )
+
+if(DYNOHOOK_BUILD_32)
+    set(DYNOHOOK_CORE_HEADERS ${DYNOHOOK_CORE_HEADERS} ${PROJECT_SOURCE_DIR}/include/dynohook/x86_hook.h)
+elseif(DYNOHOOK_BUILD_64)
+    set(DYNOHOOK_CORE_HEADERS ${DYNOHOOK_CORE_HEADERS} ${PROJECT_SOURCE_DIR}/include/dynohook/x64_hook.h)
+endif()
+
 install(FILES ${DYNOHOOK_CORE_HEADERS} DESTINATION include/dynohook)
 
 target_sources(${PROJECT_NAME} PRIVATE
@@ -225,11 +234,17 @@ target_sources(${PROJECT_NAME} PRIVATE
         ${PROJECT_SOURCE_DIR}/src/tests/stack_canary.cpp
 		)
 
+if(DYNOHOOK_BUILD_32)
+    target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/src/x86_hook.cpp)
+elseif(DYNOHOOK_BUILD_64)
+    target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/src/x64_hook.cpp)
+endif()
+
 target_precompile_headers(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/src/pch.h)
 
 if(NOT DYNOHOOK_BUILD_TESTS)
     #include(GenerateExportHeader)
-    #generate_export_header(${PROJECT_NAME} EXPORT_MACRO_NAME DYNO_API EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/exports/${PROJECT_NAME}_export.h)
+    #generate_export_header(${PROJECT_NAME} EXPORT_MACRO_NAME EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/exports/${PROJECT_NAME}_export.h)
     #target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_BINARY_DIR}/exports)
 else()
 	target_compile_options(${PROJECT_NAME} PRIVATE

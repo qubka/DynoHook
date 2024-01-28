@@ -160,7 +160,10 @@ ProtFlag MemAccessor::mem_protect(uintptr_t dest, size_t size, ProtFlag prot, bo
 
 #endif
 
-insts_t MemAccessor::makex64FarJump(uintptr_t address, uintptr_t destination) {
+/**
+ * Write a 14 byte indirect near jump.
+ */
+insts_t MemAccessor::makex64Jump(uintptr_t address, uintptr_t destination) {
 	std::vector<uint8_t> bytes(14);
 	bytes[0] = 0xFF;
 	bytes[1] = 0x25;

@@ -174,7 +174,7 @@ void HookManager::clearCache() {
 	m_cache->cleanup();
 }
 
-HookManager& HookManager::Get() {
+IHookManager& HookManager::Get() {
 	static HookManager s_manager;
 	return s_manager;
 }

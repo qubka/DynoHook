@@ -31,7 +31,7 @@ namespace dyno {
 		void unhookAllVirtual(void* pClass) override;
 		void clearCache() override;
 
-		static HookManager& Get();
+		static IHookManager& Get();
 
 	public:
 		std::shared_ptr<VHookCache> m_cache; // used as global storage to avoid creating same hooks

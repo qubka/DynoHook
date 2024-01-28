@@ -53,7 +53,6 @@ namespace dyno {
 		void writeEncoding(const Instruction& instruction);
 
 	protected:
-		insts_t makex64FarJump(uintptr_t address, uintptr_t destination);
 
 		/**
 		 * Write a 25 byte absolute jump. This is preferred since it doesn't require an indirect memory holder.
@@ -69,6 +68,7 @@ namespace dyno {
 		 */
 		insts_t makex64MinimumJump(uintptr_t address, uintptr_t destination, uintptr_t destHolder);
 		insts_t makex86Jmp(uintptr_t address, uintptr_t destination);
+		insts_t makex64Jump(uintptr_t address, uintptr_t destination);
 		insts_t makeAgnosticJmp(uintptr_t address, uintptr_t destination);
 
 		insts_t makex64DestHolder(uintptr_t destination, uintptr_t destHolder);

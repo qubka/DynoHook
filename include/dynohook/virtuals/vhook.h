@@ -1,9 +1,9 @@
 #pragma once
 
-#include <dynohook/hook.h>
+#include <dynohook/nat_hook.h>
 
 namespace dyno {
-	class VHook final : public Hook {
+	class VHook final : public NatHook {
 	public:
 		VHook(uintptr_t fnAddress, const ConvFunc& convention);
 		~VHook() override;
