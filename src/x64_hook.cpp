@@ -161,7 +161,7 @@ void x64Hook::writeModifyReturnAddress(Assembler& a) {
 	a.lea(rdx, qword_ptr(rsp, pushed));
 	a.mov(rsi, qword_ptr(rsp, pushed));
 	a.mov(rdi, this);
-	a.sub(rsp, space;
+	a.sub(rsp, space);
 	a.call((void*&) setReturnAddress); // stack should be aligned by 16 bytes, call adds +8
 	a.add(rsp, reserved);
 #endif

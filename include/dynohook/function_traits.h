@@ -38,12 +38,10 @@ namespace dyno {
 	}
 
 	template<typename Function>
-	struct FunctionTrait;
+	struct function_traits;
 
 	template<typename Ret, typename... Args>
-	struct FunctionTrait<Ret(*)(Args...)> {
-		using return_type = Ret;
-		using argument_types = std::tuple<Args...>;
+	struct function_traits<Ret(*)(Args...)> {
 		static constexpr size_t arity = sizeof...(Args);
 
 		static std::array<DataObject, arity> args() {
@@ -56,9 +54,7 @@ namespace dyno {
 	};
 
 	template<typename Class, typename Ret, typename... Args>
-	struct FunctionTrait<Ret(Class::*)(Args...)> {
-		using return_type = Ret;
-		using argument_types = std::tuple<Args...>;
+	struct function_traits<Ret(Class::*)(Args...)> {
 		static constexpr size_t arity = sizeof...(Args);
 
 		static std::array<DataObject, arity + 1> args() {
@@ -75,9 +71,7 @@ namespace dyno {
 	};
 
 	template<typename Ret, typename... Args>
-	struct FunctionTrait<Ret(Args...)> {
-		using return_type = Ret;
-		using argument_types = std::tuple<Args...>;
+	struct function_traits<Ret(Args...)> {
 		static constexpr size_t arity = sizeof...(Args);
 
 		static std::array<DataObject, arity> args() {
