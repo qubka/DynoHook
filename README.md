@@ -289,7 +289,7 @@ cmake ..
 ```
 
 ## Credits
-- [stevemk14ebr](https://github.com/stevemk14ebr/PolyHook_2_0) - PolyHook_2_0's range allocation, trampoline creation and disassembling
+- [stevemk14ebr](https://github.com/stevemk14ebr/PolyHook_2_0) - PolyHook_2_0's range allocation, trampoline creation and disassembling (MIT Licence)
 - [Ayuto](https://github.com/Ayuto/) - DynamicHooks library
 - [peace-maker](https://github.com/peace-maker) - DHooks with detour support
 - [Kailo](https://github.com/Kailo97) - Help with assembly porting from x32 to x64 and helping fixing crashes
