@@ -16,6 +16,7 @@
 #include <iomanip>
 #include <mutex>
 #include <type_traits>
+#include <iterator>
 
 #include <dynohook/platform.h>
 #include <dynohook/helpers.h>
