@@ -43,6 +43,8 @@ ProtFlag MemAccessor::mem_protect(uintptr_t dest, size_t size, ProtFlag prot, bo
 
 #elif DYNO_PLATFORM_LINUX
 
+#include <fstream>
+
 struct region_t {
 	uintptr_t start;
 	uintptr_t end;
