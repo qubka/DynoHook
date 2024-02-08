@@ -74,7 +74,7 @@ static region_t get_region_from_addr(uintptr_t addr) {
 					res.prot = res.prot | ProtFlag::X;
 
 				if (res.prot == ProtFlag::UNSET)
-					res.prot = ProtFlag::NONE;
+					res.prot = ProtFlag::N;
 
 				break;
 			}
