@@ -115,13 +115,13 @@ void ALLOC_Free(ALLOC_HANDLE hAlloc, void* pBlock) {
 using namespace dyno; 
 
 FBAllocator::FBAllocator(uintptr_t min, uintptr_t max, uint8_t blockSize, uint8_t blockCount) :
+	m_alloc2Supported{boundedAllocSupported()},
+	m_usedBlocks{0},
+	m_maxBlocks{blockCount},
+	m_blockSize{blockSize},
 	m_min{min},
 	m_max{max},
-	m_dataPool{0},
-	m_maxBlocks{blockCount},
-	m_usedBlocks{0},
-	m_blockSize{blockSize},
-	m_alloc2Supported{boundedAllocSupported()} {
+	m_dataPool{0} {
 }
 
 FBAllocator::~FBAllocator() {
