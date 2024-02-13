@@ -2,6 +2,7 @@
 
 #include "mem_accessor.h"
 #include "ihook.h"
+#include "platform.h"
 #include <asmjit/asmjit.h>
 
 namespace dyno {
