@@ -40,7 +40,7 @@
 // therefore we need to check for __clang__ or __llvm__ first.
 #if defined(__clang__) || defined(__llvm__)
 #define DYNO_PLATFORM_CLANG 1
-#define DYNO_PLATFORM_GCC_COMPATIBLE 1
+#define DYNO_PLATFORM_GCC_COMPATIBLE 0 // No _Pragma(...)
 #if defined(__i386__) || defined(__x86_64__)
 #define DYNO_PLATFORM_X86 1
 #define DYNO_PLATFORM_CLANG_X86 1
