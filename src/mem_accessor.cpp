@@ -2,6 +2,8 @@
 #include <dynohook/mem_protector.h>
 #include <dynohook/os.h>
 
+#include <cstring>
+
 using namespace dyno;
 
 #if DYNO_PLATFORM_WINDOWS

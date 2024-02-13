@@ -1,5 +1,9 @@
 #include <dynohook/registers.h>
 
+#include <array>
+#include <algorithm>
+#include <cstring>
+
 using namespace dyno;
 
 Register Registers::s_none(NONE, SIZE_INVALID);

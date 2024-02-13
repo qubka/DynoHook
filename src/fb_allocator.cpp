@@ -1,5 +1,7 @@
 #include <dynohook/fb_allocator.h>
 
+#include <cstring>
+
 void* ALLOC_NewBlock(ALLOC_Allocator* self)  {
 	ALLOC_Block* pBlock = NULL;
 
@@ -85,7 +87,7 @@ void* ALLOC_Calloc(ALLOC_HANDLE hAlloc, size_t num, size_t size) {
 	pMem = ALLOC_Alloc(hAlloc, n);
 
 	if (pMem) {
-		memset(pMem, 0, n);
+		std::memset(pMem, 0, n);
 	}
 	return pMem;
 }

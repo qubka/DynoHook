@@ -1,6 +1,8 @@
 #include <dynohook/instruction.h>
 #include <dynohook/mem_accessor.h>
 
+#include <cstring>
+
 using namespace dyno;
 
 Instruction::Instruction(
