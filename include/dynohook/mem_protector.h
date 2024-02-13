@@ -11,7 +11,7 @@ namespace dyno {
 	class MemProtector {
 	public:
 		MemProtector() = delete;
-		MemProtector(uintptr_t address, std::size_t length, ProtFlag prot, MemAccessor& accessor, bool unsetOnDestroy = true);
+		MemProtector(std::uintptr_t address, std::size_t length, ProtFlag prot, MemAccessor& accessor, bool unsetOnDestroy = true);
 		~MemProtector();
 		
 		ProtFlag originalProt() const {
