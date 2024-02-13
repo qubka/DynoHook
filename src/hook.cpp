@@ -1,4 +1,5 @@
 #include <dynohook/hook.h>
+#include <dynohook/log.h>
 
 using namespace dyno;
 
