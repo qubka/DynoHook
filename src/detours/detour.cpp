@@ -1,4 +1,5 @@
 #include <dynohook/detours/detour.h>
+#include <dynohook/log.h>
 
 #include <cmath>
 

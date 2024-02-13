@@ -56,8 +56,8 @@ namespace dyno {
 #define DYNO_LOG_WARN(msg) dyno::Log::log(msg, dyno::ErrorLevel::WARN)
 #define DYNO_LOG_ERR(msg)  dyno::Log::log(msg, dyno::ErrorLevel::ERR)
 #else
-#define DYNO_LOG(lvl, msg)
-#define DYNO_LOG_INFO(lvl, msg)
-#define DYNO_LOG_WARN(lvl, msg)
-#define DYNO_LOG_ERR(lvl, msg)
+#define DYNO_LOG(msg)
+#define DYNO_LOG_INFO(msg)
+#define DYNO_LOG_WARN(msg)
+#define DYNO_LOG_ERR(msg)
 #endif

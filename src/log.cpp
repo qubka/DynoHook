@@ -1,5 +1,7 @@
 #include <dynohook/log.h>
 
+#include <iostream>
+
 using namespace dyno;
 
 void Log::registerLogger(std::shared_ptr<Logger> logger) {

@@ -1,5 +1,7 @@
 #include <dynohook/convention.h>
 
+#include <cstring>
+
 using namespace dyno;
 
 ICallingConvention::ICallingConvention(std::vector<DataObject> arguments, DataObject returnType, size_t alignment) :

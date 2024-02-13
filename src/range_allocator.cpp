@@ -1,6 +1,8 @@
 #include <dynohook/range_allocator.h>
 #include <dynohook/fb_allocator.h>
 
+#include <algorithm>
+
 using namespace dyno;
 
 RangeAllocator::RangeAllocator(uint8_t blockSize, uint8_t blockCount) : m_maxBlocks{blockCount}, m_blockSize{blockSize} {

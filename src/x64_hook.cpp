@@ -1,4 +1,5 @@
 #include <dynohook/x64_hook.h>
+#include <dynohook/log.h>
 
 using namespace dyno;
 using namespace asmjit;

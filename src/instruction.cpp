@@ -1,6 +1,8 @@
 #include <dynohook/instruction.h>
 #include <dynohook/mem_accessor.h>
 
+#include <cstring>
+
 using namespace dyno;
 
 Instruction::Instruction(
@@ -15,26 +17,28 @@ Instruction::Instruction(
 	std::string&& opStr,
 	Mode mode
 ) : m_accessor{accessor},
-	m_address{address},
-	m_displacement{displacement},
-	m_dispOffset{displacementOffset},
-	m_dispSize{0},
-	m_isRelative{isRelative},
+
+	m_register{0},
 	m_isIndirect{isIndirect},
 	m_isCalling{false},
 	m_isBranching{false},
+	m_isRelative{isRelative},
 	m_hasDisplacement{false},
 	m_hasImmediate{false},
+	m_displacement{displacement},
+
+	m_address{address},
 	m_immediate{0},
 	m_immediateSize{0},
-	m_register{0},
+	m_dispOffset{displacementOffset},
+	m_dispSize{0},
+
+	m_mode{mode},
+	m_uid{s_counter++},
 
 	m_bytes{std::move(bytes)},
 	m_mnemonic{std::move(mnemonic)},
-	m_opStr{std::move(opStr)},
-
-	m_uid{s_counter++},
-	m_mode{mode} {
+	m_opStr{std::move(opStr)} {
 }
 
 void Instruction::setDestination(uintptr_t dest) {

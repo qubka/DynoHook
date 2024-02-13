@@ -1,5 +1,9 @@
 #include <dynohook/virtuals/vtable.h>
+#include <dynohook/core.h>
+#include <dynohook/log.h>
 #include <dynohook/mem_protector.h>
+
+#include <cstring>
 
 using namespace dyno;
 

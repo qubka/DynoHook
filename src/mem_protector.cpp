@@ -4,12 +4,12 @@
 
 using namespace dyno;
 
-MemProtector::MemProtector(uintptr_t address, size_t length, ProtFlag prot, MemAccessor& accessor, bool unsetOnDestroy) :
+MemProtector::MemProtector(std::uintptr_t address, std::size_t length, ProtFlag prot, MemAccessor& accessor, bool unsetOnDestroy) :
+	m_accessor{accessor},
 	m_address{address},
 	m_length{length},
-	m_unsetLater{unsetOnDestroy},
-	m_accessor{accessor},
-	m_status{false} {
+	m_status{false},
+	m_unsetLater{unsetOnDestroy} {
 	m_origProtection = m_accessor.mem_protect(address, length, prot, m_status);
 }
 

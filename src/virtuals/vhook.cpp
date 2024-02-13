@@ -1,8 +1,9 @@
+#include <dynohook/log.h>
 #include <dynohook/virtuals/vhook.h>
 
 using namespace dyno;
 
-VHook::VHook(uintptr_t fnAddress, const ConvFunc& convention) : NatHook(convention), m_fnAddress{fnAddress} {
+VHook::VHook(std::uintptr_t fnAddress, const ConvFunc& convention) : NatHook(convention), m_fnAddress{fnAddress} {
 	assert(fnAddress != 0 && "Function address cannot be null");
 }
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "platform.h"
+
 #if DYNO_ARCH_X86 == 32
 #include <dynohook/x86_hook.h>
 #elif DYNO_ARCH_X86 == 64

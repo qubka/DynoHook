@@ -1,6 +1,8 @@
 #include <dynohook/core.h>
 #include <dynohook/os.h>
 
+#include <cstring>
+
 namespace dyno {
 
 uintptr_t findPattern(uintptr_t rangeStart, size_t len, const char* pattern) {
@@ -36,7 +38,7 @@ uintptr_t findPattern(uintptr_t rangeStart, size_t len, const char* pattern) {
 }
 
 size_t getPatternSize(const char* pattern) {
-	const size_t l = strlen(pattern);
+	const size_t l = std::strlen(pattern);
 
 	// c = 2 * b + (b - 1) . 2 chars per byte + b - 1 spaces between
 	return (l + 1) / 3;
