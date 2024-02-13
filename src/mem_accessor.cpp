@@ -1,3 +1,4 @@
+#include <dynohook/core.h>
 #include <dynohook/mem_accessor.h>
 #include <dynohook/mem_protector.h>
 #include <dynohook/os.h>

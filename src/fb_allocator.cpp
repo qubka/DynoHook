@@ -1,3 +1,4 @@
+#include <dynohook/core.h>
 #include <dynohook/fb_allocator.h>
 
 #include <cstring>
