@@ -223,7 +223,7 @@
 #endif
 
 // optimization
-#if DYNO_PLATFORM_GCC_COMPATIBLE
+#if DYNO_PLATFORM_GCC_COMPATIBLE && !(defined(DYNO_PLATFORM_CLANG) && DYNO_PLATFORM_CLANG)
 #define DYNO_OPTS_OFF _Pragma("GCC push_options") _Pragma("GCC optimize (\"O0\")")
 #define DYNO_OPTS_ON _Pragma("GCC pop_options")
 #elif DYNO_PLATFORM_MSVC
