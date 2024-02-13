@@ -1,7 +1,14 @@
+#include <dynohook/core.h>
+#include <dynohook/log.h>
 #include <dynohook/detours/x64_detour.h>
 
 #include <asmtk/asmtk.h>
 #include <Zydis/Register.h>
+
+#include <algorithm>
+#include <iterator>
+#include <map>
+#include <set>
 
 using namespace std::string_literals;
 

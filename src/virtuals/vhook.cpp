@@ -1,3 +1,4 @@
+#include <dynohook/log.h>
 #include <dynohook/virtuals/vhook.h>
 
 using namespace dyno;
