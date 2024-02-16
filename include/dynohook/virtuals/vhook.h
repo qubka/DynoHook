@@ -16,6 +16,10 @@ namespace dyno {
 			return HookMode::VTableSwap;
 		}
 
+		const std::uintptr_t& getTarget() const override {
+			return m_fnAddress;
+		}
+
 		const std::uintptr_t& getAddress() const override {
 			return m_fnAddress;
 		}
