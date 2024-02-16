@@ -126,7 +126,8 @@ ReturnAction Hook::callbackHandler(CallbackType type) {
 void* Hook::getReturnAddress(void* stackPtr) {
 	auto it = m_retAddr.find(stackPtr);
 	if (it == m_retAddr.end()) {
-		DYNO_LOG_ERR("Failed to find return address of original function. Check the arguments and return type of your detour setup.");
+		DYNO_LOG_ERR("Failed to find return address of original function. Check the arguments and return type of your hook setup.");
+		m_mutex.unlock();
 		return nullptr;
 	}
 
@@ -138,9 +139,13 @@ void* Hook::getReturnAddress(void* stackPtr) {
 	if (v.empty())
 		m_retAddr.erase(it);
 
+	m_mutex.unlock();
+
 	return retAddr;
 }
 
 void Hook::setReturnAddress(void* retAddr, void* stackPtr) {
+	m_mutex.lock();
+
 	m_retAddr[stackPtr].push_back(retAddr);
 }

@@ -3,7 +3,9 @@
 #include "mem_accessor.h"
 #include "ihook.h"
 #include "platform.h"
+
 #include <asmjit/asmjit.h>
+#include <mutex>
 
 namespace dyno {
 	/**
@@ -70,6 +72,7 @@ DYNO_OPTS_ON
 
 	protected:
 		asmjit::JitRuntime m_asmjit_rt;
+		std::mutex m_mutex;
 
 		// address storage
 		uintptr_t m_fnBridge{ 0 };

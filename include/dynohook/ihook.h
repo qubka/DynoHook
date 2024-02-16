@@ -28,10 +28,7 @@ namespace dyno {
 	};
 
 	class IHook;
-	//typedef ReturnAction (* FnHookCallback_t)(CallbackType, IHook&);
-	//typedef ReturnAction (* FnHookCallbackNoContext_t)(IHook&);
-	//typedef ReturnAction (* FnHookCallbackVoid_t)();
-	typedef ReturnAction (*CallbackHandler)(CallbackType, IHook&);
+	using CallbackHandler = ReturnAction (*)(CallbackType, IHook&);
 	using ConvFunc = std::function<ICallingConvention*()>;
 
 	/**
