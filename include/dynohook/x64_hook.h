@@ -3,7 +3,7 @@
 #include <dynohook/hook.h>
 
 namespace dyno {
-	class x64Hook : public Hook {
+	class DYNO_API x64Hook : public Hook {
 	public:
 		explicit x64Hook(const ConvFunc& convention);
 		~x64Hook() override = default;
