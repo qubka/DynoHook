@@ -73,8 +73,11 @@ bool HookManager::unhookDetour(void* pFunc) {
 
 	auto it = m_detours.find(pFunc);
 	if (it != m_detours.end()) {
-		m_detours.erase(it);
-		return true;
+		auto detour = it->second;
+		if (detour->unhook()) {
+			m_detours.erase(it);
+			return true;
+		}
 	}
 
 	return false;
