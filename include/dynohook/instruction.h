@@ -15,7 +15,7 @@ namespace dyno {
 	};
 
 	class MemAccessor;
-	class Instruction {
+	class DYNO_API Instruction {
 	public:
 		union Displacement {
 			intptr_t  Relative;

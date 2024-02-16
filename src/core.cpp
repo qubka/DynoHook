@@ -5,6 +5,13 @@
 
 namespace dyno {
 
+size_t getPatternSize(const char* pattern) {
+  const size_t l = std::strlen(pattern);
+
+  // c = 2 * b + (b - 1) . 2 chars per byte + b - 1 spaces between
+  return (l + 1) / 3;
+}
+
 uintptr_t findPattern(uintptr_t rangeStart, size_t len, const char* pattern) {
 	unsigned char pattern_scratch[FINDPATTERN_SCRATCH_SIZE] = { 0 };
 	unsigned char mask_scratch[FINDPATTERN_SCRATCH_SIZE] = { 0 };
@@ -29,19 +36,16 @@ uintptr_t findPattern(uintptr_t rangeStart, size_t len, const char* pattern) {
 	}
 
 	*msk = 0;
+
+	// TODO:: Add Intrinsics
+
 	for (size_t n = 0; n < (len - (patSize + 1)); n++) {
 		if (isMatch((char*)(rangeStart + n), (char*)(&pattern_scratch[0]), (char*)(&mask_scratch[0]))) {
 			return rangeStart + n;
 		}
 	}
+
 	return 0;
-}
-
-size_t getPatternSize(const char* pattern) {
-	const size_t l = std::strlen(pattern);
-
-	// c = 2 * b + (b - 1) . 2 chars per byte + b - 1 spaces between
-	return (l + 1) / 3;
 }
 
 uintptr_t findPattern_rev(uintptr_t rangeStart, size_t len, const char* pattern) {
@@ -68,11 +72,15 @@ uintptr_t findPattern_rev(uintptr_t rangeStart, size_t len, const char* pattern)
 	}
 
 	*msk = 0;
+
+	// TODO:: Add Intrinsics
+
 	for (size_t n = len - (patSize + 1); n > 0; n--) {
 		if (isMatch((char*)(rangeStart + n), (char*)(&pattern_scratch[0]), (char*)(&mask_scratch[0]))) {
 			return rangeStart + n;
 		}
 	}
+
 	return 0;
 }
 

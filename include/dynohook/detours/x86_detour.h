@@ -3,7 +3,7 @@
 #include <dynohook/detours/detour.h>
 
 namespace dyno {
-	class x86Detour final : public Detour {
+	class DYNO_API x86Detour final : public Detour {
 	public:
 		x86Detour(uintptr_t fnAddress, const ConvFunc& convention);
 		~x86Detour() override = default;

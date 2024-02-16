@@ -42,7 +42,7 @@ namespace dyno {
 	 *
 	 * Inherit from this class to create your own calling convention.
 	 */
-	class ICallingConvention {
+	class DYNO_API ICallingConvention {
 	public:
 		/**
 		 * @brief Initializes the calling convention.

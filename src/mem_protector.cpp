@@ -4,7 +4,7 @@
 
 using namespace dyno;
 
-MemProtector::MemProtector(std::uintptr_t address, std::size_t length, ProtFlag prot, MemAccessor& accessor, bool unsetOnDestroy) :
+MemProtector::MemProtector(uintptr_t address, size_t length, ProtFlag prot, MemAccessor& accessor, bool unsetOnDestroy) :
 	m_accessor{accessor},
 	m_address{address},
 	m_length{length},

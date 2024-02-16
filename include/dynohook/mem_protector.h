@@ -5,13 +5,13 @@
 namespace dyno {
 	class MemAccessor;
 
-	int TranslateProtection(ProtFlag flags);
-	ProtFlag TranslateProtection(int prot);
+	DYNO_API int TranslateProtection(ProtFlag flags);
+	DYNO_API ProtFlag TranslateProtection(int prot);
 
-	class MemProtector {
+	class DYNO_API MemProtector {
 	public:
 		MemProtector() = delete;
-		MemProtector(std::uintptr_t address, std::size_t length, ProtFlag prot, MemAccessor& accessor, bool unsetOnDestroy = true);
+		MemProtector(uintptr_t address, size_t length, ProtFlag prot, MemAccessor& accessor, bool unsetOnDestroy = true);
 		~MemProtector();
 		
 		ProtFlag originalProt() const {
@@ -25,8 +25,8 @@ namespace dyno {
 	private:
 		MemAccessor& m_accessor;
 
-		std::uintptr_t m_address;
-		std::size_t m_length;
+		uintptr_t m_address;
+		size_t m_length;
 		bool m_status;
 		bool m_unsetLater;
 		

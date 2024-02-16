@@ -3,7 +3,7 @@
 #include <cstdint>
 
 namespace dyno {
-	class StackCanary {
+	class DYNO_API StackCanary {
 	public:
 		StackCanary();
 		~StackCanary() noexcept(false);

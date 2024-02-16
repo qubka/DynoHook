@@ -23,7 +23,7 @@
 		- floating pointer types are returned via the xmm0 register
 */
 namespace dyno {
-	class x64WindowsCall : public ICallingConvention {
+	class DYNO_API x64WindowsCall : public ICallingConvention {
 	public:
 		x64WindowsCall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = SIZE_QWORD);
 		~x64WindowsCall() override = default;

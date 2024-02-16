@@ -3,7 +3,7 @@
 
 using namespace dyno;
 
-VHook::VHook(std::uintptr_t fnAddress, const ConvFunc& convention) : NatHook(convention), m_fnAddress{fnAddress} {
+VHook::VHook(uintptr_t fnAddress, const ConvFunc& convention) : NatHook(convention), m_fnAddress{fnAddress} {
 	assert(fnAddress != 0 && "Function address cannot be null");
 }
 

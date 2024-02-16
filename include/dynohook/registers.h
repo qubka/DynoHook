@@ -6,6 +6,8 @@
 #include "platform.h"
 #include "helpers.h"
 
+#include <dynohook_export.h>
+
 namespace dyno {
 	enum RegisterType : uint8_t {
 		// no register at all.
@@ -292,7 +294,7 @@ namespace dyno {
 	size_t RegisterTypeToSSEIndex(RegisterType reg);
 	RegisterType SSEIndexToRegisterType(size_t index, size_t size = 0);
 
-	class Register {
+	class DYNO_API Register {
 	public:
 		Register(RegisterType type, RegisterSize size, uint8_t alignment = 0);
 		~Register();
@@ -347,7 +349,7 @@ namespace dyno {
 
 	typedef std::vector<RegisterType> regs_t;
 
-	class Registers {
+	class DYNO_API Registers {
 	public:
 		explicit Registers(const regs_t& registers);
 		Registers(const regs_t& registers1, const regs_t& registers2);

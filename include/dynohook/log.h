@@ -21,7 +21,7 @@ namespace dyno {
 		virtual void log(const std::string& msg, ErrorLevel level) = 0;
 	};
 
-	class Log {
+	class DYNO_API Log {
 	public:
 		static void registerLogger(std::shared_ptr<Logger> logger);
 		static void log(const std::string& msg, ErrorLevel level);
@@ -30,7 +30,7 @@ namespace dyno {
 		static inline std::shared_ptr<Logger> m_logger = nullptr;
 	};
 
-	class ErrorLogger : public Logger {
+	class DYNO_API ErrorLogger : public Logger {
 	public:
 		ErrorLogger() = default;
 		~ErrorLogger() override = default;

@@ -3,6 +3,7 @@
 #include "instruction.h"
 #include "mem_accessor.h"
 #include <unordered_map>
+#include <dynohook_export.h>
 
 extern "C" {
 	typedef struct ZydisDecoder_ ZydisDecoder;
@@ -14,7 +15,7 @@ extern "C" {
 namespace dyno {
 	typedef std::unordered_map<uintptr_t, insts_t> branch_map_t;
 
-	class ZydisDisassembler {
+	class DYNO_API ZydisDisassembler {
 	public:
 		explicit ZydisDisassembler(Mode mode);
 		virtual ~ZydisDisassembler();

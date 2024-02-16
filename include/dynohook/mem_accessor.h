@@ -13,7 +13,7 @@
 
 namespace dyno {
 	/// Overriding these routines can allow cross-process/cross-arch hooks
-	class MemAccessor {
+	class DYNO_API MemAccessor {
 	public:
 		virtual ~MemAccessor() = default;
 

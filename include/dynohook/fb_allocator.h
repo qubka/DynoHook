@@ -53,7 +53,7 @@ typedef struct {
 
 namespace dyno {
 	// wrapper over fb_allocator in C, with heap backing from VirtualAlloc2 to enforce range
-	class FBAllocator final {
+	class DYNO_API FBAllocator final {
 	public:
 		FBAllocator(uintptr_t min, uintptr_t max, uint8_t blockSize, uint8_t blockCount);
 		~FBAllocator();

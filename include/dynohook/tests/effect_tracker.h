@@ -5,7 +5,7 @@
 #include <vector>
 
 namespace dyno {
-	class Effect {
+	class DYNO_API Effect {
 	public:
 		Effect();
 		void trigger();
@@ -20,7 +20,7 @@ namespace dyno {
 	};
 
 	/**Track if some side effect happened.**/
-	class EffectTracker {
+	class DYNO_API EffectTracker {
 	public:
 		void push();
 		Effect pop();

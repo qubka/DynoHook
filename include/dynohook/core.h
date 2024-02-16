@@ -6,6 +6,8 @@
 #include <sstream>
 #include <cassert>
 
+#include <dynohook_export.h>
+
 namespace dyno {
 	template<typename T>
 	std::string int_to_hex(T i) {
@@ -67,20 +69,20 @@ namespace dyno {
 
 	// https://github.com/learn-more/findpattern-bench/blob/master/patterns/learn_more.h
 	// must use space between bytes and ?? for wildcards. Do not add 0x prefix
-	uintptr_t findPattern(uintptr_t rangeStart, size_t len, const char* pattern);
-	uintptr_t findPattern_rev(uintptr_t rangeStart, size_t len, const char* pattern);
-	uintptr_t getPatternSize(const char* pattern);
+	DYNO_API uintptr_t findPattern(uintptr_t rangeStart, size_t len, const char* pattern);
+	DYNO_API uintptr_t findPattern_rev(uintptr_t rangeStart, size_t len, const char* pattern);
+	DYNO_API uintptr_t getPatternSize(const char* pattern);
 
-	bool boundedAllocSupported();
-	uintptr_t boundAlloc(uintptr_t min, uintptr_t max, size_t size);
-	uintptr_t boundAllocLegacy(uintptr_t min, uintptr_t max, size_t size);
-	void   boundAllocFree(uintptr_t address, size_t size);
-	size_t getAllocationAlignment();
-	size_t getPageSize();
+	DYNO_API bool boundedAllocSupported();
+	DYNO_API uintptr_t boundAlloc(uintptr_t min, uintptr_t max, size_t size);
+	DYNO_API uintptr_t boundAllocLegacy(uintptr_t min, uintptr_t max, size_t size);
+	DYNO_API void boundAllocFree(uintptr_t address, size_t size);
+	DYNO_API size_t getAllocationAlignment();
+	DYNO_API size_t getPageSize();
 
 #if DYNO_ARCH_X86 == 64
-	uint64_t calc_2gb_below(uint64_t address);
-	uint64_t calc_2gb_above(uint64_t address);
+	DYNO_API uint64_t calc_2gb_below(uint64_t address);
+	DYNO_API uint64_t calc_2gb_above(uint64_t address);
 #endif // DYNO_ARCH_X86
 
 	// we cannot return a char array from a function, therefore we need a wrapper

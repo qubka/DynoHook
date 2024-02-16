@@ -4,9 +4,9 @@
 #include <cstdint>
 
 namespace dyno {
-	class VHook final : public NatHook {
+	class DYNO_API VHook final : public NatHook {
 	public:
-		VHook(std::uintptr_t fnAddress, const ConvFunc& convention);
+		VHook(uintptr_t fnAddress, const ConvFunc& convention);
 		~VHook() override;
 
 		bool hook() override;
@@ -20,12 +20,12 @@ namespace dyno {
 			return m_fnAddress;
 		}
 
-		const std::uintptr_t& getAddress() const override {
+		const uintptr_t& getAddress() const override {
 			return m_fnAddress;
 		}
 
 	private:
 		// address of the original function
-		std::uintptr_t m_fnAddress;
+		uintptr_t m_fnAddress;
 	};
 }

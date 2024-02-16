@@ -3,6 +3,7 @@
 #include "convention.h"
 #include "registers.h"
 #include <functional>
+#include <dynohook_export.h>
 
 namespace dyno {
 	enum class HookMode : uint8_t {
@@ -26,7 +27,6 @@ namespace dyno {
 		Supercede // skip real function; use my return value
 	};
 
-
 	class IHook;
 	//typedef ReturnAction (* FnHookCallback_t)(CallbackType, IHook&);
 	//typedef ReturnAction (* FnHookCallbackNoContext_t)(IHook&);
@@ -39,7 +39,7 @@ namespace dyno {
 	 *
 	 * This hooking method requires knowledge of parameters and calling convention of the target function.
 	 */
-	class IHook {
+	class DYNO_API IHook {
 	public:
 		/**
 		 * @brief Adds a callback handler to the hook.

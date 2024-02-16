@@ -24,7 +24,7 @@
 		- floating pointer types are returned via the st0 register
 */
 namespace dyno {
-	class x86MsFastcall : public x86MsStdcall {
+	class DYNO_API x86MsFastcall : public x86MsStdcall {
 	public:
 		x86MsFastcall(std::vector<DataObject> arguments, DataObject returnType, size_t alignment = 4);
 		~x86MsFastcall() override = default;

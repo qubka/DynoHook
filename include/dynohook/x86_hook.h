@@ -3,7 +3,7 @@
 #include <dynohook/hook.h>
 
 namespace dyno {
-	class x86Hook : public Hook {
+	class DYNO_API x86Hook : public Hook {
 	public:
 		explicit x86Hook(const ConvFunc& convention);
 		~x86Hook() override = default;

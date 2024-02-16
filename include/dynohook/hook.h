@@ -10,7 +10,7 @@ namespace dyno {
 	 * Creates and manages hooks at the beginning of a function.
 	 * This hooking method requires knowledge of parameters and calling convention of the target function.
 	 */
-	class Hook : public MemAccessor, public IHook {
+	class DYNO_API Hook : public MemAccessor, public IHook {
 	public:
 		explicit Hook(const ConvFunc& convention);
 		~Hook() override = default;

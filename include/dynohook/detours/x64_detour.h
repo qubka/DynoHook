@@ -4,7 +4,7 @@
 #include <dynohook/range_allocator.h>
 
 namespace dyno {
-	class x64Detour final : public Detour {
+	class DYNO_API x64Detour final : public Detour {
 	public:
 		enum detour_scheme_t : uint8_t {
 			VALLOC2 = 1 << 0, // use virtualalloc2 to allocate in range. Only on win10 > 1803

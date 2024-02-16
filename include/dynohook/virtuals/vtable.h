@@ -5,7 +5,7 @@
 namespace dyno {
 	class VHookCache;
 
-	class VTable final : public MemAccessor {
+	class DYNO_API VTable final : public MemAccessor {
 	public:
 		VTable(void* pClass, std::shared_ptr<VHookCache> cache);
 		~VTable() override;
@@ -36,7 +36,7 @@ namespace dyno {
 		std::unordered_map<int16_t, std::shared_ptr<VHook>> m_hooked;
 	};
 
-	class VHookCache {
+	class DYNO_API VHookCache {
 	public:
 		std::shared_ptr<VHook> get(void* pFunc, const ConvFunc& convention);
 		void clear();

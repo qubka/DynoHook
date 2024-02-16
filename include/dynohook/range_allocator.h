@@ -9,7 +9,7 @@
 
 namespace dyno {
 	class FBAllocator;
-	class RangeAllocator {
+	class DYNO_API RangeAllocator {
 	public:
 		RangeAllocator(uint8_t blockSize, uint8_t blockCount);
 		~RangeAllocator() = default;

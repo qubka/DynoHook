@@ -97,5 +97,26 @@ namespace dyno {
 		 * @brief Unhooks previously hooked virtual functions which not in use anymore.
 		 */
 		virtual void clearCache() = 0;
+
+		/**
+		 * @brief Gets a reference to the singleton instance of the HookManager.
+		 *
+		 * The HookManager is a static class that manages hooks for certain operations.
+		 * This method provides access to the singleton instance of the HookManager.
+		 *
+		 * @return A reference to the singleton instance of the HookManager.
+		 *
+		 * @note The HookManager follows the Singleton pattern, ensuring that only one
+		 * instance exists throughout the program's execution.
+		 *
+		 * Example usage:
+		 * @code
+		 * // Get a reference to the HookManager instance
+		 * IHookManager& hookManager = IHookManager::Get();
+		 * // Use the hookManager reference to manage hooks
+		 * // ...
+		 * @endcode
+		 */
+		DYNO_API static IHookManager& Get();
 	};
 }

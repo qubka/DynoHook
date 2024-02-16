@@ -9,7 +9,7 @@
 #include <cassert>
 
 namespace dyno {
-	class Detour : public NatHook {
+	class DYNO_API Detour : public NatHook {
 	public:
 		Detour(uintptr_t fnAddress, const ConvFunc& convention, Mode mode);
 		~Detour() override;

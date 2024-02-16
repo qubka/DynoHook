@@ -150,7 +150,6 @@ endif()
 if(NOT DYNOHOOK_BUILD_TESTS)
     if(DYNOHOOK_BUILD_SHARED_LIB)
         add_library(${PROJECT_NAME} SHARED)
-        set_target_properties(${PROJECT_NAME} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
     else()
         add_library(${PROJECT_NAME} STATIC)
     endif()
@@ -242,15 +241,34 @@ endif()
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/src/pch.h)
 
+set(DYNOHOOK_EXPORT_FOLDER ${CMAKE_BINARY_DIR}/exports)
+set(DYNOHOOK_EXPORT_HEADER ${DYNOHOOK_EXPORT_FOLDER}/${PROJECT_NAME}_export.h)
 if(NOT DYNOHOOK_BUILD_TESTS)
-    #include(GenerateExportHeader)
-    #generate_export_header(${PROJECT_NAME} EXPORT_MACRO_NAME EXPORT_FILE_NAME ${CMAKE_BINARY_DIR}/exports/${PROJECT_NAME}_export.h)
-    #target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_BINARY_DIR}/exports)
+	include(GenerateExportHeader)
+	generate_export_header(${PROJECT_NAME}
+			BASE_NAME DYNO
+			EXPORT_MACRO_NAME DYNO_API
+			NO_EXPORT_MACRO_NAME DYNO_PRIVATE
+			EXPORT_FILE_NAME ${DYNOHOOK_EXPORT_HEADER}
+			STATIC_DEFINE DYNO_STATIC
+			)
+	target_include_directories(${PROJECT_NAME} PUBLIC
+            $<BUILD_INTERFACE:${DYNOHOOK_EXPORT_FOLDER}>
+            #$<INSTALL_INTERFACE:include>
+    )
+    install(FILES ${DYNOHOOK_EXPORT_HEADER} DESTINATION include)
 else()
 	target_compile_options(${PROJECT_NAME} PRIVATE
 		$<$<BOOL:${UNIX}>:-fpermissive>
 	)
-    #target_compile_definitions(${PROJECT_NAME} PRIVATE DYNO_EXPORT)
+    target_include_directories(${PROJECT_NAME} PUBLIC
+            $<BUILD_INTERFACE:${DYNOHOOK_EXPORT_FOLDER}>
+            #$<INSTALL_INTERFACE:include>
+    )
+    if(NOT EXISTS ${DYNOHOOK_EXPORT_FOLDER})
+        file(MAKE_DIRECTORY ${DYNOHOOK_EXPORT_FOLDER})
+    endif()
+    file(WRITE ${DYNOHOOK_EXPORT_HEADER} "#define DYNO_API")
 endif()
 
 #Zydis
