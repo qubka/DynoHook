@@ -26,7 +26,11 @@ namespace dyno {
 		Supercede // skip real function; use my return value
 	};
 
+
 	class IHook;
+	//typedef ReturnAction (* FnHookCallback_t)(CallbackType, IHook&);
+	//typedef ReturnAction (* FnHookCallbackNoContext_t)(IHook&);
+	//typedef ReturnAction (* FnHookCallbackVoid_t)();
 	typedef ReturnAction (*CallbackHandler)(CallbackType, IHook&);
 	using ConvFunc = std::function<ICallingConvention*()>;
 

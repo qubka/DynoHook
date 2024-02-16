@@ -41,12 +41,13 @@ namespace dyno {
 	//Credit to Dogmatt on unknowncheats.me for IsValidPtr
 	// and https://docs.microsoft.com/en-us/windows-hardware/drivers/gettingstarted/virtual-address-spaces
 	#if DYNO_PLATFORM_WINDOWS && DYNO_ARCH_X86 == 64
-	#define _PTR_MAX_VALUE ((void*)0x000F000000000000)
+	#define VALID_MAX_MEMORY_ADDRESS ((void*)0x000F000000000000)
 	#else
-	#define _PTR_MAX_VALUE ((void*)0xFFF00000)
+	#define VALID_MAX_MEMORY_ADDRESS ((void*)0xFFF00000)
 	#endif // DYNO_PLATFORM_WINDOWS
+	#define VALID_MIN_MEMORY_ADDRESS ((void*)0x10000)
 
-	inline bool isValidPtr(void* p) { return (p >= (void*)0x10000) && (p < _PTR_MAX_VALUE) && p != nullptr; }
+	inline bool isValidPtr(void* p) { return (p >= VALID_MIN_MEMORY_ADDRESS) && (p < VALID_MAX_MEMORY_ADDRESS) && p != nullptr; }
 
 	inline bool isMatch(const char* addr, const char* pat, const char* msk) {
 		size_t n = 0;
