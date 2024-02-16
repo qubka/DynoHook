@@ -192,7 +192,6 @@ set(DYNOHOOK_CORE_HEADERS
         ${PROJECT_SOURCE_DIR}/include/dynohook/fb_allocator.h
         ${PROJECT_SOURCE_DIR}/include/dynohook/ihook.h
         ${PROJECT_SOURCE_DIR}/include/dynohook/hook.h
-        ${PROJECT_SOURCE_DIR}/include/dynohook/nat_detour.h
         ${PROJECT_SOURCE_DIR}/include/dynohook/instruction.h
         ${PROJECT_SOURCE_DIR}/include/dynohook/manager.h
         ${PROJECT_SOURCE_DIR}/include/dynohook/mem_accessor.h
@@ -282,7 +281,7 @@ else()
     target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/zydis>)
 endif()
 
-target_sources(${PROJECT_NAME} PRIVATE "${PROJECT_SOURCE_DIR}/src/disassembler.cpp")
+target_sources(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/src/disassembler.cpp)
 install(FILES ${PROJECT_SOURCE_DIR}/include/dynohook/disassembler.h DESTINATION include/dynohook)
 
 function(link_asmjit)
@@ -291,7 +290,7 @@ function(link_asmjit)
         target_link_libraries(${PROJECT_NAME} PRIVATE asmjit::asmjit)
     else()
         target_link_libraries(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:asmjit>)
-        target_include_directories(${PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:${ASMJIT_SRC}>")
+        target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${ASMJIT_SRC}>)
         if(MSVC)
             target_compile_options(asmjit PUBLIC /wd5054)
         elseif(MINGW)
@@ -311,7 +310,7 @@ if(DYNOHOOK_FEATURE_DETOURS)
         target_link_libraries(${PROJECT_NAME} PRIVATE asmjit::asmtk)
     else()
         target_link_libraries(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:asmtk>)
-        target_include_directories(${PROJECT_NAME} PUBLIC "$<BUILD_INTERFACE:${ASMTK_SRC}>")
+        target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${ASMTK_SRC}>)
     endif()
 
 	set(DYNOHOOK_DETOUR_HEADERS
