@@ -35,6 +35,10 @@ namespace dyno {
 
 		void setIsFollowCallOnFnAddress(bool value);
 
+		const uintptr_t& getTarget() const override {
+			return m_fnAddress;
+		}
+
 		const uintptr_t& getAddress() const override {
 			return m_trampoline;
 		}

@@ -96,6 +96,7 @@ namespace dyno {
 		virtual bool rehook()  = 0;
 		virtual bool setHooked(bool state) = 0;
 		virtual bool isHooked() const = 0;
+		virtual const uintptr_t& getTarget() const = 0;
 		virtual const uintptr_t& getAddress() const = 0;
 		virtual HookMode getMode() const = 0;
 
