@@ -39,7 +39,7 @@ bool Hook::removeCallback(CallbackType type, CallbackHandler handler) {
 
 	for (size_t i = 0; i < callbacks.size(); i++) {
 		if (callbacks[i] == handler) {
-			callbacks.erase(callbacks.begin() + i);
+			callbacks.erase(callbacks.begin() + static_cast<ptrdiff_t>(i));
 			if (callbacks.empty())
 				m_handlers.erase(it);
 			return true;
