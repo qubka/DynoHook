@@ -20,7 +20,7 @@ namespace dyno {
 		Post  // callback will be executed after the original function
 	};
 
-	enum class ReturnAction : uint8_t {
+	enum class ReturnAction : int8_t {
 		Ignored,  // handler didn't take any action
 		Handled,  // we did something, but real function should still be called
 		Override, // call real function, but use my return value
