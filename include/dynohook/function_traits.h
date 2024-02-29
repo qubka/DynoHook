@@ -69,6 +69,14 @@ namespace dyno {
 			return GetType<Ret>();
 		}
 	};
+	
+	template <typename Class, typename Ret, typename... Args>
+	class function_traits<Ret (Class::*)(Args...) const> : public function_traits<Ret (Class::*)(Args...)> {};
+	template <typename Class, typename Ret, typename... Args>
+	class function_traits<Ret (Class::*)(Args...) volatile> : public function_traits<Ret (Class::*)(Args...)> {};
+	template <typename Class, typename Ret, typename... Args>
+	class function_traits<Ret (Class::*)(Args...) const volatile> : public function_traits<Ret (Class::*)(Args...)> {};
+
 
 	template<typename Ret, typename... Args>
 	struct function_traits<Ret(Args...)> {
@@ -82,4 +90,11 @@ namespace dyno {
 			return GetType<Ret>();
 		}
 	};
+	
+	template<class Ret, class... ArgTypes>
+	class function_traits<Ret(ArgTypes...) const> : public function_traits<Ret(ArgTypes...)> {};
+	template<class Ret, class... ArgTypes>
+	class function_traits<Ret(ArgTypes...) volatile> : public function_traits<Ret(ArgTypes...)> {};
+	template<class Ret, class... ArgTypes>
+	class function_traits<Ret(ArgTypes...) const volatile> : public function_traits<Ret(ArgTypes...)> {};
 }
