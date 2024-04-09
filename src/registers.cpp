@@ -519,6 +519,8 @@ size_t dyno::RegisterTypeToSSEIndex(RegisterType reg) {
 		case ZMM30: return 30;
 		case ZMM31: return 31;
 #endif // DYNO_PLATFORM_AVX512
+
+		default: break;
 	}
 	return (size_t)-1;
 }
@@ -566,6 +568,7 @@ RegisterType dyno::SSEIndexToRegisterType(size_t index, size_t size) {
 				case 31: return XMM31;
 #endif // DYNO_PLATFORM_AVX512
 #endif // DYNO_ARCH_X86
+				default: break;
 			}
 			break;
 
@@ -610,6 +613,7 @@ RegisterType dyno::SSEIndexToRegisterType(size_t index, size_t size) {
 				case 30: return YMM30;
 				case 31: return YMM31;
 #endif // DYNO_PLATFORM_AVX512
+				default: break;
 			}
 			break;
 #endif // DYNO_PLATFORM_AVX
@@ -653,6 +657,7 @@ RegisterType dyno::SSEIndexToRegisterType(size_t index, size_t size) {
 				case 29: return ZMM29;
 				case 30: return ZMM30;
 				case 31: return ZMM31;
+				default: break;
 			}
 			break;
 #endif // DYNO_PLATFORM_AVX512
