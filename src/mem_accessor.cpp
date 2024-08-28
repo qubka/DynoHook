@@ -243,7 +243,7 @@ insts_t MemAccessor::makex64MinimumJump(uintptr_t address, uintptr_t destination
 	std::stringstream ss;
 	ss << std::hex << "[" << destHolder << "] ->" << destination;
 
-	return { Instruction(this, address, disp, 2, true, true, std::move(bytes), "jmp", ss.str(), Mode::x64), specialDest };
+	return { specialDest, Instruction(this, address, disp, 2, true, true, std::move(bytes), "jmp", ss.str(), Mode::x64) };
 }
 
 insts_t MemAccessor::makex86Jmp(uintptr_t address, uintptr_t destination) {
