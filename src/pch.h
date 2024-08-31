@@ -17,6 +17,7 @@
 #include <mutex>
 #include <type_traits>
 #include <iterator>
+#include <algorithm>
 
 #include <dynohook/platform.h>
 #include <dynohook/helpers.h>
