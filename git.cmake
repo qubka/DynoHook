@@ -59,8 +59,8 @@ else()
     set(GIT_TAG "UNKNOWN")
 endif()
 
-add_library(git-info INTERFACE)
-target_compile_definitions(git-info INTERFACE
+add_library(dynohook-git INTERFACE)
+target_compile_definitions(dynohook-git INTERFACE
         DYNO_GIT_COMMIT_HASH="${GIT_SHA1}"
         DYNO_GIT_COMMIT_DATE="${GIT_DATE}"
         DYNO_GIT_TAG="${GIT_TAG}"

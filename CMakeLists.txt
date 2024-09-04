@@ -155,7 +155,7 @@ if(NOT DYNOHOOK_BUILD_TESTS)
     endif()
 else()
     add_executable(${PROJECT_NAME})
-    target_link_libraries(${PROJECT_NAME} PRIVATE git-info)
+    target_link_libraries(${PROJECT_NAME} PRIVATE dynohook-git)
 endif()
 
 if(MSVC)
