@@ -83,6 +83,8 @@ bool Hook::areCallbacksRegistered() const {
 }
 
 ReturnAction Hook::callbackHandler(CallbackType type) {
+	DYNO_LOG_VERBOSE(type == CallbackType::Pre ? "callbackHandler::Pre" : "callbackHandler::Post");
+
 	if (type == CallbackType::Post) {
 		ReturnAction lastPreReturnAction = m_lastPreReturnAction.back();
 		m_lastPreReturnAction.pop_back();
@@ -124,6 +126,8 @@ ReturnAction Hook::callbackHandler(CallbackType type) {
 }
 
 void* Hook::getReturnAddress(void* stackPtr) {
+	DYNO_LOG_VERBOSE("getReturnAddress");
+
 	auto it = m_retAddr.find(stackPtr);
 	if (it == m_retAddr.end()) {
 		DYNO_LOG_ERR("Failed to find return address of original function. Check the arguments and return type of your hook setup.");
@@ -146,6 +150,14 @@ void* Hook::getReturnAddress(void* stackPtr) {
 
 void Hook::setReturnAddress(void* retAddr, void* stackPtr) {
 	m_mutex.lock();
+
+	DYNO_LOG_VERBOSE("setReturnAddress");
+
+#if DYNO_VERBOSE
+	std::stringstream ss;
+	ss << std::hex << std::setw(sizeof(void*) * 2) << std::setfill('0') << getAddress();
+	DYNO_LOG_VERBOSE(ss.str());
+#endif
 
 	m_retAddr[stackPtr].push_back(retAddr);
 }

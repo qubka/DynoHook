@@ -61,3 +61,9 @@ namespace dyno {
 #define DYNO_LOG_WARN(msg)
 #define DYNO_LOG_ERR(msg)
 #endif
+
+#if DYNO_VERBOSE
+#define DYNO_LOG_VERBOSE(msg) dyno::Log::log(msg, dyno::ErrorLevel::INFO)
+#else
+#define DYNO_LOG_VERBOSE(msg)
+#endif

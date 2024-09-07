@@ -48,7 +48,7 @@ std::shared_ptr<IHook> HookManager::hookVirtual(void* pClass, void* pFunc, const
 	auto it = m_vtables.find(pClass);
 	if (it != m_vtables.end()) {
 		auto& table = it->second;
-		int index = table->getVTableIndex(pFunc);
+		int index = VTable::getVTableIndex(pFunc, *table);
 		if (index == -1)
 			return nullptr;
 		return table->hook(index, convention);
@@ -56,7 +56,7 @@ std::shared_ptr<IHook> HookManager::hookVirtual(void* pClass, void* pFunc, const
 
 	auto vtable = std::make_unique<VTable>(pClass, m_cache);
 
-	int index = vtable->getVTableIndex(pFunc);
+	int index = VTable::getVTableIndex(pFunc, *vtable);
 	if (index == -1)
 		return nullptr;
 
@@ -114,7 +114,7 @@ bool HookManager::unhookVirtual(void* pClass, void* pFunc) {
 	if (it != m_vtables.end()) {
 		auto& table = it->second;
 
-		int index = table->getVTableIndex(pFunc);
+		int index = VTable::getVTableIndex(pFunc, *table);
 		if (index == -1)
 			return false;
 
@@ -144,7 +144,7 @@ std::shared_ptr<IHook> HookManager::findVirtual(void* pClass, void* pFunc) const
 	auto it = m_vtables.find(pClass);
 	if (it != m_vtables.end()){
 		auto& table = it->second;
-		int index = table->getVTableIndex(pFunc);
+		int index = VTable::getVTableIndex(pFunc, *table);
 		if (index == -1)
 			return nullptr;
 		return table->find(index);

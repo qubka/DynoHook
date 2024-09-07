@@ -21,7 +21,7 @@ namespace dyno {
 			return m_hooked.empty();
 		}
 
-		int getVTableIndex(void* pFunc);
+		static int getVTableIndex(void* pFunc, MemAccessor& accessor);
 		
 	private:
 		static int getVFuncCount(void** vtable);

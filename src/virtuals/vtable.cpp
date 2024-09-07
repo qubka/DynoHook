@@ -35,16 +35,10 @@ int VTable::getVFuncCount(void** vtable) {
 	return count;
 }
 
-int VTable::getVTableIndex(void* pFunc) {
-	static std::unordered_map<void*, int> cachedVTableIndexes;
-	
-	auto it = cachedVTableIndexes.find(pFunc);
-	if (it != cachedVTableIndexes.end())
-		return it->second;
+int VTable::getVTableIndex(void* pFunc, MemAccessor& accessor) {
+	constexpr size_t size = 12;
 
-	const size_t size = 12;
-
-	MemProtector protector((uintptr_t)pFunc, size, ProtFlag::R, *this);
+	MemProtector protector((uintptr_t)pFunc, size, ProtFlag::R, accessor);
 
 #if DYNO_PLATFORM_GCC_COMPATIBLE
 	struct GCC_MemFunPtr {
@@ -62,8 +56,6 @@ int VTable::getVTableIndex(void* pFunc) {
 	} else {
 		vtindex = -1;
 	}
-	
-	cachedVTableIndexes.emplace(pFunc, vtindex);
 
 	return vtindex;
 #elif DYNO_PLATFORM_MSVC
@@ -71,7 +63,7 @@ int VTable::getVTableIndex(void* pFunc) {
 	// https://www.unknowncheats.me/forum/c-and-c-/102577-vtable-index-pure-virtual-function.html
 
 	// Check whether it's a virtual function call on x86
-	
+
 	// They look like this:a
 	//		0:  8b 01                   mov    eax,DWORD PTR [ecx]
 	//		2:  ff 60 04                jmp    DWORD PTR [eax+0x4]
@@ -121,7 +113,7 @@ int VTable::getVTableIndex(void* pFunc) {
 			addr += 6;
 			ok = true;
 		}
-		
+
 		if (!ok)
 			return -1;
 
@@ -137,13 +129,11 @@ int VTable::getVTableIndex(void* pFunc) {
 			else
 				return -1;
 		}
-		
+
 		return -1;
 	};
 
-	int vtindex = finder((uint8_t*)pFunc);
-	cachedVTableIndexes.emplace(pFunc, vtindex);
-	return vtindex;
+	return finder((uint8_t*)pFunc);
 #else
 	#error "Compiler not support"
 #endif
