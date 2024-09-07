@@ -40,7 +40,7 @@ include(git.cmake)
 # Options
 #
 
-option(DYNOHOOK_BUILD_TESTS "Build dll & lib instead of tests" ON)
+option(DYNOHOOK_BUILD_TESTS "Build dll & lib instead of tests" OFF)
 
 option(DYNOHOOK_BUILD_SHARED_LIB "Build dynohook as shared library" OFF)
 option(DYNOHOOK_BUILD_SHARED_ASMTK "Build asmtk as shared library" OFF)
