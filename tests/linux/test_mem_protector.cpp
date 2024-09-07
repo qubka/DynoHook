@@ -1,7 +1,8 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "dynohook/mem_protector.h"
 #include "dynohook/os.h"
+#include "dynohook/mem_protector.h"
+#include "dynohook/mem_accessor.h"
 
 TEST_CASE("Test protflag translation", "[MemProtector],[Enums]") {
     SECTION("flags to native") {
@@ -12,7 +13,7 @@ TEST_CASE("Test protflag translation", "[MemProtector],[Enums]") {
         REQUIRE(dyno::TranslateProtection(dyno::ProtFlag::X | dyno::ProtFlag::R) == (PROT_EXEC|PROT_READ));
         REQUIRE(dyno::TranslateProtection(dyno::ProtFlag::X | dyno::ProtFlag::W) == (PROT_EXEC|PROT_WRITE));
         REQUIRE(dyno::TranslateProtection(dyno::ProtFlag::X | dyno::ProtFlag::W | dyno::ProtFlag::R) == (PROT_EXEC|PROT_WRITE|PROT_READ));
-        REQUIRE(dyno::TranslateProtection(dyno::ProtFlag::NONE) == PROT_NONE);
+        REQUIRE(dyno::TranslateProtection(dyno::ProtFlag::N) == PROT_NONE);
     }
 
     SECTION("native to flags") {
@@ -23,7 +24,7 @@ TEST_CASE("Test protflag translation", "[MemProtector],[Enums]") {
         REQUIRE(dyno::TranslateProtection(PROT_EXEC|PROT_READ) == (dyno::ProtFlag::X | dyno::ProtFlag::R));
         REQUIRE(dyno::TranslateProtection(PROT_EXEC|PROT_WRITE) == (dyno::ProtFlag::X | dyno::ProtFlag::W));
         REQUIRE(dyno::TranslateProtection(PROT_EXEC|PROT_WRITE|PROT_READ) == (dyno::ProtFlag::X | dyno::ProtFlag::W | dyno::ProtFlag::R));
-        REQUIRE(dyno::TranslateProtection(PROT_NONE) == dyno::ProtFlag::NONE);
+        REQUIRE(dyno::TranslateProtection(PROT_NONE) == dyno::ProtFlag::N);
     }
 }
 
@@ -34,30 +35,30 @@ TEST_CASE("Test setting page protections", "[MemProtector]") {
     dyno::MemAccessor accessor;
 
     {
-        dyno::MemoryProtector prot((uintptr_t)page, 4 * 1024, dyno::ProtFlag::R, accessor);
+        dyno::MemProtector prot((uintptr_t)page, 4 * 1024, dyno::ProtFlag::R, accessor);
         REQUIRE(prot.isGood());
-        REQUIRE(prot.originalProt() == dyno::ProtFlag::NONE);
+        REQUIRE(prot.originalProt() == dyno::ProtFlag::N);
 
-        dyno::MemoryProtector prot1((uintptr_t)page, 4 * 1024, dyno::ProtFlag::W, accessor);
+        dyno::MemProtector prot1((uintptr_t)page, 4 * 1024, dyno::ProtFlag::W, accessor);
         REQUIRE(prot1.isGood());
         REQUIRE(prot1.originalProt() == dyno::ProtFlag::R);
 
-        dyno::MemoryProtector prot2((uintptr_t)page, 4 * 1024, dyno::ProtFlag::X, accessor);
+        dyno::MemProtector prot2((uintptr_t)page, 4 * 1024, dyno::ProtFlag::X, accessor);
         REQUIRE(prot2.isGood());
         REQUIRE((prot2.originalProt() & dyno::ProtFlag::W));
     }
 
     // protection should now be NOACCESS if destructors worked
     {
-        dyno::MemoryProtector prot((uintptr_t)page, 4 * 1024, dyno::ProtFlag::X | dyno::ProtFlag::R, accessor);
+        dyno::MemProtector prot((uintptr_t)page, 4 * 1024, dyno::ProtFlag::X | dyno::ProtFlag::R, accessor);
         REQUIRE(prot.isGood());
-        REQUIRE(prot.originalProt() == dyno::ProtFlag::NONE);
+        REQUIRE(prot.originalProt() == dyno::ProtFlag::N);
 
-        dyno::MemoryProtector prot1((uintptr_t)page, 4 * 1024, dyno::ProtFlag::X | dyno::ProtFlag::W, accessor);
+        dyno::MemProtector prot1((uintptr_t)page, 4 * 1024, dyno::ProtFlag::X | dyno::ProtFlag::W, accessor);
         REQUIRE(prot.isGood());
         REQUIRE((prot1.originalProt() == (dyno::ProtFlag::X | dyno::ProtFlag::R)));
 
-        dyno::MemoryProtector prot2((uintptr_t)page, 4 * 1024, dyno::ProtFlag::X | dyno::ProtFlag::R | dyno::ProtFlag::W, accessor);
+        dyno::MemProtector prot2((uintptr_t)page, 4 * 1024, dyno::ProtFlag::X | dyno::ProtFlag::R | dyno::ProtFlag::W, accessor);
         REQUIRE(prot.isGood());
         REQUIRE(prot2.originalProt() == (dyno::ProtFlag::X | dyno::ProtFlag::W));
     }
