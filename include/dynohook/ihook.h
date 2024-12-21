@@ -68,6 +68,18 @@ namespace dyno {
 		 */
 		virtual bool areCallbacksRegistered() const = 0;
 
+		size_t getArgumentsNumber() {
+		    return getCallingConvention().getArgumentsNumber();
+	    }
+
+		DataType getArgumentType(size_t index) {
+		    return getCallingConvention().getArgumentType(index);
+	    }
+
+		DataType getReturnType() {
+		    return getCallingConvention().getReturnType();
+	    }
+
 		template<class T>
 		T getArgument(size_t index) {
 			return *(T*) getCallingConvention().getArgumentPtr(index, getRegisters());

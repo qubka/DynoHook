@@ -76,6 +76,24 @@ namespace dyno {
 		virtual void* getArgumentPtr(size_t index, const Registers& registers) = 0;
 
 		/**
+		 * @brief Returns the number of arguments.
+		 * @return
+		 */
+		size_t getArgumentsNumber() const;
+
+		/**
+		 * @brief Returns the type of an argument at the given index.
+		 * @return
+		 */
+		DataType getArgumentType(size_t index) const;
+
+		/**
+		 * @brief Returns the type of return value.
+		 * @return
+		 */
+		DataType getReturnType() const;
+
+		/**
 		 * @brief
 		 * @param index The index of the argument.
 		 * @param registers A snapshot of all saved registers.
