@@ -30,6 +30,21 @@ void ICallingConvention::init() {
 		m_return.size = static_cast<uint16_t>(getDataTypeSize(m_return.type, m_alignment));
 }
 
+size_t ICallingConvention::getArgumentsNumber() const {
+	return m_arguments.size();
+}
+
+DataType ICallingConvention::getArgumentType(size_t index) const{
+	if (index >= m_arguments.size())
+		return DataType::Void;
+
+	return m_arguments[index].type;
+}
+
+DataType ICallingConvention::getReturnType() const{
+	return m_return.type;
+}
+
 void ICallingConvention::saveReturnValue(const Registers& registers) {
 	std::unique_ptr<uint8_t[]> savedReturnValue = std::make_unique<uint8_t[]>(m_return.size);
 	std::memcpy(savedReturnValue.get(), getReturnPtr(registers), m_return.size);
