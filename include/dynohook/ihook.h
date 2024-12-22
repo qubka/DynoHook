@@ -28,7 +28,8 @@ namespace dyno {
 	};
 
 	class IHook;
-	using CallbackHandler = ReturnAction (*)(CallbackType, IHook&);
+	using CallbackHandlerFunPtr = ReturnAction (*)(CallbackType, IHook&);
+	using CallbackHandler = std::function<ReturnAction(CallbackType, IHook&)>;
 	using ConvFunc = std::function<ICallingConvention*()>;
 
 	/**

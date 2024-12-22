@@ -14,10 +14,12 @@ bool Hook::addCallback(CallbackType type, CallbackHandler handler) {
 
 	std::vector<CallbackHandler>& callbacks = m_handlers[type];
 
-	for (const CallbackHandler callback : callbacks) {
-		if (callback == handler) {
-			DYNO_LOG_WARN("Callback handler was already added");
-			return false;
+	if (handler.target<CallbackHandlerFunPtr>() != nullptr) {
+		for (const CallbackHandler callback : callbacks) {
+			if (*callback.target<CallbackHandlerFunPtr>() == *handler.target<CallbackHandlerFunPtr>()) {
+				DYNO_LOG_WARN("Callback handler was already added");
+				return false;
+			}
 		}
 	}
 
@@ -31,6 +33,11 @@ bool Hook::removeCallback(CallbackType type, CallbackHandler handler) {
 		return false;
 	}
 
+	if (handler.target<CallbackHandlerFunPtr>() == nullptr) {
+		DYNO_LOG_WARN("Callback is not a function pointer. Only function pointers callbacks can be removed.");
+		return false;
+	}
+
 	auto it = m_handlers.find(type);
 	if (it == m_handlers.end())
 		return false;
@@ -38,7 +45,7 @@ bool Hook::removeCallback(CallbackType type, CallbackHandler handler) {
 	std::vector<CallbackHandler>& callbacks = it->second;
 
 	for (size_t i = 0; i < callbacks.size(); i++) {
-		if (callbacks[i] == handler) {
+		if (*callbacks[i].target<CallbackHandlerFunPtr>() == *handler.target<CallbackHandlerFunPtr>()) {
 			callbacks.erase(callbacks.begin() + static_cast<ptrdiff_t>(i));
 			if (callbacks.empty())
 				m_handlers.erase(it);
@@ -56,6 +63,11 @@ bool Hook::isCallbackRegistered(CallbackType type, CallbackHandler handler) cons
 		return false;
 	}
 
+	if (handler.target<CallbackHandlerFunPtr>() == nullptr){
+		DYNO_LOG_WARN("Callback is not a function pointer. Only function pointers callbacks can be checked.");
+		return false;
+	}
+
 	auto it = m_handlers.find(type);
 	if (it == m_handlers.end())
 		return false;
@@ -63,7 +75,7 @@ bool Hook::isCallbackRegistered(CallbackType type, CallbackHandler handler) cons
 	const std::vector<CallbackHandler>& callbacks = it->second;
 
 	for (const CallbackHandler callback : callbacks) {
-		if (callback == handler)
+		if (*callback.target<CallbackHandlerFunPtr>() == *handler.target<CallbackHandlerFunPtr>())
 			return true;
 	}
 
