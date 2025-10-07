@@ -29,6 +29,10 @@ This module requires the following modules:
 - [MSVC](https://visualstudio.microsoft.com/vs/features/cplusplus/) 2022 and above
 - [Apple Clang](https://opensource.apple.com/projects/llvm-clang/) 14 and above
 
+[Actions](https://github.com/qubka/DynoHook/actions) build created for windows, linux and apple.
+
+![clang build](https://github.com/qubka/DynoHook/actions/workflows/clang.yml/badge.svg) ![gcc build](https://github.com/qubka/DynoHook/actions/workflows/gcc.yml/badge.svg) ![msvc build](https://github.com/qubka/DynoHook/actions/workflows/msvc.yml/badge.svg) ![msys build](https://github.com/qubka/DynoHook/actions/workflows/msys2.yml/badge.svg)
+
 ## Examples
 ### Static functions
 ```c++
