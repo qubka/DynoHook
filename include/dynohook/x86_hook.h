@@ -19,8 +19,5 @@ namespace dyno {
 		void writeRestoreRegisters(Assembler& a, bool post) const override;
 		void writeRegToMem(Assembler& a, const Register& reg, bool post) const override;
 		void writeMemToReg(Assembler& a, const Register& reg, bool post) const override;
-
-	private:
-		Registers m_scratchRegisters;
 	};
 }

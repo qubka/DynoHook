@@ -5,7 +5,7 @@ using namespace asmjit;
 using namespace asmjit::x86;
 using namespace std::string_literals;
 
-x86Hook::x86Hook(const ConvFunc& convention) : Hook(convention), m_scratchRegisters(Registers::ScratchList()) {
+x86Hook::x86Hook(const ConvFunc& convention) : Hook(convention) {
 }
 
 bool x86Hook::createBridge() {
@@ -158,14 +158,14 @@ void x86Hook::writeCallHandler(Assembler& a, CallbackType type) const {
 }
 
 int32_t x86Hook::writeSaveScratchRegisters(Assembler& a) const {
-	for (const auto& reg : m_scratchRegisters) {
+	for (const auto& reg : Registers::ScratchList()) {
 		writeRegToMem(a, reg, false);
 	}
 	return 0;
 }
 
 void x86Hook::writeRestoreScratchRegisters(Assembler& a) const {
-	for (const auto& reg : m_scratchRegisters) {
+	for (const auto& reg : Registers::ScratchList()) {
 		writeMemToReg(a, reg, false);
 	}
 }

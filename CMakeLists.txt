@@ -5,8 +5,25 @@ if(POLICY CMP0092)
 endif()
 
 
-project(dynohook)
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/version.txt" DYNOHOOK_VERSION)
+string(STRIP "${DYNOHOOK_VERSION}" DYNOHOOK_VERSION)
+message(STATUS "Dynohook Version: ${DYNOHOOK_VERSION}")
+
+# version.txt may contain a SemVer of the form 1.2.3-xxx+xxx
+# Extract the first 3 numbers into CMake variables
+string(REGEX REPLACE "[.+-]" ";" DYNOHOOK_VERSION_LIST ${DYNOHOOK_VERSION})
+list(GET DYNOHOOK_VERSION_LIST 0 DYNOHOOK_VERSION_MAJOR)
+list(GET DYNOHOOK_VERSION_LIST 1 DYNOHOOK_VERSION_MINOR)
+list(GET DYNOHOOK_VERSION_LIST 2 DYNOHOOK_VERSION_PATCH)
+
+
+project(dynohook VERSION "${DYNOHOOK_VERSION_MAJOR}.${DYNOHOOK_VERSION_MINOR}.${DYNOHOOK_VERSION_PATCH}" DESCRIPTION "DynHook Core" HOMEPAGE_URL "https://github.com/qubka/DynoHook" LANGUAGES C CXX)
 include(CMakePackageConfigHelpers)
+
+if(NOT CMAKE_BUILD_TYPE MATCHES "Debug|Devel|MinSizeRel|RelWithDebInfo|Release")
+    message(STATUS "CMAKE_BUILD_TYPE not set, defaulting to Release.")
+    set(CMAKE_BUILD_TYPE Release)
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -40,7 +57,7 @@ include(git.cmake)
 # Options
 #
 
-option(DYNOHOOK_BUILD_TESTS "Build dll & lib instead of tests" OFF)
+option(DYNOHOOK_BUILD_TESTS "Build dll & lib instead of tests" ON)
 
 option(DYNOHOOK_BUILD_SHARED_LIB "Build dynohook as shared library" OFF)
 option(DYNOHOOK_BUILD_SHARED_ASMTK "Build asmtk as shared library" OFF)

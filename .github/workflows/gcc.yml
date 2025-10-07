@@ -1,4 +1,4 @@
-name: CMake on multiple platforms
+name: gcc
 
 on:
   push:
@@ -10,11 +10,13 @@ on:
       - LICENSE
       - README.md
       - 'docs/**'
+      - 'schemas/**'
   pull_request:
     paths-ignore:
       - LICENSE
       - README.md
       - 'docs/**'
+      - 'schemas/**'
 
 jobs:
   build:
@@ -24,26 +26,10 @@ jobs:
       fail-fast: false
 
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
         build_type: [Release]
-        c_compiler: [gcc, clang, cl]
-        include:
-          - os: windows-latest
-            c_compiler: cl
-            cpp_compiler: cl
-          - os: ubuntu-latest
-            c_compiler: gcc
-            cpp_compiler: g++
-          - os: ubuntu-latest
-            c_compiler: clang
-            cpp_compiler: clang++
-        exclude:
-          - os: windows-latest
-            c_compiler: gcc
-          - os: windows-latest
-            c_compiler: clang
-          - os: ubuntu-latest
-            c_compiler: cl
+        c_compiler: [gcc]
+        cpp_compiler: [g++]
 
     steps:
     - name: Checkout
@@ -51,11 +37,13 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Install clang
-      shell: bash -el {0}
-      if: matrix.c_compiler == 'clang'
-      run: |
-        sudo apt install clang
+    - name: Setup Visual Studio environment
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Setup CMake
+      uses: lukka/get-cmake@latest
 
     - name: Cache build dependencies
       uses: actions/cache@v3
@@ -74,7 +62,6 @@ jobs:
         cmake -S . -B build -G Ninja 
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
     - name: Build
       shell: bash -el {0}

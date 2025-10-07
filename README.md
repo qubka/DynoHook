@@ -1,6 +1,5 @@
 # DynoHook
-![Build Status](https://github.com/qubka/DynoHook/actions/workflows/cmake-multiple-platform.yml/badge.svg)
-![ezgif com-webp-to-jpg-removebg-preview (1)](https://user-images.githubusercontent.com/17956432/230238380-5787b9bd-8f31-4f27-a104-195c289af545.png)
+
 ## Introduction
 DynoHooks is a versatile and powerful C++ library designed to provide developers with an easy way to create dynamic function hooks for any call convention with pre and post callbacks. This library is built using AsmJit machine code generation library and Capstone Disassembler library to achieve dynamic function hooking for x86 architecture with support for 32/64-bit modes on Windows and Linux platforms. The library is designed to be used with C++17 or later. It is based on Ayuto's DynamicHooks library.
 
@@ -22,6 +21,13 @@ This module requires the following modules:
 
 - [AsmJit](https://asmjit.com/)
 - [Zydis](https://zydis.re/)
+
+#### Supported compilers:
+
+- [Clang](https://clang.llvm.org) 14 and above
+- [GCC](https://gcc.gnu.org) 10 and above
+- [MSVC](https://visualstudio.microsoft.com/vs/features/cplusplus/) 2022 and above
+- [Apple Clang](https://opensource.apple.com/projects/llvm-clang/) 14 and above
 
 ## Examples
 ### Static functions

@@ -1,0 +1,71 @@
+name: clang
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - 'main'
+    paths-ignore:
+      - LICENSE
+      - README.md
+      - 'docs/**'
+      - 'schemas/**'
+  pull_request:
+    paths-ignore:
+      - LICENSE
+      - README.md
+      - 'docs/**'
+      - 'schemas/**'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        build_type: [Release]
+        c_compiler: [clang]
+        cpp_compiler: [clang++]
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install clang (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      shell: bash -el {0}
+      run: |
+        sudo apt install clang
+
+    - name: Cache build dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          build/_deps
+          ~/.vcpkg
+          ~/.cache
+        key: ${{ runner.os }}-build-${{ hashFiles('**/CMakeLists.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-build-
+
+    - name: Configure CMake
+      shell: bash -el {0}
+      run: >
+        cmake -S . -B build -G Ninja 
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+
+    - name: Build
+      shell: bash -el {0}
+      run: cmake --build build --target dynohook --config ${{ matrix.build_type }} --parallel
+
+#    - name: Test
+#      shell: bash -el {0}
+#      working-directory: build
+#      run: ctest --build-config ${{ matrix.build_type }}
