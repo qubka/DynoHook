@@ -5,7 +5,7 @@
 #include "virtuals/vtable.h"
 #include "detours/nat_detour.h"
 
-#include <asmjit/asmjit.h>
+#include <asmjit/x86.h>
 #include <unordered_map>
 
 namespace dyno {

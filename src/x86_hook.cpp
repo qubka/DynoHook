@@ -12,10 +12,10 @@ bool x86Hook::createBridge() {
 	assert(m_fnBridge == 0);
 
 	CodeHolder code;
-	code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpuFeatures());
+	code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpu_features());
 	Assembler a(&code);
 
-	Label override = a.newLabel();
+	Label override = a.new_label();
 
 	// write a redirect to the post-hook code
 	writeModifyReturnAddress(a);
@@ -46,12 +46,12 @@ bool x86Hook::createBridge() {
 
 	// generate code
 	auto error = m_asmjit_rt.add(&m_fnBridge, &code);
-	if (error) {
-		DYNO_LOG_ERR("AsmJit error: "s + DebugUtils::errorAsString(error));
+	if (error != kErrorOk) {
+		DYNO_LOG_ERR("AsmJit error: "s + DebugUtils::error_as_string(error));
 		return false;
 	}
 
-	m_fnBridgeSize = code.codeSize();
+	m_fnBridgeSize = code.code_size();
 
 	return true;
 }
@@ -60,7 +60,7 @@ bool x86Hook::createPostCallback() {
 	assert(m_newRetAddr == 0);
 
 	CodeHolder code;
-	code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpuFeatures());
+	code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpu_features());
 	Assembler a(&code);
 
 	// gets pop size + return address
@@ -105,12 +105,12 @@ bool x86Hook::createPostCallback() {
 
 	// generate code
 	auto error = m_asmjit_rt.add(&m_newRetAddr, &code);
-	if (error) {
-		DYNO_LOG_ERR("AsmJit error: "s + DebugUtils::errorAsString(error));
+	if (error != kErrorOk) {
+		DYNO_LOG_ERR("AsmJit error: "s + DebugUtils::error_as_string(error));
 		return false;
 	}
 
-	m_newRetAddrSize = code.codeSize();
+	m_newRetAddrSize = code.code_size();
 
 	return true;
 }

@@ -204,20 +204,19 @@ bool x64Detour::makeInplaceTrampoline(
 	const std::function<void(asmjit::x86::Assembler&)>& builder
 ) {
 	CodeHolder code;
-	code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpuFeatures(), base_address);
+	code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpu_features(), base_address);
 	x86::Assembler a(&code);
 
 	builder(a);
 
 	uintptr_t trampoline_address;
 	auto error = m_asmjit_rt.add(&trampoline_address, &code);
-
-	if (error) {
-		DYNO_LOG_ERR("Failed to generate in-place trampoline: "s + asmjit::DebugUtils::errorAsString(error));
+	if (error != kErrorOk) {
+		DYNO_LOG_ERR("Failed to generate in-place trampoline: "s + asmjit::DebugUtils::error_as_string(error));
 		return false;
 	}
 
-	const auto trampoline_end = trampoline_address + code.codeSize();
+	const auto trampoline_end = trampoline_address + code.code_size();
 	m_hookInsts = m_disasm.disassemble(trampoline_address, trampoline_address, trampoline_end, *this);
 	// Fix the addresses
 	auto current_address = base_address;
@@ -585,7 +584,7 @@ std::vector<std::string> generateAbsoluteJump(uintptr_t destination, uint16_t st
 std::optional<uintptr_t> x64Detour::generateTranslationRoutine(const Instruction& instruction, uintptr_t resume_address) {
 	// AsmTK parses strings for AsmJit, which generates the binary code.
 	CodeHolder code;
-	code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpuFeatures());
+	code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpu_features());
 
 	x86::Assembler assembler(&code);
 	asmtk::AsmParser parser(&assembler);
@@ -655,15 +654,15 @@ std::optional<uintptr_t> x64Detour::generateTranslationRoutine(const Instruction
 	DYNO_LOG_INFO("Translation:\n" + translation_string + "\n");
 
 	// Parse the instructions via AsmTK
-	if (auto error = parser.parse(translation_string.c_str())) {
-		DYNO_LOG_ERR("AsmTK error: "s + DebugUtils::errorAsString(error));
+	if (auto error = parser.parse(translation_string.c_str()); error != kErrorOk) {
+		DYNO_LOG_ERR("AsmTK error: "s + DebugUtils::error_as_string(error));
 		return std::nullopt;
 	}
 
 	// Generate the binary code via AsmJit
 	uintptr_t translation_address = 0;
-	if (auto error = m_asmjit_rt.add(&translation_address, &code)) {
-		DYNO_LOG_ERR("AsmJit error: "s + DebugUtils::errorAsString(error));
+	if (auto error = m_asmjit_rt.add(&translation_address, &code); error != kErrorOk) {
+		DYNO_LOG_ERR("AsmJit error: "s + DebugUtils::error_as_string(error));
 		return std::nullopt;
 	}
 

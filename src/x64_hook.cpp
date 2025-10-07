@@ -14,10 +14,10 @@ bool x64Hook::createBridge() {
 	assert(m_fnBridge == 0);
 
 	CodeHolder code;
-	code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpuFeatures());
+	code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpu_features());
 	Assembler a(&code);
 
-	Label override = a.newLabel();
+	Label override = a.new_label();
 
 	// write a redirect to the post-hook code
 	writeModifyReturnAddress(a);
@@ -39,7 +39,7 @@ bool x64Hook::createBridge() {
 	} else {
 		// make space for inserting near/far jump later
 		std::array<uint8_t, 14> nops{ 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 };
-		a.embedDataArray(TypeId::kUInt8, nops.data(), nops.size());
+		a.embed_data_array(TypeId::kUInt8, nops.data(), nops.size());
 	}
 
 	// this code will be executed if a pre-hook returns Supercede
@@ -55,12 +55,12 @@ bool x64Hook::createBridge() {
 
 	// generate code
 	auto error = m_asmjit_rt.add(&m_fnBridge, &code);
-	if (error) {
-		DYNO_LOG_ERR("AsmJit error: "s + DebugUtils::errorAsString(error));
+	if (error != kErrorOk) {
+		DYNO_LOG_ERR("AsmJit error: "s + DebugUtils::error_as_string(error));
 		return false;
 	}
 
-	m_fnBridgeSize = code.codeSize();
+	m_fnBridgeSize = code.code_size();
 
 	return true;
 }
@@ -69,7 +69,7 @@ bool x64Hook::createPostCallback() {
 	assert(m_newRetAddr == 0);
 
 	CodeHolder code;
-	code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpuFeatures());
+	code.init(m_asmjit_rt.environment(), m_asmjit_rt.cpu_features());
 	Assembler a(&code);
 
 	// gets pop size + return address
@@ -127,12 +127,12 @@ bool x64Hook::createPostCallback() {
 
 	// generate code
 	auto error = m_asmjit_rt.add(&m_newRetAddr, &code);
-	if (error) {
-		DYNO_LOG_ERR("AsmJit error: "s + DebugUtils::errorAsString(error));
+	if (error != kErrorOk) {
+		DYNO_LOG_ERR("AsmJit error: "s + DebugUtils::error_as_string(error));
 		return false;
 	}
 
-	m_newRetAddrSize = code.codeSize();
+	m_newRetAddrSize = code.code_size();
 
 	return true;
 }

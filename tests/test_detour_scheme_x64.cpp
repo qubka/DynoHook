@@ -22,15 +22,14 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
 
     auto make_func = [&](const std::function<void(asmjit::x86::Assembler&)>& builder) {
         asmjit::CodeHolder code;
-        code.init(rt.environment(), rt.cpuFeatures());
+        code.init(rt.environment(), rt.cpu_features());
         asmjit::x86::Assembler a{&code};
         builder(a);
 
         IntFn fn;
         auto error = rt.add(&fn, &code);
-
-        if (error) {
-            std::cerr << "Error generating function: " << asmjit::DebugUtils::errorAsString(error) << std::endl;
+        if (error != asmjit::kErrorOk) {
+            std::cerr << "Error generating function: " << asmjit::DebugUtils::error_as_string(error) << std::endl;
             exit(1);
         }
 
@@ -44,8 +43,8 @@ TEST_CASE("Testing detour schemes", "[DetourScheme][Detour]") {
         dyno::StackCanary canary;
 
         auto valloc_function = make_func([](asmjit::x86::Assembler& a) {
-            auto setRax = a.newLabel();
-            auto exit = a.newLabel();
+            auto setRax = a.new_label();
+            auto exit = a.new_label();
 
             a.cmp(asmjit::x86::qword_ptr(asmjit::x86::rip, -11), 0x12345678);
 

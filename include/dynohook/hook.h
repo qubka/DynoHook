@@ -4,7 +4,7 @@
 #include "ihook.h"
 #include "platform.h"
 
-#include <asmjit/asmjit.h>
+#include <asmjit/x86.h>
 #include <mutex>
 
 namespace dyno {
