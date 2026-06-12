@@ -24,16 +24,18 @@ namespace dyno {
 		static int getVTableIndex(void* pFunc, MemAccessor& accessor);
 		
 	private:
-		static int getVFuncCount(void** vtable);
+		static size_t getVFuncCount(void** vtable);
 
 		void*** m_class;
 		void** m_origVtable;
-		int m_vFuncCount;
-		std::unique_ptr<void*[]> m_newVtable;
+		size_t m_vFuncCount;
+		void** m_newVtable;
+
+		std::unique_ptr<void*[]> m_vtable;
 
 		std::shared_ptr<VHookCache> m_hookCache;
 
-		std::unordered_map<int16_t, std::shared_ptr<VHook>> m_hooked;
+		std::unordered_map<int, std::shared_ptr<VHook>> m_hooked;
 	};
 
 	class DYNO_API VHookCache {

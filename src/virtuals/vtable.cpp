@@ -7,14 +7,22 @@
 
 using namespace dyno;
 
+#if DYNO_PLATFORM_MSVC
+static constexpr size_t HEADER = 1; // RTTICompleteObjectLocator*
+#elif DYNO_PLATFORM_GCC_COMPATIBLE
+static constexpr size_t HEADER = 2; // offset-to-top + RTTI ptr
+#endif
+
 VTable::VTable(void* pClass, std::shared_ptr<VHookCache> hookCache) : m_class{(void***)pClass}, m_hookCache{std::move(hookCache)} {
 	MemProtector protector((uintptr_t)m_class, sizeof(void*), ProtFlag::R | ProtFlag::W, *this);
 
 	m_origVtable = *m_class;
 	m_vFuncCount = getVFuncCount(m_origVtable);
-	m_newVtable = std::make_unique<void*[]>(m_vFuncCount);
-	std::memcpy(m_newVtable.get(), m_origVtable, sizeof(void*) * m_vFuncCount);
-	*m_class = m_newVtable.get();
+	auto size = m_vFuncCount + HEADER;
+	m_vtable = std::make_unique<void*[]>(size);
+	std::memcpy(m_vtable.get(), m_origVtable - HEADER, sizeof(void*) * size);
+	m_newVtable = m_vtable.get() + HEADER;
+	*m_class = m_newVtable;
 }
 
 VTable::~VTable() {
@@ -25,8 +33,8 @@ VTable::~VTable() {
 	//m_hookCache->cleanup();
 }
 
-int VTable::getVFuncCount(void** vtable) {
-	int count = 0;
+size_t VTable::getVFuncCount(void** vtable) {
+	size_t count = 0;
 	while (true) {
 		// if you have more than 512 vfuncs you have a problem
 		if (!isValidPtr(vtable[++count]) || count > 512)
@@ -145,7 +153,7 @@ std::shared_ptr<Hook> VTable::hook(int index, const ConvFunc& convention) {
 		return nullptr;
 	}
 
-	auto it = m_hooked.find(int16_t(index));
+	auto it = m_hooked.find(index);
 	if (it != m_hooked.end())
 		return it->second;
 
@@ -154,7 +162,7 @@ std::shared_ptr<Hook> VTable::hook(int index, const ConvFunc& convention) {
 		DYNO_LOG_ERR("Invalid virtual hook");
 		return nullptr;
 	}
-	
+
 	m_hooked.emplace(index, vhook);
 	m_newVtable[index] = (void*) vhook->getBridge();
 	return vhook;
@@ -166,7 +174,7 @@ bool VTable::unhook(int index) {
 		return false;
 	}
 
-	auto it = m_hooked.find(int16_t(index));
+	auto it = m_hooked.find(index);
 	if (it == m_hooked.end())
 		return false;
 
@@ -176,7 +184,7 @@ bool VTable::unhook(int index) {
 }
 
 std::shared_ptr<Hook> VTable::find(int index) const {
-	auto it = m_hooked.find(int16_t(index));
+	auto it = m_hooked.find(index);
 	return it != m_hooked.end() ? it->second : nullptr;
 }
 
