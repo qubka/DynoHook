@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/qubka/DynoHook/compare/v1.0.1...v1.0.2) (2026-06-12)
+
+
+### Bug Fixes
+
+* allow dynamic cast work after vtable hook ([d7f2309](https://github.com/qubka/DynoHook/commit/d7f2309c8c970e218a001d5480758925719db6bd))
+
 ## [1.0.1](https://github.com/qubka/DynoHook/compare/v1.0.0...v1.0.1) (2025-10-07)
 
 
